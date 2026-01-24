@@ -1,5 +1,8 @@
 {
-  "name": "Copy of SaaS Workshop Pro",
-  "description": "A comprehensive SaaS platform for service management, featuring a robust workshop (Oficina) module with AI-powered diagnostics and workflow management.",
-  "requestFramePermissions": []
+  "name": "SaaS Workshop Pro",
+  "description": "Plataforma completa de gestão para oficinas mecânicas com IA integrada.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
 }

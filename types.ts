@@ -4,30 +4,25 @@ export enum ModuleStatus {
   LOCKED = 'LOCKED'
 }
 
-export interface Module {
+export interface ServiceItem {
   id: string;
-  name: string;
+  type: 'PEÇA' | 'MÃO DE OBRA' | 'NOTA';
   description: string;
-  status: ModuleStatus;
-  icon: string;
-  path: string;
+  quantity: number;
+  price: number;
+  timestamp: string;
 }
 
 export interface ServiceOrder {
   id: string;
   clientName: string;
+  phone: string;
   vehicle: string;
   plate: string;
   description: string;
-  status: 'Pendente' | 'Em Andamento' | 'Concluído';
-  date: string;
+  status: 'Aberto' | 'Orçamento' | 'Execução' | 'Pronto' | 'Entregue';
+  createdAt: string;
+  items: ServiceItem[];
+  photoUrl?: string;
   total: number;
-}
-
-export interface Client {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  lastVisit: string;
 }
