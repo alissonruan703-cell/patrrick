@@ -12,7 +12,6 @@ const PublicView: React.FC = () => {
       const decoded = decodeURIComponent(escape(atob(data || '')));
       const raw = JSON.parse(decoded);
       
-      // Traduzindo chaves curtas de volta para o formato original
       return {
         id: raw.i,
         client: raw.n,
@@ -23,15 +22,15 @@ const PublicView: React.FC = () => {
         total: raw.t,
         date: raw.dt,
         companyName: raw.cn,
-        companyLogo: raw.cl,
+        // Logo removida do link para garantir URL curta. 
+        // Em um sistema real com backend, buscaríamos pelo CN.
         items: (raw.it || []).map((item: any) => ({
           type: item.t === 'P' ? 'PEÇA' : item.t === 'M' ? 'MÃO DE OBRA' : 'NOTA',
           description: item.d,
           brand: item.b,
           quantity: item.q,
           price: item.p
-        })),
-        photos: raw.ph || [] // Fotos agora são opcionais no link para economizar espaço
+        }))
       };
     } catch (e) {
       return null;
@@ -40,9 +39,7 @@ const PublicView: React.FC = () => {
 
   const handleClientAction = (newStatus: 'Execução' | 'Reprovado') => {
     if (!os) return;
-    
     setStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
-
     const saved = localStorage.getItem('crmplus_oficina_orders');
     if (saved) {
       const orders = JSON.parse(saved);
@@ -100,7 +97,6 @@ const PublicView: React.FC = () => {
   };
 
   const companyName = os.companyName || 'CRMPlus+';
-  const companyLogo = os.companyLogo || '';
 
   return (
     <div className="min-h-screen bg-[#0f1115] p-4 lg:p-20 text-slate-200 print:bg-white print:p-0">
@@ -118,13 +114,10 @@ const PublicView: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4">
                <div className="flex items-center gap-4 mb-6">
-                {companyLogo ? (
-                   <div className="bg-white/10 p-2 rounded-2xl border border-white/10 w-20 h-20 flex items-center justify-center overflow-hidden print:border-slate-200 shadow-xl">
-                      <img src={companyLogo} alt="Logo" className="w-full h-full object-contain" />
-                   </div>
-                ) : (
-                   <div className="bg-violet-600 p-2 rounded-lg print:hidden"><Plus size={20} className="text-white" /></div>
-                )}
+                {/* Badge de marca premium gerado dinamicamente já que removemos a logo para encurtar o link */}
+                <div className="bg-violet-600 w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-xl shadow-violet-600/30 print:border-slate-300 print:text-slate-900 print:bg-slate-100">
+                   {companyName[0].toUpperCase()}
+                </div>
                 <span className="text-2xl font-black text-white print:text-black uppercase tracking-tighter">
                   {companyName.split(' ')[0]}
                   <span className="text-violet-500">{companyName.split(' ').slice(1).join(' ') || '+'}</span>
@@ -172,26 +165,6 @@ const PublicView: React.FC = () => {
           <TableSection title="Peças e Componentes" icon={<Box size={20}/>} items={parts} />
           <TableSection title="Mão de Obra e Serviços" icon={<Wrench size={20}/>} items={services} />
           <TableSection title="Outros / Notas" icon={<Check size={20}/>} items={others} />
-
-          {/* Galeria de Fotos da OS (Apenas se inclusas no link) */}
-          {os.photos && os.photos.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 px-2">
-                 <Camera className="text-violet-500" size={20} />
-                 <h3 className="text-sm font-black text-white uppercase tracking-widest print:hidden">Registros Fotográficos</h3>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
-                {os.photos.map((photo: string, i: number) => (
-                  <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/5 bg-black/40 group relative">
-                    <img src={photo} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={`Foto ${i}`} />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <Search size={24} className="text-white" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {os.observation && (
             <div className="p-6 bg-[#0f1115] rounded-2xl border border-violet-500/20 space-y-3 print:bg-slate-50 print:border-slate-200">

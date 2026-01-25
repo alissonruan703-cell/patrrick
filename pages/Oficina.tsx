@@ -188,9 +188,9 @@ const Oficina: React.FC = () => {
   const generateShareLink = () => {
     if (!selectedOS) return "";
     
-    // Minificando as chaves para encurtar a URL significativamente
-    // i: id, n: name, v: vehicle, p: plate, d: desc, o: obs, it: items, t: total, dt: date
-    // cn: companyName, cl: companyLogo
+    // REDUÇÃO AGRESSIVA PARA LINK CURTO:
+    // 1. Removida a logo cl: (que causa 95% do tamanho do link)
+    // 2. Chaves encurtadas ao máximo
     const data = {
       i: selectedOS.id,
       n: selectedOS.clientName,
@@ -199,7 +199,7 @@ const Oficina: React.FC = () => {
       d: selectedOS.description,
       o: selectedOS.observation || '',
       it: selectedOS.items.map(item => ({
-        t: item.type[0], // P, M ou N
+        t: item.type[0], 
         d: item.description,
         b: item.brand,
         q: item.quantity,
@@ -207,8 +207,7 @@ const Oficina: React.FC = () => {
       })),
       t: selectedOS.total,
       dt: selectedOS.createdAt,
-      cn: systemConfig.companyName,
-      cl: systemConfig.companyLogo
+      cn: systemConfig.companyName
     };
 
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
