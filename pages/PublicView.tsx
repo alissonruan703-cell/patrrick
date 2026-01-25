@@ -6,6 +6,7 @@ import { Printer, Check, Box, Wrench, ThumbsUp, ThumbsDown } from 'lucide-react'
 const PublicView: React.FC = () => {
   const { data } = useParams();
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [logo, setLogo] = useState('');
   
   const os = React.useMemo(() => {
     try {
@@ -27,6 +28,14 @@ const PublicView: React.FC = () => {
       return null;
     }
   }, [data]);
+
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('crmplus_system_config');
+    if (savedConfig) {
+      const parsed = JSON.parse(savedConfig);
+      setLogo(parsed.companyLogo || '');
+    }
+  }, []);
 
   const items = React.useMemo(() => {
      if (!data) return [];
@@ -55,9 +64,7 @@ const PublicView: React.FC = () => {
       );
       localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updatedOrders));
       
-      // Notifica outras abas
       window.dispatchEvent(new Event('storage'));
-      // Notifica componentes na mesma aba
       window.dispatchEvent(new CustomEvent('crmplus_update'));
     }
   };
@@ -113,7 +120,7 @@ const PublicView: React.FC = () => {
         {status !== 'pending' && (
           <div className={`p-4 text-center animate-in slide-in-from-top-full duration-500 ${status === 'approved' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
             <p className="text-[10px] font-black uppercase tracking-widest">
-              {status === 'approved' ? 'Orçamento Aprovado com Sucesso! O sistema já foi notificado.' : 'Orçamento Reprovado.'}
+              {status === 'approved' ? 'Aprovado com Sucesso! O sistema já foi notificado.' : 'Orçamento Reprovado.'}
             </p>
           </div>
         )}
@@ -122,9 +129,15 @@ const PublicView: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4">
                <div className="flex items-center gap-4 mb-4">
-                <div className="bg-violet-600 w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-xl shadow-violet-600/30 print:border-slate-300 print:text-slate-900 print:bg-slate-100 transition-all">
-                   {companyName[0].toUpperCase()}
-                </div>
+                {logo ? (
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center p-2 shadow-xl">
+                    <img src={logo} className="max-w-full max-h-full object-contain" alt="Logo Empresa" />
+                  </div>
+                ) : (
+                  <div className="bg-violet-600 w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-xl shadow-violet-600/30">
+                    {companyName[0].toUpperCase()}
+                  </div>
+                )}
                 <span className="text-xl font-black text-white print:text-black uppercase tracking-tighter">
                   {companyName.split(' ')[0]}
                   <span className="text-violet-500">{companyName.split(' ').slice(1).join(' ') || ''}</span>

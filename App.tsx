@@ -54,7 +54,7 @@ const Navbar = () => {
       <div className="flex items-center gap-10">
         <Link to="/" className="flex items-center gap-2.5">
           {config.companyLogo ? (
-            <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center p-1.5 transition-all">
+            <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center p-2 transition-all">
               <img src={config.companyLogo} className="max-w-full max-h-full object-contain" alt="Logo" />
             </div>
           ) : (
