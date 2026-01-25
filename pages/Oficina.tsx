@@ -7,7 +7,8 @@ import {
   Package, Wrench, History, Trash2,
   PlusCircle, AlertCircle, Edit3, LayoutDashboard,
   Printer, TrendingUp, Users, ClipboardList,
-  Filter, Calendar, Hash, Settings
+  Filter, Calendar, Hash, Settings, ImageIcon,
+  ImagePlus
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem } from '../types';
 
@@ -34,6 +35,7 @@ const Oficina: React.FC = () => {
 
   const [tempPhoto, setTempPhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const [orders, setOrders] = useState<ServiceOrder[]>([
     {
@@ -46,6 +48,7 @@ const Oficina: React.FC = () => {
       status: 'Execução',
       createdAt: new Date().toISOString().split('T')[0],
       total: 350,
+      photos: [],
       items: [
         { id: 'i1', type: 'PEÇA', description: 'Amortecedor Dianteiro', quantity: 2, price: 150, timestamp: '14:00' },
         { id: 'i2', type: 'MÃO DE OBRA', description: 'Troca de amortecedores', quantity: 1, price: 50, timestamp: '15:30' }
@@ -105,12 +108,47 @@ const Oficina: React.FC = () => {
       createdAt: new Date().toISOString().split('T')[0],
       total: 0,
       items: [],
-      photoUrl: tempPhoto || undefined
+      photos: tempPhoto ? [tempPhoto] : [],
     };
     setOrders([nova, ...orders]);
     setFormData({ clientName: '', plate: '', vehicle: '', phone: '', description: '' });
+    setTempPhoto(null);
     setView('lista');
     setActiveTab('ativos');
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addGalleryPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && selectedOS) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const updatedPhotos = [...(selectedOS.photos || []), reader.result as string];
+        const updatedOS = { ...selectedOS, photos: updatedPhotos };
+        setSelectedOS(updatedOS);
+        setOrders(orders.map(o => o.id === selectedOS.id ? updatedOS : o));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeGalleryPhoto = (index: number) => {
+    if (selectedOS && selectedOS.photos) {
+      const updatedPhotos = selectedOS.photos.filter((_, i) => i !== index);
+      const updatedOS = { ...selectedOS, photos: updatedPhotos };
+      setSelectedOS(updatedOS);
+      setOrders(orders.map(o => o.id === selectedOS.id ? updatedOS : o));
+    }
   };
 
   const addItem = (type: ServiceItem['type']) => {
@@ -169,7 +207,7 @@ const Oficina: React.FC = () => {
         </button>
       </div>
 
-      {/* PAINEL DE FILTROS (Disponível em todas as abas de lista) */}
+      {/* PAINEL DE FILTROS */}
       {view === 'lista' && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 no-print">
           <div className="flex items-center justify-between mb-2">
@@ -243,12 +281,6 @@ const Oficina: React.FC = () => {
               <h3 className="text-3xl font-black text-slate-900">{stats.concluidos}</h3>
             </div>
           </div>
-          
-          <div className="bg-white p-12 rounded-3xl border border-slate-200 shadow-sm text-center">
-            <ClipboardList size={48} className="mx-auto text-slate-200 mb-4" />
-            <h3 className="text-lg font-bold text-slate-800">Resumo de Atividades</h3>
-            <p className="text-slate-500 text-sm mt-2 max-w-sm mx-auto">Utilize os filtros acima para analisar o desempenho da sua oficina em diferentes períodos e clientes.</p>
-          </div>
         </div>
       )}
 
@@ -280,13 +312,13 @@ const Oficina: React.FC = () => {
           )) : (
             <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
               <Search size={40} className="mx-auto text-slate-200 mb-3" />
-              <p className="text-slate-500 font-medium">Nenhum veículo encontrado com estes filtros.</p>
+              <p className="text-slate-500 font-medium">Nenhum veículo encontrado.</p>
             </div>
           )}
         </div>
       )}
 
-      {/* VIEW: NOVA O.S. (Removido IA/Mágica) */}
+      {/* VIEW: NOVA O.S. */}
       {view === 'nova' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
           <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -317,81 +349,189 @@ const Oficina: React.FC = () => {
                 <label className="text-xs font-bold text-slate-500 uppercase">Relato do Defeito</label>
                 <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} required rows={3} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
               </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase">Foto Inicial (Opcional)</label>
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center cursor-pointer hover:border-indigo-400 transition-colors bg-slate-50"
+                >
+                  <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
+                  {tempPhoto ? (
+                    <img src={tempPhoto} alt="Preview" className="max-h-48 mx-auto rounded-lg shadow-sm" />
+                  ) : (
+                    <div className="text-slate-400">
+                      <Camera size={32} className="mx-auto mb-2" />
+                      <p className="text-sm font-medium">Clique para tirar foto ou fazer upload</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="p-6 bg-slate-50 border-t border-slate-200 flex gap-4">
-              <button type="button" onClick={() => setView('lista')} className="flex-1 py-4 font-bold text-slate-500 hover:bg-slate-200 rounded-2xl">Cancelar</button>
-              <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl hover:bg-indigo-700">Abrir Atendimento</button>
+              <button type="button" onClick={() => setView('lista')} className="flex-1 py-4 font-bold text-slate-500 hover:bg-slate-200 rounded-2xl transition-colors">Cancelar</button>
+              <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl hover:bg-indigo-700 transition-all">Abrir Atendimento</button>
             </div>
           </form>
         </div>
       )}
 
-      {/* VIEW: DETALHES (Removido Consultoria IA) */}
+      {/* VIEW: DETALHES */}
       {view === 'detalhes' && selectedOS && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-8 space-y-8">
-              <div className="flex justify-between items-start border-b border-slate-100 pb-6">
+            <div id="print-area" className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-8 space-y-8">
+              <div className="flex justify-between items-start border-b border-slate-100 pb-6 no-print">
                 <div>
                   <button onClick={() => setView('lista')} className="text-sm font-bold text-slate-400 mb-2 block hover:text-indigo-600">← Voltar</button>
                   <h2 className="text-2xl font-black text-slate-900 uppercase">O.S. #{selectedOS.id}</h2>
                   <p className="text-sm text-slate-500">{selectedOS.vehicle} • {selectedOS.plate}</p>
                 </div>
-                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 max-w-xs">
-                  <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Problema Relatado</p>
-                  <p className="text-xs text-slate-700 italic">"{selectedOS.description}"</p>
+              </div>
+
+              {/* Cabeçalho da OS Impressa */}
+              <div className="hidden print:block mb-8">
+                <div className="flex justify-between items-center border-b-2 border-slate-900 pb-4">
+                  <div>
+                    <h1 className="text-2xl font-black uppercase">Relatório de Serviço</h1>
+                    <p className="text-sm font-bold">O.S. #{selectedOS.id}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold">{selectedOS.createdAt}</p>
+                    <p className="text-xs uppercase">Workshop Pro SaaS</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="p-5 bg-slate-50 rounded-3xl space-y-4">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente</p>
+                    <p className="text-lg font-bold text-slate-900">{selectedOS.clientName}</p>
+                    <p className="text-sm text-slate-500">{selectedOS.phone}</p>
+                  </div>
+                  <div className="h-[1px] bg-slate-200"></div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Veículo</p>
+                    <p className="text-lg font-bold text-slate-900">{selectedOS.vehicle}</p>
+                    <p className="text-sm font-mono font-bold text-indigo-600">{selectedOS.plate}</p>
+                  </div>
+                </div>
+                <div className="p-6 bg-amber-50 border border-amber-100 rounded-3xl h-full">
+                  <p className="text-[10px] font-black text-amber-600 uppercase mb-3">Problema Relatado</p>
+                  <p className="text-slate-700 leading-relaxed italic text-sm">"{selectedOS.description}"</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-slate-900">Peças e Serviços</h3>
+                  <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs">Peças e Serviços</h3>
                   <div className="flex gap-2 no-print">
                     <button onClick={() => addItem('PEÇA')} className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold">+ Peça</button>
                     <button onClick={() => addItem('MÃO DE OBRA')} className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold">+ Mão de Obra</button>
                   </div>
                 </div>
-                <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                   <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
-                      <tr><th className="px-6 py-4 text-left">Item</th><th className="px-6 py-4 text-center">Qtd</th><th className="px-6 py-4 text-right">Total</th></tr>
+                    <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase border-b border-slate-200">
+                      <tr><th className="px-6 py-4 text-left">Item / Serviço</th><th className="px-6 py-4 text-center">Qtd</th><th className="px-6 py-4 text-right">Total</th></tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-100">
                       {selectedOS.items.length > 0 ? selectedOS.items.map(item => (
-                        <tr key={item.id}><td className="px-6 py-4 font-medium">{item.description}</td><td className="px-6 py-4 text-center">{item.quantity}</td><td className="px-6 py-4 text-right font-bold text-slate-900">R$ {(item.price * item.quantity).toFixed(2)}</td></tr>
+                        <tr key={item.id}>
+                          <td className="px-6 py-4">
+                            <span className="font-bold text-slate-800">{item.description}</span>
+                            <span className="block text-[10px] text-slate-400">{item.type}</span>
+                          </td>
+                          <td className="px-6 py-4 text-center font-mono">{item.quantity}</td>
+                          <td className="px-6 py-4 text-right font-black text-slate-900">R$ {(item.price * item.quantity).toFixed(2)}</td>
+                        </tr>
                       )) : (
-                        <tr><td colSpan={3} className="px-6 py-10 text-center text-slate-300 italic">Nenhum item lançado.</td></tr>
+                        <tr><td colSpan={3} className="px-6 py-12 text-center text-slate-300 italic">Nenhum item lançado no orçamento.</td></tr>
                       )}
                     </tbody>
+                    <tfoot className="bg-slate-50 border-t border-slate-200">
+                       <tr>
+                         <td colSpan={2} className="px-6 py-4 text-right text-sm font-bold uppercase text-slate-500">Valor Total</td>
+                         <td className="px-6 py-4 text-right text-xl font-black text-indigo-600">R$ {selectedOS.total.toFixed(2)}</td>
+                       </tr>
+                    </tfoot>
                   </table>
                 </div>
+              </div>
+
+              {/* SEÇÃO DE IMAGENS DO RELATÓRIO */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs">Registros Fotográficos</h3>
+                  <button 
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all no-print"
+                  >
+                    <ImagePlus size={14} /> Adicionar Foto
+                    <input type="file" ref={galleryInputRef} onChange={addGalleryPhoto} accept="image/*" className="hidden" />
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {selectedOS.photos && selectedOS.photos.length > 0 ? selectedOS.photos.map((photo, index) => (
+                    <div key={index} className="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 aspect-video shadow-sm">
+                      <img src={photo} alt={`Registro ${index + 1}`} className="w-full h-full object-cover" />
+                      <button 
+                        onClick={() => removeGalleryPhoto(index)}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity no-print shadow-lg"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-[10px] font-bold hidden print:block">
+                        Foto {index + 1}
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="col-span-full py-10 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center text-slate-300 no-print">
+                      <ImageIcon size={32} className="mb-2" />
+                      <p className="text-sm">Nenhuma imagem no relatório</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Rodapé do relatório impresso */}
+              <div className="hidden print:block mt-12 pt-8 border-t border-slate-200">
+                <div className="flex justify-between items-end gap-8">
+                  <div className="flex-1 border-t border-slate-400 pt-2 text-center">
+                    <p className="text-[10px] font-bold uppercase">Assinatura do Responsável</p>
+                  </div>
+                  <div className="flex-1 border-t border-slate-400 pt-2 text-center">
+                    <p className="text-[10px] font-bold uppercase">Assinatura do Cliente</p>
+                  </div>
+                </div>
+                <p className="text-[8px] text-slate-400 text-center mt-8">Gerado via SaaS Workshop Pro em {new Date().toLocaleString('pt-BR')}</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-6 no-print">
             <div className="bg-indigo-900 text-white p-8 rounded-3xl shadow-xl">
-              <p className="text-indigo-200 text-xs font-bold uppercase tracking-widest mb-2">Total do Atendimento</p>
-              <h3 className="text-4xl font-black mb-8">R$ {selectedOS.total.toFixed(2)}</h3>
+              <p className="text-indigo-200 text-xs font-bold uppercase tracking-widest mb-2 text-center">Resumo de Pagamento</p>
+              <h3 className="text-4xl font-black mb-8 text-center">R$ {selectedOS.total.toFixed(2)}</h3>
               <div className="space-y-3">
                 <button 
                   onClick={() => {
-                    const texto = `Olá! Segue o orçamento para o veículo ${selectedOS.vehicle}:\n\nTotal: R$ ${selectedOS.total.toFixed(2)}`;
+                    const texto = `Olá ${selectedOS.clientName}! Segue o link do relatório/orçamento para o seu veículo ${selectedOS.vehicle} (${selectedOS.plate}).\n\nTotal: R$ ${selectedOS.total.toFixed(2)}`;
                     window.open(`https://wa.me/55${selectedOS.phone}?text=${encodeURIComponent(texto)}`, '_blank');
                   }}
-                  className="w-full py-4 bg-white text-indigo-900 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-50 transition-all"
+                  className="w-full py-4 bg-white text-indigo-900 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-50 transition-all shadow-lg"
                 >
                   <Send size={18}/> Enviar via WhatsApp
                 </button>
-                <button onClick={() => window.print()} className="w-full py-4 bg-indigo-800 text-indigo-100 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all">
-                  <Printer size={18}/> Imprimir PDF
+                <button onClick={() => window.print()} className="w-full py-4 bg-indigo-800 text-indigo-100 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-md">
+                  <Printer size={18}/> Gerar Relatório PDF
                 </button>
               </div>
             </div>
 
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              {/* Fix: Added Settings icon import and usage to manage Service Order status */}
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Gerenciar O.S.</h3>
+              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Status do Serviço</h3>
               <select 
                 value={selectedOS.status}
                 onChange={(e) => {
@@ -399,7 +539,7 @@ const Oficina: React.FC = () => {
                   setSelectedOS(updated);
                   setOrders(orders.map(o => o.id === selectedOS.id ? updated : o));
                 }}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               >
                 <option>Aberto</option>
                 <option>Orçamento</option>
@@ -407,6 +547,16 @@ const Oficina: React.FC = () => {
                 <option>Pronto</option>
                 <option>Entregue</option>
               </select>
+            </div>
+
+            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200">
+               <div className="flex items-center gap-2 text-slate-600 mb-2">
+                 <AlertCircle size={18} />
+                 <h4 className="text-sm font-bold">Informação</h4>
+               </div>
+               <p className="text-xs text-slate-500 leading-relaxed">
+                 As fotos adicionadas ao relatório são salvas localmente nesta sessão. Elas aparecerão automaticamente na impressão e no PDF.
+               </p>
             </div>
           </div>
         </div>
@@ -416,7 +566,9 @@ const Oficina: React.FC = () => {
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; }
+          body { background: white !important; margin: 0; padding: 0; }
+          #print-area { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+          .max-w-6xl { max-width: 100% !important; }
         }
       `}</style>
     </div>

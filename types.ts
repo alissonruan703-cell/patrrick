@@ -23,6 +23,6 @@ export interface ServiceOrder {
   status: 'Aberto' | 'Orçamento' | 'Execução' | 'Pronto' | 'Entregue';
   createdAt: string;
   items: ServiceItem[];
-  photoUrl?: string;
+  photos?: string[];
   total: number;
 }
