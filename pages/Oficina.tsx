@@ -1,11 +1,11 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Plus, Search, Clock, 
   X, ChevronRight, Camera, 
   Send, User, Car, Wrench, Trash2,
   ImagePlus, Trash, History, LayoutGrid, CheckCircle2,
-  Settings, Briefcase, Box, Tag, Filter, Calendar
+  Settings, Briefcase, Box, Tag, Filter, Calendar, FileText
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem } from '../types';
 
@@ -35,6 +35,17 @@ const Oficina: React.FC = () => {
 
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
 
+  // Carregar dados iniciais (simulação de persistência)
+  useEffect(() => {
+    const saved = localStorage.getItem('crmplus_oficina_orders');
+    if (saved) setOrders(JSON.parse(saved));
+  }, []);
+
+  // Salvar sempre que mudar
+  useEffect(() => {
+    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(orders));
+  }, [orders]);
+
   const statusOptions: ServiceOrder['status'][] = ['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue'];
 
   const filteredOrders = useMemo(() => {
@@ -61,9 +72,11 @@ const Oficina: React.FC = () => {
       
       const isHistory = o.status === 'Entregue';
       
+      // Filtro de Status (Unificado)
+      if (statusFilter !== 'Todos' && o.status !== statusFilter) return false;
+
       if (activeTab === 'ativos') {
         if (isHistory) return false;
-        if (statusFilter !== 'Todos' && o.status !== statusFilter) return false;
       } else {
         if (!isHistory) return false;
       }
@@ -85,6 +98,7 @@ const Oficina: React.FC = () => {
       createdAt: new Date().toLocaleDateString('pt-BR'),
       total: 0,
       items: [],
+      observation: '',
       photos: osPhotos
     };
     setOrders([nova, ...orders]);
@@ -134,9 +148,18 @@ const Oficina: React.FC = () => {
   const deleteOS = () => {
     if (!selectedOS) return;
     if (window.confirm("Deseja deletar permanentemente esta O.S.?")) {
-      setOrders(orders.filter(o => o.id !== selectedOS.id));
+      const updatedOrders = orders.filter(o => o.id !== selectedOS.id);
+      setOrders(updatedOrders);
+      setSelectedOS(null);
       setView('lista');
     }
+  };
+
+  const updateObservation = (val: string) => {
+    if (!selectedOS) return;
+    const updated = { ...selectedOS, observation: val };
+    setSelectedOS(updated);
+    setOrders(orders.map(o => o.id === selectedOS.id ? updated : o));
   };
 
   const generateShareLink = () => {
@@ -148,6 +171,7 @@ const Oficina: React.FC = () => {
       plate: selectedOS.plate,
       phone: selectedOS.phone,
       description: selectedOS.description,
+      observation: selectedOS.observation || '',
       items: selectedOS.items,
       total: selectedOS.total,
       date: selectedOS.createdAt
@@ -193,14 +217,14 @@ const Oficina: React.FC = () => {
           <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter">OFICINA <span className="text-violet-500">PRO+</span></h1>
           <div className="flex items-center gap-3">
              <button 
-              onClick={() => { setActiveTab('ativos'); setView('lista'); }}
-              className={`px-4 py-1.5 rounded-lg font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'ativos' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-500 hover:bg-white/5'}`}
+              onClick={() => { setActiveTab('ativos'); setView('lista'); setStatusFilter('Todos'); }}
+              className={`px-4 py-1.5 rounded-lg font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'ativos' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-400 hover:bg-white/5'}`}
              >
                Ativos
              </button>
              <button 
-              onClick={() => { setActiveTab('historico'); setView('lista'); }}
-              className={`px-4 py-1.5 rounded-lg font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'historico' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-500 hover:bg-white/5'}`}
+              onClick={() => { setActiveTab('historico'); setView('lista'); setStatusFilter('Todos'); }}
+              className={`px-4 py-1.5 rounded-lg font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'historico' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-400 hover:bg-white/5'}`}
              >
                Histórico
              </button>
@@ -232,23 +256,41 @@ const Oficina: React.FC = () => {
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-[10px] font-black uppercase transition-all ${showFilters ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
               >
-                <Filter size={16} /> Filtros
+                <Filter size={16} /> Filtros {showFilters ? 'Avançados' : ''}
               </button>
             </div>
 
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-white/5 animate-in slide-in-from-top-4 duration-500">
-                <input value={filterPlate} onChange={e => setFilterPlate(e.target.value)} placeholder="Placa" className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white uppercase font-mono" />
-                <input type="date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white" />
-                <input type="date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white" />
-                <button onClick={() => { setFilterPlate(''); setFilterDateStart(''); setFilterDateEnd(''); setSearchTerm(''); }} className="w-full py-2 bg-red-600/10 text-red-500 font-black rounded-lg text-[9px] uppercase border border-red-500/10">Limpar</button>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 border-t border-white/5 animate-in slide-in-from-top-4 duration-500">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Placa</label>
+                  <input value={filterPlate} onChange={e => setFilterPlate(e.target.value)} placeholder="Placa" className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white uppercase font-mono" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Status</label>
+                  <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white outline-none">
+                    <option value="Todos">Todos</option>
+                    {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase ml-1">De</label>
+                  <input type="date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Até</label>
+                  <input type="date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white" />
+                </div>
+                <div className="flex items-end">
+                  <button onClick={() => { setFilterPlate(''); setFilterDateStart(''); setFilterDateEnd(''); setSearchTerm(''); setStatusFilter('Todos'); }} className="w-full py-2 bg-red-600/10 text-red-500 font-black rounded-lg text-[9px] uppercase border border-red-500/10 hover:bg-red-600 hover:text-white transition-all">Limpar</button>
+                </div>
               </div>
             )}
           </div>
 
           {/* Grid de Cards Compacto */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filteredOrders.map(o => (
+            {filteredOrders.length > 0 ? filteredOrders.map(o => (
               <div 
                 key={o.id} 
                 onClick={() => { setSelectedOS(o); setView('detalhes'); }} 
@@ -271,12 +313,14 @@ const Oficina: React.FC = () => {
                   <p className="text-sm font-black text-white">R$ {o.total.toFixed(2)}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full py-20 text-center text-slate-600 uppercase font-black tracking-widest">Nenhum registro encontrado</div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Detalhes da O.S. - Refatorado com mais espaçamento na tabela */}
+      {/* Detalhes da O.S. */}
       {view === 'detalhes' && selectedOS && (
         <div className="space-y-6 animate-in slide-in-from-bottom-5 duration-700">
           
@@ -307,17 +351,17 @@ const Oficina: React.FC = () => {
               
               <div className="flex items-center gap-4 w-full xl:w-auto">
                 <div className="text-right p-4 bg-black/40 rounded-2xl border border-white/5 min-w-[160px]">
-                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total</p>
+                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Geral</p>
                    <h3 className="text-2xl font-black text-white">R$ {selectedOS.total.toFixed(2)}</h3>
                 </div>
                 <button 
                   onClick={() => {
                     const link = generateShareLink();
-                    window.open(`https://wa.me/55${selectedOS.phone}?text=${encodeURIComponent(`Orçamento O.S. #${selectedOS.id}:\n\n${link}`)}`, '_blank');
+                    window.open(`https://wa.me/55${selectedOS.phone}?text=${encodeURIComponent(`Olá! Segue o link do orçamento para a O.S. #${selectedOS.id}:\n\n${link}`)}`, '_blank');
                   }} 
                   className="px-6 py-4 bg-emerald-600 text-white rounded-xl text-[10px] font-black flex items-center gap-2 hover:bg-emerald-500 transition-all uppercase tracking-widest shadow-lg"
                 >
-                  <Send size={16} fill="white"/> Enviar Orçamento
+                  <Send size={16} fill="white"/> Enviar WhatsApp
                 </button>
               </div>
             </div>
@@ -329,18 +373,17 @@ const Oficina: React.FC = () => {
                       <thead className="bg-[#1a1d23] text-[8px] uppercase font-black text-slate-500 border-b border-white/5">
                         <tr>
                           <th className="px-6 py-4 text-left">Tipo</th>
-                          <th className="px-6 py-4 text-left">Descrição</th>
+                          <th className="px-6 py-4 text-left">Descrição do Item</th>
                           <th className="px-6 py-4 text-left">Marca</th>
                           <th className="px-6 py-4 text-center">Qtd</th>
-                          <th className="px-6 py-4 text-right">Preço</th>
-                          <th className="px-6 py-4 text-right">Total</th>
+                          <th className="px-6 py-4 text-right">Unitário</th>
+                          <th className="px-6 py-4 text-right">Subtotal</th>
                           <th className="px-6 py-4 text-right"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 text-slate-300">
                         {selectedOS.items.map((item, i) => (
                           <tr key={i} className="hover:bg-white/5 transition-colors group">
-                            {/* py-5 garante o espaçamento maior entre os itens solicitado */}
                             <td className="px-6 py-5">
                               <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${item.type === 'PEÇA' ? 'bg-blue-500/10 text-blue-500' : item.type === 'MÃO DE OBRA' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-500'}`}>
                                 {item.type}
@@ -365,7 +408,7 @@ const Oficina: React.FC = () => {
                               <option value="NOTA">Nota</option>
                             </select>
                           </td>
-                          <td className="px-4 py-4"><input placeholder="Descrição..." value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="w-full bg-transparent border-none text-[12px] font-bold focus:ring-0 text-white placeholder:text-slate-700" /></td>
+                          <td className="px-4 py-4"><input placeholder="Ex: Óleo, Pastilha..." value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="w-full bg-transparent border-none text-[12px] font-bold focus:ring-0 text-white placeholder:text-slate-700" /></td>
                           <td className="px-4 py-4"><input placeholder="Marca..." value={newItemBrand} onChange={e => setNewItemBrand(e.target.value)} className="w-full bg-transparent border-none text-[12px] focus:ring-0 text-white placeholder:text-slate-700" /></td>
                           <td className="px-4 py-4 text-center"><input type="number" value={newItemQty} onChange={e => setNewItemQty(e.target.value)} className="w-10 bg-transparent border-none text-[12px] font-black focus:ring-0 text-center text-white" /></td>
                           <td className="px-4 py-4 text-right"><input placeholder="0.00" type="number" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} className="w-20 bg-transparent border-none text-[12px] font-black focus:ring-0 text-right text-violet-400" /></td>
@@ -377,11 +420,25 @@ const Oficina: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Campo de Observação Técnica */}
+                  <div className="bg-[#0f1115] p-6 rounded-2xl border border-white/5 space-y-4">
+                     <div className="flex items-center gap-3 text-slate-400">
+                        <FileText size={18} />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest">Observações Técnicas do Relatório</h4>
+                     </div>
+                     <textarea 
+                        placeholder="Adicione observações que aparecerão no orçamento do cliente (Ex: Próxima revisão em 5.000km, Garantia de 3 meses...)"
+                        value={selectedOS.observation || ''}
+                        onChange={(e) => updateObservation(e.target.value)}
+                        className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/20 h-28 resize-none"
+                     />
+                  </div>
                </div>
 
                <div className="space-y-6">
                   <div className="p-5 bg-black/20 rounded-2xl border border-white/5 space-y-4 shadow-xl">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Fotos do Veículo</p>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Galeria de Fotos</p>
                     <div className="grid grid-cols-2 gap-3">
                       {selectedOS.photos?.map((p, i) => (
                         <div key={i} className="aspect-square rounded-xl overflow-hidden border border-white/10 relative group">
@@ -391,18 +448,24 @@ const Oficina: React.FC = () => {
                       ))}
                       <button onClick={() => fileInputRef.current?.click()} className="aspect-square bg-black/40 border-2 border-dashed border-white/5 rounded-xl flex flex-col items-center justify-center text-slate-700 hover:text-violet-500 transition-all">
                         <ImagePlus size={32} />
+                        <span className="text-[8px] font-black uppercase mt-2">Anexar</span>
                         <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
                       </button>
                     </div>
                   </div>
-                  <button onClick={deleteOS} className="w-full py-3 bg-red-600/5 text-red-500 font-black rounded-xl uppercase text-[9px] tracking-widest border border-red-500/10 hover:bg-red-600 hover:text-white transition-all">Excluir Registro</button>
+                  <div className="p-5 bg-red-600/5 rounded-2xl border border-red-500/10 space-y-4">
+                     <p className="text-[8px] font-black text-red-500/60 uppercase tracking-widest text-center">Área Crítica</p>
+                     <button onClick={deleteOS} className="w-full py-3 bg-red-600/10 text-red-500 font-black rounded-xl uppercase text-[9px] tracking-widest border border-red-500/10 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2">
+                       <Trash size={14} /> Excluir Registro Permanente
+                     </button>
+                  </div>
                </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Formulário Nova O.S. Ajustado */}
+      {/* Formulário Nova O.S. */}
       {activeTab === 'nova' && (
         <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-5 duration-500">
            <div className="bg-[#1a1d23] rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
@@ -430,8 +493,8 @@ const Oficina: React.FC = () => {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Diagnóstico Inicial</label>
-                  <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20" />
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Descrição do Problema</label>
+                  <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 resize-none" />
                 </div>
                 <button type="submit" className="w-full py-5 bg-white text-black font-black rounded-2xl hover:bg-slate-200 transition-all uppercase tracking-[0.2em] text-xs shadow-xl active:scale-95">Gerar Ordem de Serviço</button>
               </form>
