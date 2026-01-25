@@ -2,16 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Wrench, 
-  FileText, 
-  Utensils, 
-  Menu, 
-  X,
+  Plus, 
+  Search, 
   Lock,
-  Plus,
-  Search,
-  Settings as SettingsIcon
+  Menu,
+  X
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
@@ -59,15 +54,15 @@ const Navbar = () => {
       <div className="flex items-center gap-10">
         <Link to="/" className="flex items-center gap-2.5">
           {config.companyLogo ? (
-            <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-md overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
               <img src={config.companyLogo} className="w-full h-full object-contain" alt="Logo" />
             </div>
           ) : (
-            <div className="bg-violet-600 p-1 rounded-lg shadow-xl shadow-violet-600/30">
-              <Plus size={16} className="text-white" strokeWidth={4} />
+            <div className="bg-violet-600 p-1 rounded-md shadow-xl shadow-violet-600/30">
+              <Plus size={12} className="text-white" strokeWidth={4} />
             </div>
           )}
-          <span className="text-xl font-black tracking-tighter text-white uppercase">{config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || ''}</span></span>
+          <span className="text-lg font-black tracking-tighter text-white uppercase">{config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || ''}</span></span>
         </Link>
         
         <div className="hidden lg:flex items-center gap-8">
@@ -75,7 +70,7 @@ const Navbar = () => {
             <Link 
               key={item.path} 
               to={item.locked ? '#' : item.path}
-              className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${location.pathname === item.path ? 'text-violet-500' : 'text-slate-400 hover:text-white'}`}
+              className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${location.pathname === item.path ? 'text-violet-500' : 'text-slate-400 hover:text-white'}`}
             >
               {item.name}
               {item.locked && <Lock size={10} className="opacity-40" />}
@@ -86,26 +81,26 @@ const Navbar = () => {
 
       <div className="flex items-center gap-6 text-white">
         <div className="hidden md:flex items-center gap-4 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
-          <Search size={16} className="text-slate-500" />
-          <input placeholder="Busca global..." className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest w-24 focus:w-40 transition-all" />
+          <Search size={14} className="text-slate-500" />
+          <input placeholder="Buscar..." className="bg-transparent border-none outline-none text-[9px] font-black uppercase tracking-widest w-20 focus:w-32 transition-all" />
         </div>
-        <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-[10px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">ADM</div>
+        <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-[9px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">AD</div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden">
-          <Menu size={24} />
+          <Menu size={20} />
         </button>
       </div>
 
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-[#0f1115] z-[60] p-8 flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-500">
           <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8 text-white">
-            <X size={40} />
+            <X size={32} />
           </button>
           {navItems.map((item) => (
             <Link 
               key={item.path} 
               to={item.locked ? '#' : item.path}
               onClick={() => !item.locked && setIsMobileMenuOpen(false)}
-              className={`text-3xl font-black uppercase tracking-tighter ${location.pathname === item.path ? 'text-violet-500' : 'text-white'}`}
+              className={`text-2xl font-black uppercase tracking-tighter ${location.pathname === item.path ? 'text-violet-500' : 'text-white'}`}
             >
               {item.name}
             </Link>

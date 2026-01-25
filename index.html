@@ -13,20 +13,23 @@
             background-color: #0f1115;
             color: #f8fafc;
             overflow-x: hidden;
+            width: 100vw;
         }
         #root { min-height: 100vh; }
         
-        /* Barra de rolagem refinada */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        /* Barra de rolagem ultra-fina para evitar que o site "pule" */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0f1115; }
         ::-webkit-scrollbar-thumb { 
-            background: #334155; 
-            border-radius: 10px;
-            border: 2px solid #0f1115;
+            background: #2d3748; 
+            border-radius: 20px;
         }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
         
-        html { scroll-behavior: smooth; }
+        html { 
+            scroll-behavior: smooth;
+            overflow-y: overlay; /* Faz a scrollbar ficar por cima do conteúdo em navegadores suportados */
+        }
     </style>
 <script type="importmap">
 {

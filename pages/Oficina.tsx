@@ -1,11 +1,8 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
-  Plus, Search, Clock, 
-  X, ChevronRight, Camera, 
-  Send, User, Car, Wrench, Trash2,
-  ImagePlus, Trash, History, LayoutGrid, CheckCircle2,
-  Settings, Briefcase, Box, Tag, Filter, Calendar, FileText, ArrowLeft
+  Plus, Search, X, Send, Trash2,
+  ImagePlus, Trash, Filter, Calendar, FileText, ArrowLeft
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem, SystemConfig } from '../types';
 
@@ -36,41 +33,48 @@ const Oficina: React.FC = () => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [systemConfig, setSystemConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
 
-  useEffect(() => {
-    const loadData = () => {
-      const savedOrders = localStorage.getItem('crmplus_oficina_orders');
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
-      
-      const savedConfig = localStorage.getItem('crmplus_system_config');
-      if (savedConfig) setSystemConfig(JSON.parse(savedConfig));
-    };
+  const statusOptions: ServiceOrder['status'][] = ['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'];
 
+  const loadData = () => {
+    const savedOrders = localStorage.getItem('crmplus_oficina_orders');
+    if (savedOrders) setOrders(JSON.parse(savedOrders));
+    
+    const savedConfig = localStorage.getItem('crmplus_system_config');
+    if (savedConfig) setSystemConfig(JSON.parse(savedConfig));
+  };
+
+  useEffect(() => {
     loadData();
 
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'crmplus_oficina_orders' || e.key === 'crmplus_system_config') {
-        loadData();
-      }
+    const handleStorageSync = (e: StorageEvent | Event) => {
+      // Sincroniza se houver mudança no storage ou se dispararmos o evento manualmente
+      loadData();
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('storage', handleStorageSync);
+    // Listener para o evento customizado disparado pela PublicView na mesma aba
+    window.addEventListener('crmplus_update', handleStorageSync);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageSync);
+      window.removeEventListener('crmplus_update', handleStorageSync);
+    };
   }, []);
 
   useEffect(() => {
     if (selectedOS) {
       const updated = orders.find(o => o.id === selectedOS.id);
-      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedOS)) {
-        setSelectedOS(updated);
-      }
+      if (updated) setSelectedOS(updated);
     }
-  }, [orders, selectedOS]);
+  }, [orders]);
 
   useEffect(() => {
     localStorage.setItem('crmplus_oficina_orders', JSON.stringify(orders));
   }, [orders]);
 
-  const statusOptions: ServiceOrder['status'][] = ['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'];
+  const updateOrderStatus = (orderId: string, newStatus: ServiceOrder['status']) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+  };
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -178,17 +182,8 @@ const Oficina: React.FC = () => {
     }
   };
 
-  const updateObservation = (val: string) => {
-    if (!selectedOS) return;
-    const updated = { ...selectedOS, observation: val };
-    setSelectedOS(updated);
-    setOrders(orders.map(o => o.id === selectedOS.id ? updated : o));
-  };
-
   const generateShareLink = () => {
     if (!selectedOS) return "";
-    
-    // Link ultra-curto (removendo logo e fotos)
     const data = {
       i: selectedOS.id,
       n: selectedOS.clientName,
@@ -207,7 +202,6 @@ const Oficina: React.FC = () => {
       dt: selectedOS.createdAt,
       cn: systemConfig.companyName
     };
-
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
     const baseUrl = window.location.href.split('#')[0];
     return `${baseUrl}#/v/${encoded}`;
@@ -231,13 +225,6 @@ const Oficina: React.FC = () => {
     };
     reader.readAsDataURL(file);
     if (e.target) e.target.value = '';
-  };
-
-  const updateStatus = (newStatus: ServiceOrder['status']) => {
-    if (!selectedOS) return;
-    const updated = { ...selectedOS, status: newStatus };
-    setSelectedOS(updated);
-    setOrders(orders.map(o => o.id === selectedOS.id ? updated : o));
   };
 
   const getCardBg = (status: ServiceOrder['status']) => {
@@ -328,28 +315,44 @@ const Oficina: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredOrders.length > 0 ? filteredOrders.map(o => (
               <div 
                 key={o.id} 
-                onClick={() => { setSelectedOS(o); setView('detalhes'); }} 
-                className={`p-5 rounded-2xl border cursor-pointer group transition-all flex flex-col justify-between min-h-[160px] shadow-lg hover:-translate-y-1 ${getCardBg(o.status)}`}
+                className={`p-5 rounded-2xl border transition-all flex flex-col justify-between min-h-[200px] shadow-lg ${getCardBg(o.status)} group`}
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="text-[10px] font-black text-violet-500 font-mono bg-violet-500/10 px-2 py-0.5 rounded">#{o.id}</div>
-                  <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${o.status === 'Pronto' ? 'bg-emerald-500/20 text-emerald-500' : o.status === 'Orçamento' ? 'bg-yellow-500/20 text-yellow-500' : o.status === 'Reprovado' ? 'bg-red-500/20 text-red-500' : 'bg-violet-600/10 text-violet-500'}`}>
-                    {o.status}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-white truncate group-hover:text-violet-400 transition-colors">{o.clientName}</h3>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{o.vehicle} • {o.plate}</p>
-                </div>
-                <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-slate-500 text-[9px] font-bold">
-                    <Calendar size={12} /> {o.createdAt}
+                <div onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="cursor-pointer">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="text-[10px] font-black text-violet-500 font-mono bg-violet-500/10 px-2 py-0.5 rounded">#{o.id}</div>
+                    <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${o.status === 'Pronto' ? 'bg-emerald-500/20 text-emerald-500' : o.status === 'Orçamento' ? 'bg-yellow-500/20 text-yellow-500' : o.status === 'Reprovado' ? 'bg-red-500/20 text-red-500' : 'bg-violet-600/10 text-violet-500'}`}>
+                      {o.status}
+                    </span>
                   </div>
-                  <p className="text-sm font-black text-white">R$ {o.total.toFixed(2)}</p>
+                  <div>
+                    <h3 className="text-sm font-black text-white truncate group-hover:text-violet-400 transition-colors">{o.clientName}</h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{o.vehicle} • {o.plate}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between text-[10px] border-b border-white/5 pb-2">
+                     <p className="font-black text-slate-500 uppercase">Alterar Status</p>
+                     <p className="font-black text-white">R$ {o.total.toFixed(2)}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {statusOptions.filter(s => s !== o.status).map(s => (
+                      <button 
+                        key={s}
+                        onClick={(e) => { e.stopPropagation(); updateOrderStatus(o.id, s); }}
+                        className="px-2 py-1 bg-white/5 hover:bg-violet-600 hover:text-white border border-white/5 rounded text-[8px] font-black uppercase tracking-tighter transition-all"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 text-slate-600 text-[8px] font-bold uppercase pt-1">
+                    <Calendar size={10} /> Criado em {o.createdAt}
+                  </div>
                 </div>
               </div>
             )) : (
@@ -363,18 +366,18 @@ const Oficina: React.FC = () => {
         <div className="space-y-6 animate-in slide-in-from-bottom-5 duration-700">
           
           <div className="bg-[#1a1d23] p-3 rounded-2xl border border-white/5 flex flex-wrap items-center justify-between gap-2 shadow-xl">
-            <div className="flex flex-1 items-center gap-2">
+            <div className="flex flex-1 items-center gap-2 overflow-x-auto no-scrollbar">
                <button 
                 onClick={() => setView('lista')}
-                className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 text-[9px] font-black uppercase tracking-widest border border-white/5 transition-all"
+                className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 text-[9px] font-black uppercase tracking-widest border border-white/5 transition-all shrink-0"
                >
                  <ArrowLeft size={16} /> Voltar
                </button>
                {statusOptions.map((s) => (
                 <button 
                   key={s}
-                  onClick={() => updateStatus(s)}
-                  className={`flex-1 min-w-[90px] py-3 rounded-xl flex items-center justify-center transition-all border ${selectedOS.status === s ? 'bg-violet-600 border-violet-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-slate-500 hover:text-slate-300'}`}
+                  onClick={() => updateOrderStatus(selectedOS.id, s)}
+                  className={`px-4 py-3 rounded-xl flex items-center justify-center transition-all border shrink-0 ${selectedOS.status === s ? 'bg-violet-600 border-violet-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-slate-500 hover:text-slate-300'}`}
                 >
                   <span className="text-[9px] font-black uppercase tracking-widest">{s}</span>
                 </button>
@@ -404,7 +407,7 @@ const Oficina: React.FC = () => {
                 <button 
                   onClick={() => {
                     const link = generateShareLink();
-                    window.open(`https://wa.me/55${selectedOS.phone}?text=${encodeURIComponent(`Olá! Segue o link do orçamento para a O.S. #${selectedOS.id}:\n\n${link}`)}`, '_blank');
+                    window.open(`https://wa.me/55${selectedOS.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Olá! Segue o link do orçamento para a O.S. #${selectedOS.id}:\n\n${link}`)}`, '_blank');
                   }} 
                   className="px-6 py-4 bg-emerald-600 text-white rounded-xl text-[10px] font-black flex items-center gap-2 hover:bg-emerald-500 transition-all uppercase tracking-widest shadow-lg"
                 >
@@ -415,8 +418,8 @@ const Oficina: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-[#0f1115] rounded-2xl overflow-hidden border border-white/5">
-                    <table className="w-full text-[12px]">
+                  <div className="bg-[#0f1115] rounded-2xl overflow-hidden border border-white/5 overflow-x-auto no-scrollbar">
+                    <table className="w-full text-[12px] min-w-[600px]">
                       <thead className="bg-[#1a1d23] text-[8px] uppercase font-black text-slate-500 border-b border-white/5">
                         <tr>
                           <th className="px-6 py-4 text-left">Tipo</th>
@@ -455,7 +458,7 @@ const Oficina: React.FC = () => {
                               <option value="NOTA">Nota</option>
                             </select>
                           </td>
-                          <td className="px-4 py-4"><input placeholder="Ex: Óleo, Pastilha..." value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="w-full bg-transparent border-none text-[12px] font-bold focus:ring-0 text-white placeholder:text-slate-700" /></td>
+                          <td className="px-4 py-4"><input placeholder="Descrição..." value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="w-full bg-transparent border-none text-[12px] font-bold focus:ring-0 text-white placeholder:text-slate-700" /></td>
                           <td className="px-4 py-4"><input placeholder="Marca..." value={newItemBrand} onChange={e => setNewItemBrand(e.target.value)} className="w-full bg-transparent border-none text-[12px] focus:ring-0 text-white placeholder:text-slate-700" /></td>
                           <td className="px-4 py-4 text-center"><input type="number" value={newItemQty} onChange={e => setNewItemQty(e.target.value)} className="w-10 bg-transparent border-none text-[12px] font-black focus:ring-0 text-center text-white" /></td>
                           <td className="px-4 py-4 text-right"><input placeholder="0.00" type="number" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} className="w-20 bg-transparent border-none text-[12px] font-black focus:ring-0 text-right text-violet-400" /></td>
@@ -471,12 +474,15 @@ const Oficina: React.FC = () => {
                   <div className="bg-[#0f1115] p-6 rounded-2xl border border-white/5 space-y-4">
                      <div className="flex items-center gap-3 text-slate-400">
                         <FileText size={18} />
-                        <h4 className="text-[10px] font-black uppercase tracking-widest">Observações Técnicas do Relatório</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest">Observações Técnicas</h4>
                      </div>
                      <textarea 
-                        placeholder="Adicione observações que aparecerão no orçamento do cliente (Ex: Próxima revisão em 5.000km, Garantia de 3 meses...)"
+                        placeholder="Observações que o cliente verá..."
                         value={selectedOS.observation || ''}
-                        onChange={(e) => updateObservation(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setOrders(orders.map(o => o.id === selectedOS.id ? { ...o, observation: val } : o));
+                        }}
                         className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/20 h-28 resize-none"
                      />
                   </div>
@@ -489,7 +495,13 @@ const Oficina: React.FC = () => {
                       {selectedOS.photos?.map((p, i) => (
                         <div key={i} className="aspect-square rounded-xl overflow-hidden border border-white/10 relative group">
                           <img src={p} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Search size={20} className="text-white" /></div>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                             <Trash2 size={20} className="text-red-500" onClick={(e) => {
+                               e.stopPropagation();
+                               const upPhotos = selectedOS.photos?.filter((_, idx) => idx !== i);
+                               setOrders(orders.map(o => o.id === selectedOS.id ? { ...o, photos: upPhotos } : o));
+                             }} />
+                          </div>
                         </div>
                       ))}
                       <button onClick={() => fileInputRef.current?.click()} className="aspect-square bg-black/40 border-2 border-dashed border-white/5 rounded-xl flex flex-col items-center justify-center text-slate-700 hover:text-violet-500 transition-all">
@@ -500,7 +512,6 @@ const Oficina: React.FC = () => {
                     </div>
                   </div>
                   <div className="p-5 bg-red-600/5 rounded-2xl border border-red-500/10 space-y-4">
-                     <p className="text-[8px] font-black text-red-500/60 uppercase tracking-widest text-center">Área Crítica</p>
                      <button onClick={deleteOS} className="w-full py-3 bg-red-600/10 text-red-500 font-black rounded-xl uppercase text-[9px] tracking-widest border border-red-500/10 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2">
                        <Trash size={14} /> Excluir Registro Permanente
                      </button>
