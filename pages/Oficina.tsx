@@ -102,7 +102,8 @@ const Oficina: React.FC = () => {
         }
       }
       
-      const isHistory = o.status === 'Entregue';
+      // Definição do que é considerado Histórico: Entregue ou Reprovado
+      const isHistory = o.status === 'Entregue' || o.status === 'Reprovado';
       
       if (statusFilter !== 'Todos' && o.status !== statusFilter) return false;
 
