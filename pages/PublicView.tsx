@@ -47,7 +47,6 @@ const PublicView: React.FC = () => {
     if (!os) return;
     setStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
     
-    // Atualiza o localStorage localmente
     const saved = localStorage.getItem('crmplus_oficina_orders');
     if (saved) {
       const orders = JSON.parse(saved);
@@ -56,10 +55,9 @@ const PublicView: React.FC = () => {
       );
       localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updatedOrders));
       
-      // DISPARO DE EVENTOS PARA SINCRONIZAÇÃO
-      // 1. Evento padrão para outras abas
+      // Notifica outras abas
       window.dispatchEvent(new Event('storage'));
-      // 2. Evento customizado para componentes na mesma aba
+      // Notifica componentes na mesma aba
       window.dispatchEvent(new CustomEvent('crmplus_update'));
     }
   };
@@ -69,10 +67,6 @@ const PublicView: React.FC = () => {
   const parts = items.filter((i: any) => i.type === 'PEÇA');
   const services = items.filter((i: any) => i.type === 'MÃO DE OBRA');
   const others = items.filter((i: any) => i.type === 'NOTA');
-
-  const totalParts = parts.reduce((acc: number, i: any) => acc + (i.price * i.quantity), 0);
-  const totalServices = services.reduce((acc: number, i: any) => acc + (i.price * i.quantity), 0);
-  const totalOthers = others.reduce((acc: number, i: any) => acc + (i.price * i.quantity), 0);
 
   const TableSection = ({ title, icon, items }: any) => {
     if (items.length === 0) return null;
@@ -119,7 +113,7 @@ const PublicView: React.FC = () => {
         {status !== 'pending' && (
           <div className={`p-4 text-center animate-in slide-in-from-top-full duration-500 ${status === 'approved' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
             <p className="text-[10px] font-black uppercase tracking-widest">
-              {status === 'approved' ? 'Aprovado com Sucesso! O sistema já foi notificado.' : 'Orçamento Reprovado.'}
+              {status === 'approved' ? 'Orçamento Aprovado com Sucesso! O sistema já foi notificado.' : 'Orçamento Reprovado.'}
             </p>
           </div>
         )}
@@ -128,7 +122,7 @@ const PublicView: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4">
                <div className="flex items-center gap-4 mb-4">
-                <div className="bg-violet-600 w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black text-white shadow-xl shadow-violet-600/30 print:border-slate-300 print:text-slate-900 print:bg-slate-100">
+                <div className="bg-violet-600 w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-xl shadow-violet-600/30 print:border-slate-300 print:text-slate-900 print:bg-slate-100 transition-all">
                    {companyName[0].toUpperCase()}
                 </div>
                 <span className="text-xl font-black text-white print:text-black uppercase tracking-tighter">

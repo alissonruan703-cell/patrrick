@@ -54,15 +54,15 @@ const Navbar = () => {
       <div className="flex items-center gap-10">
         <Link to="/" className="flex items-center gap-2.5">
           {config.companyLogo ? (
-            <div className="w-6 h-6 rounded-md overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-              <img src={config.companyLogo} className="w-full h-full object-contain" alt="Logo" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center p-1.5 transition-all">
+              <img src={config.companyLogo} className="max-w-full max-h-full object-contain" alt="Logo" />
             </div>
           ) : (
-            <div className="bg-violet-600 p-1 rounded-md shadow-xl shadow-violet-600/30">
-              <Plus size={12} className="text-white" strokeWidth={4} />
+            <div className="bg-violet-600 p-2 rounded-xl shadow-xl shadow-violet-600/30">
+              <Plus size={16} className="text-white" strokeWidth={4} />
             </div>
           )}
-          <span className="text-lg font-black tracking-tighter text-white uppercase">{config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || ''}</span></span>
+          <span className="text-xl font-black tracking-tighter text-white uppercase">{config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || ''}</span></span>
         </Link>
         
         <div className="hidden lg:flex items-center gap-8">
@@ -84,7 +84,7 @@ const Navbar = () => {
           <Search size={14} className="text-slate-500" />
           <input placeholder="Buscar..." className="bg-transparent border-none outline-none text-[9px] font-black uppercase tracking-widest w-20 focus:w-32 transition-all" />
         </div>
-        <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-[9px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">AD</div>
+        <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-[9px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">ADM</div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden">
           <Menu size={20} />
         </button>

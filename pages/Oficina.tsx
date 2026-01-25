@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Plus, Search, X, Send, Trash2,
@@ -37,7 +36,13 @@ const Oficina: React.FC = () => {
 
   const loadData = () => {
     const savedOrders = localStorage.getItem('crmplus_oficina_orders');
-    if (savedOrders) setOrders(JSON.parse(savedOrders));
+    if (savedOrders) {
+      const parsed = JSON.parse(savedOrders);
+      // Evita atualização infinita comparando o estado atual
+      if (JSON.stringify(parsed) !== JSON.stringify(orders)) {
+        setOrders(parsed);
+      }
+    }
     
     const savedConfig = localStorage.getItem('crmplus_system_config');
     if (savedConfig) setSystemConfig(JSON.parse(savedConfig));
@@ -46,34 +51,34 @@ const Oficina: React.FC = () => {
   useEffect(() => {
     loadData();
 
-    const handleStorageSync = (e: StorageEvent | Event) => {
-      // Sincroniza se houver mudança no storage ou se dispararmos o evento manualmente
+    const handleSync = () => {
       loadData();
     };
 
-    window.addEventListener('storage', handleStorageSync);
-    // Listener para o evento customizado disparado pela PublicView na mesma aba
-    window.addEventListener('crmplus_update', handleStorageSync);
+    // Escuta mudanças de outras abas
+    window.addEventListener('storage', handleSync);
+    // Escuta evento customizado da mesma aba (PublicView -> Oficina)
+    window.addEventListener('crmplus_update', handleSync);
     
     return () => {
-      window.removeEventListener('storage', handleStorageSync);
-      window.removeEventListener('crmplus_update', handleStorageSync);
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('crmplus_update', handleSync);
     };
-  }, []);
+  }, [orders]); // Adicionado orders para permitir comparação no loadData
 
   useEffect(() => {
     if (selectedOS) {
       const updated = orders.find(o => o.id === selectedOS.id);
-      if (updated) setSelectedOS(updated);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedOS)) {
+        setSelectedOS(updated);
+      }
     }
-  }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(orders));
-  }, [orders]);
+  }, [orders, selectedOS]);
 
   const updateOrderStatus = (orderId: string, newStatus: ServiceOrder['status']) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+    setOrders(updated);
+    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
   };
 
   const filteredOrders = useMemo(() => {
@@ -128,7 +133,9 @@ const Oficina: React.FC = () => {
       observation: '',
       photos: osPhotos
     };
-    setOrders([nova, ...orders]);
+    const updated = [nova, ...orders];
+    setOrders(updated);
+    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
     setFormData({ clientName: '', plate: '', vehicle: '', phone: '', description: '' });
     setOsPhotos([]);
     setActiveTab('ativos');
@@ -153,9 +160,12 @@ const Oficina: React.FC = () => {
     const updatedItems = [...selectedOS.items, item];
     const updatedTotal = updatedItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
     
-    const updated = { ...selectedOS, items: updatedItems, total: updatedTotal };
-    setSelectedOS(updated);
-    setOrders(orders.map(o => o.id === selectedOS.id ? updated : o));
+    const updatedOrder = { ...selectedOS, items: updatedItems, total: updatedTotal };
+    const allUpdated = orders.map(o => o.id === selectedOS.id ? updatedOrder : o);
+    
+    setOrders(allUpdated);
+    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(allUpdated));
+    setSelectedOS(updatedOrder);
     
     setNewItemDesc('');
     setNewItemBrand('');
@@ -167,16 +177,21 @@ const Oficina: React.FC = () => {
     if (!selectedOS) return;
     const updatedItems = selectedOS.items.filter(i => i.id !== id);
     const updatedTotal = updatedItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-    const updated = { ...selectedOS, items: updatedItems, total: updatedTotal };
-    setSelectedOS(updated);
-    setOrders(orders.map(o => o.id === selectedOS.id ? updated : o));
+    const updatedOrder = { ...selectedOS, items: updatedItems, total: updatedTotal };
+    const allUpdated = orders.map(o => o.id === selectedOS.id ? updatedOrder : o);
+    
+    setOrders(allUpdated);
+    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(allUpdated));
+    setSelectedOS(updatedOrder);
   };
 
   const deleteOS = () => {
     if (!selectedOS) return;
     if (window.confirm("Deseja deletar permanentemente esta O.S.?")) {
       const targetId = selectedOS.id;
-      setOrders(prev => prev.filter(o => o.id !== targetId));
+      const updated = orders.filter(o => o.id !== targetId);
+      setOrders(updated);
+      localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
       setSelectedOS(null);
       setView('lista');
     }
@@ -216,9 +231,11 @@ const Oficina: React.FC = () => {
       const base64String = reader.result as string;
       if (view === 'detalhes' && selectedOS) {
         const updatedPhotos = [...(selectedOS.photos || []), base64String];
-        const updated = { ...selectedOS, photos: updatedPhotos };
-        setSelectedOS(updated);
-        setOrders(orders.map(o => o.id === selectedOS.id ? updated : o));
+        const updatedOrder = { ...selectedOS, photos: updatedPhotos };
+        const allUpdated = orders.map(o => o.id === selectedOS.id ? updatedOrder : o);
+        setOrders(allUpdated);
+        localStorage.setItem('crmplus_oficina_orders', JSON.stringify(allUpdated));
+        setSelectedOS(updatedOrder);
       } else if (activeTab === 'nova') {
         setOsPhotos(prev => [...prev, base64String]);
       }
@@ -295,6 +312,7 @@ const Oficina: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Status</label>
+                  {/* Fixed: Added event parameter to arrow function to fix "Cannot find name 'e'" */}
                   <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white outline-none">
                     <option value="Todos">Todos</option>
                     {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
@@ -319,7 +337,7 @@ const Oficina: React.FC = () => {
             {filteredOrders.length > 0 ? filteredOrders.map(o => (
               <div 
                 key={o.id} 
-                className={`p-5 rounded-2xl border transition-all flex flex-col justify-between min-h-[200px] shadow-lg ${getCardBg(o.status)} group`}
+                className={`p-5 rounded-2xl border transition-all flex flex-col justify-between min-h-[220px] shadow-lg ${getCardBg(o.status)} group`}
               >
                 <div onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="cursor-pointer">
                   <div className="flex justify-between items-start mb-3">
@@ -336,7 +354,7 @@ const Oficina: React.FC = () => {
 
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between text-[10px] border-b border-white/5 pb-2">
-                     <p className="font-black text-slate-500 uppercase">Alterar Status</p>
+                     <p className="font-black text-slate-500 uppercase">Ações Rápidas</p>
                      <p className="font-black text-white">R$ {o.total.toFixed(2)}</p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -481,7 +499,9 @@ const Oficina: React.FC = () => {
                         value={selectedOS.observation || ''}
                         onChange={(e) => {
                           const val = e.target.value;
-                          setOrders(orders.map(o => o.id === selectedOS.id ? { ...o, observation: val } : o));
+                          const updated = orders.map(o => o.id === selectedOS.id ? { ...o, observation: val } : o);
+                          setOrders(updated);
+                          localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
                         }}
                         className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/20 h-28 resize-none"
                      />
@@ -499,7 +519,9 @@ const Oficina: React.FC = () => {
                              <Trash2 size={20} className="text-red-500" onClick={(e) => {
                                e.stopPropagation();
                                const upPhotos = selectedOS.photos?.filter((_, idx) => idx !== i);
-                               setOrders(orders.map(o => o.id === selectedOS.id ? { ...o, photos: upPhotos } : o));
+                               const updated = orders.map(o => o.id === selectedOS.id ? { ...o, photos: upPhotos } : o);
+                               setOrders(updated);
+                               localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
                              }} />
                           </div>
                         </div>
