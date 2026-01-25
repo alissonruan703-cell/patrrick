@@ -1,8 +1,7 @@
 {
-  "name": "SaaS Workshop Pro",
-  "description": "Plataforma completa de gestão para oficinas mecânicas com IA integrada.",
+  "name": "Oficina Pro SaaS",
+  "description": "Plataforma simplificada de gestão para oficinas mecânicas com compartilhamento de link público.",
   "requestFramePermissions": [
-    "camera",
-    "microphone"
+    "camera"
   ]
 }
