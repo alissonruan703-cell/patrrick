@@ -35,7 +35,7 @@ const Oficina: React.FC = () => {
 
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
 
-  // Carrega e observa mudanças no localStorage (para ver aprovações externas)
+  // Carrega dados iniciais e escuta mudanças em outras abas (Ex: Aprovação do Cliente)
   useEffect(() => {
     const loadOrders = () => {
       const saved = localStorage.getItem('crmplus_oficina_orders');
@@ -43,10 +43,29 @@ const Oficina: React.FC = () => {
     };
 
     loadOrders();
-    const interval = setInterval(loadOrders, 5000); // Poll de 5s para simular "realtime" local
-    return () => clearInterval(interval);
+
+    // Sincronização entre abas (Instantânea)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'crmplus_oficina_orders') {
+        loadOrders();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Atualiza a O.S. selecionada se os dados mudarem externamente
+  useEffect(() => {
+    if (selectedOS) {
+      const updated = orders.find(o => o.id === selectedOS.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedOS)) {
+        setSelectedOS(updated);
+      }
+    }
+  }, [orders, selectedOS]);
+
+  // Salva no localStorage sempre que houver mudança local
   useEffect(() => {
     localStorage.setItem('crmplus_oficina_orders', JSON.stringify(orders));
   }, [orders]);
@@ -214,10 +233,10 @@ const Oficina: React.FC = () => {
 
   const getCardBg = (status: ServiceOrder['status']) => {
     switch(status) {
-      case 'Orçamento': return 'bg-yellow-500/5 hover:bg-yellow-500/10 border-yellow-500/10';
+      case 'Orçamento': return 'bg-yellow-500/5 hover:bg-yellow-500/10 border-yellow-500/20';
       case 'Execução':
-      case 'Pronto': return 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/10';
-      case 'Reprovado': return 'bg-red-500/5 hover:bg-red-500/10 border-red-500/10';
+      case 'Pronto': return 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/20';
+      case 'Reprovado': return 'bg-red-500/5 hover:bg-red-500/10 border-red-500/20';
       default: return 'bg-[#1a1d23] hover:bg-[#22272e] border-white/5';
     }
   };

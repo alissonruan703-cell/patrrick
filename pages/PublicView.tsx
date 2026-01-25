@@ -16,18 +16,17 @@ const PublicView: React.FC = () => {
     }
   }, [data]);
 
-  // Sincroniza a ação do cliente com o banco local (localStorage)
   const handleClientAction = (newStatus: 'Execução' | 'Reprovado') => {
     if (!os) return;
     
     setStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
 
-    // Tenta atualizar no localStorage do navegador (simulando banco de dados)
+    // Sincroniza com o localStorage (Isso disparará o Storage Event na aba da Oficina)
     const saved = localStorage.getItem('crmplus_oficina_orders');
     if (saved) {
       const orders = JSON.parse(saved);
       const updatedOrders = orders.map((order: any) => 
-        order.id === os.id ? { ...order, status: newStatus } : order
+        String(order.id) === String(os.id) ? { ...order, status: newStatus } : order
       );
       localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updatedOrders));
     }
@@ -82,11 +81,11 @@ const PublicView: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0f1115] p-4 lg:p-20 text-slate-200 print:bg-white print:p-0">
       <div className="max-w-4xl mx-auto bg-[#1a1d23] rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden print:shadow-none print:border-none print:bg-white print:text-black">
-        {/* Banner de Status Interativo */}
+        
         {status !== 'pending' && (
           <div className={`p-4 text-center animate-in slide-in-from-top-full duration-500 ${status === 'approved' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
             <p className="text-xs font-black uppercase tracking-[0.2em]">
-              {status === 'approved' ? 'Orçamento Aprovado! Iniciando Execução.' : 'Orçamento Reprovado.'}
+              {status === 'approved' ? 'Orçamento Aprovado com Sucesso!' : 'Orçamento Reprovado.'}
             </p>
           </div>
         )}
@@ -105,11 +104,11 @@ const PublicView: React.FC = () => {
             </div>
             
             <div className="text-right hidden md:block print:block">
-               <div className={`w-16 h-16 ml-auto mb-4 rounded-2xl border flex items-center justify-center transition-all ${status === 'approved' ? 'bg-emerald-500 text-white border-emerald-500' : status === 'rejected' ? 'bg-red-500 text-white border-red-500' : 'bg-white/5 border-white/5 text-emerald-500'}`}>
+               <div className={`w-16 h-16 ml-auto mb-4 rounded-2xl border flex items-center justify-center transition-all ${status === 'approved' ? 'bg-emerald-500 text-white border-emerald-500 shadow-xl' : status === 'rejected' ? 'bg-red-500 text-white border-red-500 shadow-xl' : 'bg-white/5 border-white/5 text-emerald-500'}`}>
                  {status === 'approved' ? <ThumbsUp size={32} strokeWidth={3} /> : status === 'rejected' ? <ThumbsDown size={32} strokeWidth={3} /> : <Check size={32} strokeWidth={3} />}
                </div>
                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest print:text-slate-400">
-                 {status === 'approved' ? 'Aprovado pelo Cliente' : status === 'rejected' ? 'Reprovado pelo Cliente' : 'Válido para Execução'}
+                 {status === 'approved' ? 'Aprovado pelo Cliente' : status === 'rejected' ? 'Reprovado pelo Cliente' : 'Aguardando Aprovação'}
                </p>
             </div>
           </div>
@@ -131,7 +130,7 @@ const PublicView: React.FC = () => {
           </div>
 
           <div className="p-6 bg-violet-600/5 border border-violet-500/20 rounded-2xl flex flex-col justify-center print:border-slate-200">
-            <p className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1">Diagnóstico</p>
+            <p className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1">Diagnóstico Técnico</p>
             <p className="text-slate-300 font-medium italic text-base leading-relaxed print:text-slate-600">"{os.description}"</p>
           </div>
         </div>
@@ -143,64 +142,62 @@ const PublicView: React.FC = () => {
 
           {os.observation && (
             <div className="p-6 bg-[#0f1115] rounded-2xl border border-violet-500/20 space-y-3 print:bg-slate-50 print:border-slate-200">
-               <p className="text-[9px] font-black text-violet-400 uppercase tracking-widest print:text-slate-500">Observações Adicionais</p>
+               <p className="text-[9px] font-black text-violet-400 uppercase tracking-widest print:text-slate-500">Observações do Orçamento</p>
                <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700 whitespace-pre-wrap">{os.observation}</p>
             </div>
           )}
 
-          {/* Resumo de Valores Detalhado */}
-          <div className="bg-[#0f1115] rounded-2xl border border-white/5 overflow-hidden">
-             <div className="p-6 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/5 text-center">
-                <div className="p-4">
-                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Peças</p>
-                   <p className="text-xl font-bold text-white">R$ {totalParts.toFixed(2)}</p>
+          {/* Fechamento de Valores Separados */}
+          <div className="bg-[#0f1115] rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
+             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-white/5">
+                <div className="space-y-3">
+                   <div className="flex justify-between items-center text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                      <span>Total em Peças</span>
+                      <span className="text-white text-sm">R$ {totalParts.toFixed(2)}</span>
+                   </div>
+                   <div className="flex justify-between items-center text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                      <span>Total em Serviços</span>
+                      <span className="text-white text-sm">R$ {totalServices.toFixed(2)}</span>
+                   </div>
+                   <div className="flex justify-between items-center text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                      <span>Outras Taxas</span>
+                      <span className="text-white text-sm">R$ {totalOthers.toFixed(2)}</span>
+                   </div>
                 </div>
-                <div className="p-4">
-                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Serviços</p>
-                   <p className="text-xl font-bold text-white">R$ {totalServices.toFixed(2)}</p>
-                </div>
-                <div className="p-4">
-                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Outros</p>
-                   <p className="text-xl font-bold text-white">R$ {totalOthers.toFixed(2)}</p>
+                
+                <div className="md:pl-8 flex flex-col justify-center items-center md:items-end">
+                   <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.4em] mb-2 print:text-slate-500">Valor Total do Investimento</p>
+                   <p className="text-5xl font-black text-white tracking-tighter print:text-black">R$ {os.total.toFixed(2)}</p>
                 </div>
              </div>
              
-             <div className="bg-violet-600 p-8 flex flex-col md:flex-row justify-between items-center shadow-2xl print:bg-slate-100 print:text-black print:border-t print:border-slate-300">
-                <div className="text-center md:text-left mb-4 md:mb-0">
-                    <p className="text-[10px] font-black text-violet-200 uppercase tracking-[0.3em] print:text-slate-500">Investimento Total Geral</p>
-                    <p className="text-xs text-violet-300 font-medium print:text-slate-400 italic">Valores brutos sem impostos adicionais</p>
-                </div>
-                <div className="text-5xl font-black text-white print:text-black">
-                    R$ {os.total.toFixed(2)}
-                </div>
+             {/* Área de Aprovação e Impressão */}
+             <div className="bg-white/5 p-6 flex flex-col md:flex-row gap-4 print:hidden border-t border-white/5">
+                <button onClick={() => window.print()} className="flex-1 py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all">
+                   <Printer size={16} /> Versão para PDF
+                </button>
+                
+                {status === 'pending' && (
+                  <>
+                   <button 
+                     onClick={() => handleClientAction('Reprovado')} 
+                     className="flex-1 py-4 bg-red-600/10 border border-red-500/20 text-red-500 font-black rounded-xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-red-600 hover:text-white transition-all shadow-xl shadow-red-600/10"
+                   >
+                     <ThumbsDown size={16} /> Reprovar Orçamento
+                   </button>
+                   <button 
+                     onClick={() => handleClientAction('Execução')} 
+                     className="flex-1 py-4 bg-emerald-600 text-white font-black rounded-xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-600/20"
+                   >
+                     <ThumbsUp size={16} /> Aprovar Agora
+                   </button>
+                  </>
+                )}
              </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 print:hidden">
-             <button onClick={() => window.print()} className="flex-1 py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all">
-                <Printer size={16} /> Versão para Impressão
-             </button>
-             
-             {status === 'pending' && (
-               <>
-                <button 
-                  onClick={() => handleClientAction('Reprovado')} 
-                  className="flex-1 py-4 bg-red-600/10 border border-red-500/20 text-red-500 font-black rounded-xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-red-600 hover:text-white transition-all shadow-xl shadow-red-600/5"
-                >
-                  <ThumbsDown size={16} /> Reprovar Orçamento
-                </button>
-                <button 
-                  onClick={() => handleClientAction('Execução')} 
-                  className="flex-1 py-4 bg-emerald-600 text-white font-black rounded-xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-600/20"
-                >
-                  <ThumbsUp size={16} /> Aprovar e Iniciar Serviço
-                </button>
-               </>
-             )}
           </div>
         </div>
       </div>
-      <p className="mt-6 text-center text-[10px] text-slate-600 uppercase tracking-widest font-black print:hidden">© 2025 CRMPlus+ - Gestão Automotiva Inteligente</p>
+      <p className="mt-8 text-center text-[10px] text-slate-700 uppercase tracking-[0.5em] font-black print:hidden">Excelência e Transparência • Plataforma CRMPlus+</p>
     </div>
   );
 };
