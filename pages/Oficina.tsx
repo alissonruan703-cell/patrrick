@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Plus, Search, X, Send, Trash2,
-  ImagePlus, Trash, Filter, Calendar, FileText, ArrowLeft
+  ImagePlus, Trash, Filter, Calendar, FileText, ArrowLeft, ChevronDown
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem, SystemConfig } from '../types';
 
@@ -77,7 +77,6 @@ const Oficina: React.FC = () => {
     const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
     setOrders(updated);
     localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
-    // Dispara evento para garantir sincronia na mesma aba se necessário
     window.dispatchEvent(new CustomEvent('crmplus_update'));
   };
 
@@ -128,7 +127,6 @@ const Oficina: React.FC = () => {
       ...formData,
       status: 'Aberto',
       createdAt: new Date().toLocaleDateString('pt-BR'),
-      // Fix: Removed duplicate 'total' property that was causing an error
       total: 0,
       items: [],
       observation: '',
@@ -245,13 +243,14 @@ const Oficina: React.FC = () => {
     if (e.target) e.target.value = '';
   };
 
-  const getCardBg = (status: ServiceOrder['status']) => {
+  const getStatusColorClass = (status: ServiceOrder['status']) => {
     switch(status) {
-      case 'Orçamento': return 'bg-yellow-500/5 hover:bg-yellow-500/10 border-yellow-500/20';
-      case 'Execução':
-      case 'Pronto': return 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/20';
-      case 'Reprovado': return 'bg-red-500/5 hover:bg-red-500/10 border-red-500/20';
-      default: return 'bg-[#1a1d23] hover:bg-[#22272e] border-white/5';
+      case 'Orçamento': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30';
+      case 'Execução': return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
+      case 'Pronto': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30';
+      case 'Reprovado': return 'bg-red-500/10 text-red-500 border-red-500/30';
+      case 'Entregue': return 'bg-slate-500/10 text-slate-500 border-slate-500/30';
+      default: return 'bg-violet-500/10 text-violet-500 border-violet-500/30';
     }
   };
 
@@ -337,42 +336,39 @@ const Oficina: React.FC = () => {
             {filteredOrders.length > 0 ? filteredOrders.map(o => (
               <div 
                 key={o.id} 
-                className={`p-5 rounded-2xl border transition-all flex flex-col justify-between min-h-[240px] shadow-lg ${getCardBg(o.status)} group`}
+                className={`p-5 rounded-2xl border border-white/5 bg-[#1a1d23] transition-all flex flex-col justify-between min-h-[200px] shadow-lg hover:border-white/10 group`}
               >
-                <div onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="cursor-pointer">
-                  <div className="flex justify-between items-start mb-3">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
                     <div className="text-[10px] font-black text-violet-500 font-mono bg-violet-500/10 px-2 py-0.5 rounded">#{o.id}</div>
-                    <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${o.status === 'Pronto' ? 'bg-emerald-500/20 text-emerald-500' : o.status === 'Orçamento' ? 'bg-yellow-500/20 text-yellow-500' : o.status === 'Reprovado' ? 'bg-red-500/20 text-red-500' : 'bg-violet-600/10 text-violet-500'}`}>
-                      {o.status}
-                    </span>
+                    
+                    {/* LISTA SUSPENSA DE STATUS - EM CIMA DOS DETALHES */}
+                    <div className="relative">
+                      <select 
+                        value={o.status}
+                        onChange={(e) => updateOrderStatus(o.id, e.target.value as any)}
+                        className={`appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border outline-none cursor-pointer transition-all ${getStatusColorClass(o.status)}`}
+                      >
+                        {statusOptions.map(s => (
+                          <option key={s} value={s} className="bg-[#1a1d23] text-white uppercase">{s}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                    </div>
                   </div>
-                  <div className="space-y-1">
+
+                  <div onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="cursor-pointer space-y-1">
                     <h3 className="text-sm font-black text-white truncate group-hover:text-violet-400 transition-colors">{o.clientName}</h3>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{o.vehicle} • {o.plate}</p>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
-                  <div className="flex items-center justify-between text-[10px]">
-                     <p className="font-black text-slate-500 uppercase tracking-widest">Alterar Status</p>
-                     <p className="font-black text-white">R$ {o.total.toFixed(2)}</p>
-                  </div>
-                  
-                  {/* LISTA DE STATUS PARA ALTERAÇÃO RÁPIDA */}
-                  <div className="flex flex-wrap gap-1.5 overflow-x-auto no-scrollbar pb-1">
-                    {statusOptions.map(s => (
-                      <button 
-                        key={s}
-                        onClick={(e) => { e.stopPropagation(); updateOrderStatus(o.id, s); }}
-                        className={`px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-tighter transition-all border ${o.status === s ? 'bg-violet-600 border-violet-500 text-white shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-
+                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
                   <div className="flex items-center gap-1 text-slate-600 text-[8px] font-bold uppercase">
-                    <Calendar size={10} /> Criado em {o.createdAt}
+                    <Calendar size={10} /> {o.createdAt}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-white">R$ {o.total.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
