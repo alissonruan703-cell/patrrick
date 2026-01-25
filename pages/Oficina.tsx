@@ -5,7 +5,7 @@ import {
   X, ChevronRight, Camera, 
   Send, User, Car, Wrench, Trash2,
   ImagePlus, Trash, History, LayoutGrid, CheckCircle2,
-  Settings, Briefcase, Box, Tag, Filter, Calendar, FileText
+  Settings, Briefcase, Box, Tag, Filter, Calendar, FileText, ArrowLeft
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem } from '../types';
 
@@ -35,18 +35,16 @@ const Oficina: React.FC = () => {
 
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
 
-  // Carregar dados iniciais (simulação de persistência)
   useEffect(() => {
     const saved = localStorage.getItem('crmplus_oficina_orders');
     if (saved) setOrders(JSON.parse(saved));
   }, []);
 
-  // Salvar sempre que mudar
   useEffect(() => {
     localStorage.setItem('crmplus_oficina_orders', JSON.stringify(orders));
   }, [orders]);
 
-  const statusOptions: ServiceOrder['status'][] = ['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue'];
+  const statusOptions: ServiceOrder['status'][] = ['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'];
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -72,7 +70,6 @@ const Oficina: React.FC = () => {
       
       const isHistory = o.status === 'Entregue';
       
-      // Filtro de Status (Unificado)
       if (statusFilter !== 'Todos' && o.status !== statusFilter) return false;
 
       if (activeTab === 'ativos') {
@@ -148,8 +145,8 @@ const Oficina: React.FC = () => {
   const deleteOS = () => {
     if (!selectedOS) return;
     if (window.confirm("Deseja deletar permanentemente esta O.S.?")) {
-      const updatedOrders = orders.filter(o => o.id !== selectedOS.id);
-      setOrders(updatedOrders);
+      const targetId = selectedOS.id;
+      setOrders(prev => prev.filter(o => o.id !== targetId));
       setSelectedOS(null);
       setView('lista');
     }
@@ -208,10 +205,19 @@ const Oficina: React.FC = () => {
     setOrders(orders.map(o => o.id === selectedOS.id ? updated : o));
   };
 
+  const getCardBg = (status: ServiceOrder['status']) => {
+    switch(status) {
+      case 'Orçamento': return 'bg-yellow-500/5 hover:bg-yellow-500/10 border-yellow-500/10';
+      case 'Execução':
+      case 'Pronto': return 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/10';
+      case 'Reprovado': return 'bg-red-500/5 hover:bg-red-500/10 border-red-500/10';
+      default: return 'bg-[#1a1d23] hover:bg-[#22272e] border-white/5';
+    }
+  };
+
   return (
     <div className="pt-24 px-6 lg:px-10 max-w-screen-2xl mx-auto space-y-6 animate-in fade-in duration-700 text-[13px]">
       
-      {/* Header Compacto e Ajustado */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 bg-[#1a1d23] p-6 rounded-2xl border border-white/5 shadow-xl">
         <div className="space-y-3">
           <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter">OFICINA <span className="text-violet-500">PRO+</span></h1>
@@ -240,7 +246,6 @@ const Oficina: React.FC = () => {
 
       {view === 'lista' && activeTab !== 'nova' && (
         <div className="space-y-4">
-          {/* Busca e Filtros */}
           <div className="bg-[#1a1d23] p-5 rounded-2xl border border-white/5 space-y-4 shadow-xl">
             <div className="flex flex-wrap items-center gap-4">
               <div className="relative flex-1 min-w-[280px]">
@@ -288,17 +293,16 @@ const Oficina: React.FC = () => {
             )}
           </div>
 
-          {/* Grid de Cards Compacto */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {filteredOrders.length > 0 ? filteredOrders.map(o => (
               <div 
                 key={o.id} 
                 onClick={() => { setSelectedOS(o); setView('detalhes'); }} 
-                className="bg-[#1a1d23] p-5 rounded-2xl border border-white/5 hover:border-violet-500/50 cursor-pointer group transition-all hover:bg-[#22272e] flex flex-col justify-between min-h-[160px] shadow-lg hover:-translate-y-1"
+                className={`p-5 rounded-2xl border cursor-pointer group transition-all flex flex-col justify-between min-h-[160px] shadow-lg hover:-translate-y-1 ${getCardBg(o.status)}`}
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="text-[10px] font-black text-violet-500 font-mono bg-violet-500/10 px-2 py-0.5 rounded">#{o.id}</div>
-                  <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${o.status === 'Pronto' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-violet-600/10 text-violet-500'}`}>
+                  <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${o.status === 'Pronto' ? 'bg-emerald-500/20 text-emerald-500' : o.status === 'Orçamento' ? 'bg-yellow-500/20 text-yellow-500' : o.status === 'Reprovado' ? 'bg-red-500/20 text-red-500' : 'bg-violet-600/10 text-violet-500'}`}>
                     {o.status}
                   </span>
                 </div>
@@ -320,22 +324,28 @@ const Oficina: React.FC = () => {
         </div>
       )}
 
-      {/* Detalhes da O.S. */}
       {view === 'detalhes' && selectedOS && (
         <div className="space-y-6 animate-in slide-in-from-bottom-5 duration-700">
           
-          {/* Status Bar */}
           <div className="bg-[#1a1d23] p-3 rounded-2xl border border-white/5 flex flex-wrap items-center justify-between gap-2 shadow-xl">
-            {statusOptions.map((s) => (
-              <button 
-                key={s}
-                onClick={() => updateStatus(s)}
-                className={`flex-1 min-w-[100px] py-3 rounded-xl flex items-center justify-center transition-all border ${selectedOS.status === s ? 'bg-violet-600 border-violet-500 text-white' : 'bg-black/20 border-white/5 text-slate-500 hover:text-slate-300'}`}
-              >
-                <span className="text-[9px] font-black uppercase tracking-widest">{s}</span>
-              </button>
-            ))}
-            <button onClick={() => setView('lista')} className="p-3 text-slate-500 hover:text-white transition-colors"><X size={20}/></button>
+            <div className="flex flex-1 items-center gap-2">
+               <button 
+                onClick={() => setView('lista')}
+                className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 text-[9px] font-black uppercase tracking-widest border border-white/5 transition-all"
+               >
+                 <ArrowLeft size={16} /> Voltar
+               </button>
+               {statusOptions.map((s) => (
+                <button 
+                  key={s}
+                  onClick={() => updateStatus(s)}
+                  className={`flex-1 min-w-[90px] py-3 rounded-xl flex items-center justify-center transition-all border ${selectedOS.status === s ? 'bg-violet-600 border-violet-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-slate-500 hover:text-slate-300'}`}
+                >
+                  <span className="text-[9px] font-black uppercase tracking-widest">{s}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setView('lista')} className="p-3 text-slate-500 hover:text-white transition-colors ml-2"><X size={20}/></button>
           </div>
 
           <div className="bg-[#1a1d23] p-6 lg:p-8 rounded-3xl border border-white/5 shadow-2xl space-y-8">
@@ -421,7 +431,6 @@ const Oficina: React.FC = () => {
                     </table>
                   </div>
 
-                  {/* Campo de Observação Técnica */}
                   <div className="bg-[#0f1115] p-6 rounded-2xl border border-white/5 space-y-4">
                      <div className="flex items-center gap-3 text-slate-400">
                         <FileText size={18} />
@@ -465,7 +474,6 @@ const Oficina: React.FC = () => {
         </div>
       )}
 
-      {/* Formulário Nova O.S. */}
       {activeTab === 'nova' && (
         <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-5 duration-500">
            <div className="bg-[#1a1d23] rounded-3xl border border-white/5 overflow-hidden shadow-2xl">

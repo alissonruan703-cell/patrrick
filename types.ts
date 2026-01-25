@@ -21,8 +21,8 @@ export interface ServiceOrder {
   vehicle: string;
   plate: string;
   description: string;
-  observation?: string; // Novo campo para observações do relatório
-  status: 'Aberto' | 'Orçamento' | 'Execução' | 'Pronto' | 'Entregue';
+  observation?: string;
+  status: 'Aberto' | 'Orçamento' | 'Execução' | 'Pronto' | 'Entregue' | 'Reprovado';
   createdAt: string;
   items: ServiceItem[];
   photos?: string[];
