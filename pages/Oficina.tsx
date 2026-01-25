@@ -34,7 +34,7 @@ const Oficina: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
-  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ companyName: 'CRMPlus+', companyLogo: '' });
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
 
   useEffect(() => {
     const loadData = () => {
@@ -188,9 +188,7 @@ const Oficina: React.FC = () => {
   const generateShareLink = () => {
     if (!selectedOS) return "";
     
-    // REDUÇÃO AGRESSIVA PARA LINK CURTO:
-    // 1. Removida a logo cl: (que causa 95% do tamanho do link)
-    // 2. Chaves encurtadas ao máximo
+    // Link ultra-curto (removendo logo e fotos)
     const data = {
       i: selectedOS.id,
       n: selectedOS.clientName,

@@ -11,8 +11,6 @@ import {
   Lock,
   Plus,
   Search,
-  Bell,
-  User,
   Settings as SettingsIcon
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
@@ -26,7 +24,7 @@ const Navbar = () => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPlus+', companyLogo: '' });
+  const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,16 +56,18 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#0f1115]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
-      <div className="flex items-center gap-12">
+      <div className="flex items-center gap-10">
         <Link to="/" className="flex items-center gap-2.5">
           {config.companyLogo ? (
-            <img src={config.companyLogo} className="w-10 h-10 rounded-lg object-cover border border-white/10" alt="Logo" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
+              <img src={config.companyLogo} className="w-full h-full object-contain" alt="Logo" />
+            </div>
           ) : (
-            <div className="bg-violet-600 p-1.5 rounded-lg shadow-xl shadow-violet-600/30">
-              <Plus size={20} className="text-white" strokeWidth={4} />
+            <div className="bg-violet-600 p-1 rounded-lg shadow-xl shadow-violet-600/30">
+              <Plus size={16} className="text-white" strokeWidth={4} />
             </div>
           )}
-          <span className="text-2xl font-black tracking-tighter text-white uppercase">{config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || '+'}</span></span>
+          <span className="text-xl font-black tracking-tighter text-white uppercase">{config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || ''}</span></span>
         </Link>
         
         <div className="hidden lg:flex items-center gap-8">
@@ -87,15 +87,14 @@ const Navbar = () => {
       <div className="flex items-center gap-6 text-white">
         <div className="hidden md:flex items-center gap-4 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
           <Search size={16} className="text-slate-500" />
-          <input placeholder="Busca global..." className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest w-24 focus:w-48 transition-all" />
+          <input placeholder="Busca global..." className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest w-24 focus:w-40 transition-all" />
         </div>
-        <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-[10px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">ADMIN</div>
+        <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-[10px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">ADM</div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden">
-          <Menu size={28} />
+          <Menu size={24} />
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-[#0f1115] z-[60] p-8 flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-500">
           <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8 text-white">

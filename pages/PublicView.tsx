@@ -21,20 +21,27 @@ const PublicView: React.FC = () => {
         observation: raw.o,
         total: raw.t,
         date: raw.dt,
-        companyName: raw.cn,
-        // Logo removida do link para garantir URL curta. 
-        // Em um sistema real com backend, buscaríamos pelo CN.
-        items: (raw.it || []).map((item: any) => ({
+        companyName: raw.cn || 'CRMPLUS'
+      };
+    } catch (e) {
+      return null;
+    }
+  }, [data]);
+
+  // Carrega os itens reais se disponíveis no sistema local (opcional)
+  const items = React.useMemo(() => {
+     if (!data) return [];
+     try {
+       const decoded = decodeURIComponent(escape(atob(data)));
+       const raw = JSON.parse(decoded);
+       return (raw.it || []).map((item: any) => ({
           type: item.t === 'P' ? 'PEÇA' : item.t === 'M' ? 'MÃO DE OBRA' : 'NOTA',
           description: item.d,
           brand: item.b,
           quantity: item.q,
           price: item.p
-        }))
-      };
-    } catch (e) {
-      return null;
-    }
+        }));
+     } catch(e) { return []; }
   }, [data]);
 
   const handleClientAction = (newStatus: 'Execução' | 'Reprovado') => {
@@ -52,9 +59,9 @@ const PublicView: React.FC = () => {
 
   if (!os) return <div className="p-20 text-center text-slate-500 font-black uppercase tracking-widest">Link expirado ou inválido.</div>;
 
-  const parts = os.items.filter((i: any) => i.type === 'PEÇA');
-  const services = os.items.filter((i: any) => i.type === 'MÃO DE OBRA');
-  const others = os.items.filter((i: any) => i.type === 'NOTA');
+  const parts = items.filter((i: any) => i.type === 'PEÇA');
+  const services = items.filter((i: any) => i.type === 'MÃO DE OBRA');
+  const others = items.filter((i: any) => i.type === 'NOTA');
 
   const totalParts = parts.reduce((acc: number, i: any) => acc + (i.price * i.quantity), 0);
   const totalServices = services.reduce((acc: number, i: any) => acc + (i.price * i.quantity), 0);
@@ -96,7 +103,7 @@ const PublicView: React.FC = () => {
     );
   };
 
-  const companyName = os.companyName || 'CRMPlus+';
+  const companyName = os.companyName || 'CRMPLUS';
 
   return (
     <div className="min-h-screen bg-[#0f1115] p-4 lg:p-20 text-slate-200 print:bg-white print:p-0">
@@ -114,13 +121,12 @@ const PublicView: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4">
                <div className="flex items-center gap-4 mb-6">
-                {/* Badge de marca premium gerado dinamicamente já que removemos a logo para encurtar o link */}
-                <div className="bg-violet-600 w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-xl shadow-violet-600/30 print:border-slate-300 print:text-slate-900 print:bg-slate-100">
+                <div className="bg-violet-600 w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-xl shadow-violet-600/30 print:border-slate-300 print:text-slate-900 print:bg-slate-100">
                    {companyName[0].toUpperCase()}
                 </div>
                 <span className="text-2xl font-black text-white print:text-black uppercase tracking-tighter">
                   {companyName.split(' ')[0]}
-                  <span className="text-violet-500">{companyName.split(' ').slice(1).join(' ') || '+'}</span>
+                  <span className="text-violet-500">{companyName.split(' ').slice(1).join(' ') || ''}</span>
                 </span>
                </div>
                <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none print:text-black">Orçamento de Serviço <br/><span className="text-violet-500 text-2xl tracking-normal">Documento O.S. #{os.id}</span></h1>
@@ -130,8 +136,8 @@ const PublicView: React.FC = () => {
             </div>
             
             <div className="text-right hidden md:block print:block">
-               <div className={`w-16 h-16 ml-auto mb-4 rounded-2xl border flex items-center justify-center transition-all ${status === 'approved' ? 'bg-emerald-500 text-white border-emerald-500 shadow-xl' : status === 'rejected' ? 'bg-red-500 text-white border-red-500 shadow-xl' : 'bg-white/5 border-white/5 text-emerald-500'}`}>
-                 {status === 'approved' ? <ThumbsUp size={32} strokeWidth={3} /> : status === 'rejected' ? <ThumbsDown size={32} strokeWidth={3} /> : <Check size={32} strokeWidth={3} />}
+               <div className={`w-14 h-14 ml-auto mb-4 rounded-2xl border flex items-center justify-center transition-all ${status === 'approved' ? 'bg-emerald-500 text-white border-emerald-500 shadow-xl' : status === 'rejected' ? 'bg-red-500 text-white border-red-500 shadow-xl' : 'bg-white/5 border-white/5 text-emerald-500'}`}>
+                 {status === 'approved' ? <ThumbsUp size={28} strokeWidth={3} /> : status === 'rejected' ? <ThumbsDown size={28} strokeWidth={3} /> : <Check size={28} strokeWidth={3} />}
                </div>
                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest print:text-slate-400">
                  {status === 'approved' ? 'Aprovado pelo Cliente' : status === 'rejected' ? 'Reprovado pelo Cliente' : 'Aguardando Aprovação'}
