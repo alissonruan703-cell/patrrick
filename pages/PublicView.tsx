@@ -10,7 +10,29 @@ const PublicView: React.FC = () => {
   const os = React.useMemo(() => {
     try {
       const decoded = decodeURIComponent(escape(atob(data || '')));
-      return JSON.parse(decoded);
+      const raw = JSON.parse(decoded);
+      
+      // Traduzindo chaves curtas de volta para o formato original
+      return {
+        id: raw.i,
+        client: raw.n,
+        vehicle: raw.v,
+        plate: raw.p,
+        description: raw.d,
+        observation: raw.o,
+        total: raw.t,
+        date: raw.dt,
+        companyName: raw.cn,
+        companyLogo: raw.cl,
+        items: (raw.it || []).map((item: any) => ({
+          type: item.t === 'P' ? 'PEÇA' : item.t === 'M' ? 'MÃO DE OBRA' : 'NOTA',
+          description: item.d,
+          brand: item.b,
+          quantity: item.q,
+          price: item.p
+        })),
+        photos: raw.ph || [] // Fotos agora são opcionais no link para economizar espaço
+      };
     } catch (e) {
       return null;
     }
@@ -21,7 +43,6 @@ const PublicView: React.FC = () => {
     
     setStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
 
-    // Sincroniza com o localStorage (Isso disparará o Storage Event na aba da Oficina)
     const saved = localStorage.getItem('crmplus_oficina_orders');
     if (saved) {
       const orders = JSON.parse(saved);
@@ -42,7 +63,7 @@ const PublicView: React.FC = () => {
   const totalServices = services.reduce((acc: number, i: any) => acc + (i.price * i.quantity), 0);
   const totalOthers = others.reduce((acc: number, i: any) => acc + (i.price * i.quantity), 0);
 
-  const TableSection = ({ title, icon, items, total }: any) => {
+  const TableSection = ({ title, icon, items }: any) => {
     if (items.length === 0) return null;
     return (
       <div className="space-y-4">
@@ -148,11 +169,11 @@ const PublicView: React.FC = () => {
         </div>
 
         <div className="px-10 space-y-10 pb-10">
-          <TableSection title="Peças e Componentes" icon={<Box size={20}/>} items={parts} total={totalParts} />
-          <TableSection title="Mão de Obra e Serviços" icon={<Wrench size={20}/>} items={services} total={totalServices} />
-          <TableSection title="Outros / Notas" icon={<Check size={20}/>} items={others} total={totalOthers} />
+          <TableSection title="Peças e Componentes" icon={<Box size={20}/>} items={parts} />
+          <TableSection title="Mão de Obra e Serviços" icon={<Wrench size={20}/>} items={services} />
+          <TableSection title="Outros / Notas" icon={<Check size={20}/>} items={others} />
 
-          {/* Galeria de Fotos da OS */}
+          {/* Galeria de Fotos da OS (Apenas se inclusas no link) */}
           {os.photos && os.photos.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 px-2">
@@ -179,7 +200,6 @@ const PublicView: React.FC = () => {
             </div>
           )}
 
-          {/* Fechamento de Valores Separados */}
           <div className="bg-[#0f1115] rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
              <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-white/5">
                 <div className="space-y-3">
@@ -203,7 +223,6 @@ const PublicView: React.FC = () => {
                 </div>
              </div>
              
-             {/* Área de Aprovação e Impressão */}
              <div className="bg-white/5 p-6 flex flex-col md:flex-row gap-4 print:hidden border-t border-white/5">
                 <button onClick={() => window.print()} className="flex-1 py-4 bg-white/5 border border-white/10 text-slate-400 font-black rounded-xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all">
                    <Printer size={16} /> Versão para PDF

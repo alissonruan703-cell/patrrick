@@ -187,22 +187,30 @@ const Oficina: React.FC = () => {
 
   const generateShareLink = () => {
     if (!selectedOS) return "";
+    
+    // Minificando as chaves para encurtar a URL significativamente
+    // i: id, n: name, v: vehicle, p: plate, d: desc, o: obs, it: items, t: total, dt: date
+    // cn: companyName, cl: companyLogo
     const data = {
-      id: selectedOS.id,
-      client: selectedOS.clientName,
-      vehicle: selectedOS.vehicle,
-      plate: selectedOS.plate,
-      phone: selectedOS.phone,
-      description: selectedOS.description,
-      observation: selectedOS.observation || '',
-      items: selectedOS.items,
-      total: selectedOS.total,
-      date: selectedOS.createdAt,
-      photos: selectedOS.photos || [], // Enviando as fotos da OS para o cliente
-      // Incluindo branding da empresa no link
-      companyName: systemConfig.companyName,
-      companyLogo: systemConfig.companyLogo
+      i: selectedOS.id,
+      n: selectedOS.clientName,
+      v: selectedOS.vehicle,
+      p: selectedOS.plate,
+      d: selectedOS.description,
+      o: selectedOS.observation || '',
+      it: selectedOS.items.map(item => ({
+        t: item.type[0], // P, M ou N
+        d: item.description,
+        b: item.brand,
+        q: item.quantity,
+        p: item.price
+      })),
+      t: selectedOS.total,
+      dt: selectedOS.createdAt,
+      cn: systemConfig.companyName,
+      cl: systemConfig.companyLogo
     };
+
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
     const baseUrl = window.location.href.split('#')[0];
     return `${baseUrl}#/v/${encoded}`;
