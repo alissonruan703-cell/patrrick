@@ -35,9 +35,16 @@ const Oficina: React.FC = () => {
 
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
 
+  // Carrega e observa mudanças no localStorage (para ver aprovações externas)
   useEffect(() => {
-    const saved = localStorage.getItem('crmplus_oficina_orders');
-    if (saved) setOrders(JSON.parse(saved));
+    const loadOrders = () => {
+      const saved = localStorage.getItem('crmplus_oficina_orders');
+      if (saved) setOrders(JSON.parse(saved));
+    };
+
+    loadOrders();
+    const interval = setInterval(loadOrders, 5000); // Poll de 5s para simular "realtime" local
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -345,14 +352,16 @@ const Oficina: React.FC = () => {
                 </button>
               ))}
             </div>
-            <button onClick={() => setView('lista')} className="p-3 text-slate-500 hover:text-white transition-colors ml-2"><X size={20}/></button>
           </div>
 
           <div className="bg-[#1a1d23] p-6 lg:p-8 rounded-3xl border border-white/5 shadow-2xl space-y-8">
             <div className="flex flex-col xl:flex-row justify-between items-start gap-6">
               <div className="space-y-1">
-                <h2 className="text-3xl font-black text-white uppercase tracking-tighter">O.S. <span className="text-violet-500">#{selectedOS.id}</span></h2>
-                <div className="flex items-center gap-3 text-slate-400 font-bold uppercase text-[11px]">
+                <div className="flex items-center gap-4 mb-2">
+                   <button onClick={() => setView('lista')} className="text-slate-500 hover:text-white transition-colors"><ArrowLeft size={24} /></button>
+                   <h2 className="text-3xl font-black text-white uppercase tracking-tighter">O.S. <span className="text-violet-500">#{selectedOS.id}</span></h2>
+                </div>
+                <div className="flex items-center gap-3 text-slate-400 font-bold uppercase text-[11px] ml-10">
                   <span className="text-lg text-white">{selectedOS.clientName}</span>
                   <span className="w-1 h-1 bg-slate-700 rounded-full" />
                   <span className="text-violet-500 font-mono tracking-widest">{selectedOS.plate}</span>
