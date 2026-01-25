@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wrench, FileText, Utensils, Play, Info, Plus, ChevronRight, Shield, Zap, BarChart3 } from 'lucide-react';
+import { SystemConfig } from '../types';
 
 const ModuleCard: React.FC<{ mod: any, onNavigate: (path: string) => void }> = ({ mod, onNavigate }) => {
   return (
@@ -43,6 +44,12 @@ const ModuleCard: React.FC<{ mod: any, onNavigate: (path: string) => void }> = (
 
 const Catalog: React.FC = () => {
   const navigate = useNavigate();
+  const [config, setConfig] = useState<SystemConfig>({ companyName: 'SISTEMA', companyLogo: '' });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('crmplus_system_config');
+    if (saved) setConfig(JSON.parse(saved));
+  }, []);
 
   const systems = [
     {
@@ -92,17 +99,24 @@ const Catalog: React.FC = () => {
         <div className="relative z-10 text-center space-y-8 max-w-6xl animate-in fade-in zoom-in duration-1000">
           <div className="inline-flex items-center gap-3 bg-white/5 backdrop-blur-2xl px-6 py-2.5 rounded-full border border-white/10 mb-4">
             <Zap size={16} className="text-violet-500" fill="currentColor" />
-            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-violet-400">Próxima Geração em SaaS</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-violet-400">Plataforma SaaS Corporativa</span>
           </div>
 
-          <h1 className="text-6xl sm:text-8xl md:text-[9.5rem] font-black text-white leading-[0.85] tracking-tighter uppercase">
-            SISTEMA<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-400">MODERNO</span>
-          </h1>
+          <div className="flex flex-col items-center">
+             {config.companyLogo && (
+               <img src={config.companyLogo} alt="Logo Empresa" className="w-24 h-24 mb-6 rounded-2xl object-cover shadow-2xl border border-white/10" />
+             )}
+            <h1 className="text-6xl sm:text-8xl md:text-[8rem] font-black text-white leading-[0.85] tracking-tighter uppercase break-words px-4">
+              {config.companyName.split(' ')[0]}<br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-400">
+                {config.companyName.split(' ').slice(1).join(' ') || 'MODERNO'}
+              </span>
+            </h1>
+          </div>
           
           <div className="max-w-3xl mx-auto space-y-10">
             <p className="text-slate-400 text-lg md:text-2xl font-medium leading-relaxed italic">
-              "A tecnologia deve ser invisível, o resultado deve ser extraordinário."
+              "Bem-vindo ao centro de comando inteligente da sua empresa."
             </p>
             
             <div className="flex flex-wrap items-center justify-center gap-6">
@@ -111,10 +125,10 @@ const Catalog: React.FC = () => {
                 className="group px-10 py-5 bg-white text-black font-black rounded-2xl hover:bg-violet-500 hover:text-white transition-all duration-500 flex items-center gap-4 text-lg shadow-[0_20px_40px_rgba(255,255,255,0.1)] active:scale-95"
               >
                 <Play size={24} fill="currentColor" className="group-hover:text-white" /> 
-                Acessar Plataforma
+                Acessar Oficina
               </button>
-              <button className="px-10 py-5 bg-white/5 text-white font-black rounded-2xl hover:bg-white/10 transition-all flex items-center gap-4 text-lg border border-white/10 backdrop-blur-xl">
-                Documentação
+              <button onClick={() => navigate('/config')} className="px-10 py-5 bg-white/5 text-white font-black rounded-2xl hover:bg-white/10 transition-all flex items-center gap-4 text-lg border border-white/10 backdrop-blur-xl">
+                Personalizar Sistema
               </button>
             </div>
           </div>
@@ -160,12 +174,12 @@ const Catalog: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
             <div className="space-y-4">
               <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase leading-none">
-                Ecossistema <br/><span className="text-violet-500">Integrado</span>
+                Módulos <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-400">Ativos</span>
               </h2>
               <div className="w-24 h-2 bg-violet-600 rounded-full" />
             </div>
             <p className="text-slate-500 max-w-md font-medium text-lg leading-relaxed">
-              Explore nossos módulos especializados projetados para elevar a eficiência operacional de diversos setores.
+              Explore nossos módulos especializados projetados para elevar a eficiência operacional da sua empresa.
             </p>
           </div>
 
@@ -182,10 +196,14 @@ const Catalog: React.FC = () => {
         <div className="max-w-7xl mx-auto flex flex-col items-center space-y-16">
           <div className="flex flex-col items-center gap-6">
             <div className="flex items-center gap-4 text-5xl font-black text-white">
-              <div className="bg-violet-600 p-2.5 rounded-xl shadow-2xl shadow-violet-600/40">
-                <Plus className="text-white" size={32} strokeWidth={4} />
-              </div>
-              CRM<span className="text-violet-500">Plus+</span>
+              {config.companyLogo ? (
+                <img src={config.companyLogo} className="w-16 h-16 rounded-xl object-cover" alt="Logo" />
+              ) : (
+                <div className="bg-violet-600 p-2.5 rounded-xl shadow-2xl shadow-violet-600/40">
+                  <Plus className="text-white" size={32} strokeWidth={4} />
+                </div>
+              )}
+              {config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || '+'}</span>
             </div>
             <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px]">Management Intelligence Platform</p>
           </div>
@@ -199,7 +217,7 @@ const Catalog: React.FC = () => {
 
           <div className="text-center space-y-4">
             <div className="h-px w-64 bg-gradient-to-r from-transparent via-white/10 to-transparent mx-auto" />
-            <p className="text-slate-700 text-[9px] font-bold tracking-[0.6em] uppercase">© 2025 CRMPlus+ Enterprises. Designed for High Performance.</p>
+            <p className="text-slate-700 text-[9px] font-bold tracking-[0.6em] uppercase">© 2025 {config.companyName} Enterprises. Designed for High Performance.</p>
           </div>
         </div>
       </footer>

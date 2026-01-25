@@ -4,6 +4,11 @@ export enum ModuleStatus {
   LOCKED = 'LOCKED'
 }
 
+export interface SystemConfig {
+  companyName: string;
+  companyLogo: string;
+}
+
 export interface ServiceItem {
   id: string;
   type: 'PEÇA' | 'MÃO DE OBRA' | 'NOTA';

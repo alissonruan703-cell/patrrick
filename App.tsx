@@ -12,24 +12,38 @@ import {
   Plus,
   Search,
   Bell,
-  User
+  User,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
 import LockedModule from './pages/LockedModule';
 import PublicView from './pages/PublicView';
+import Settings from './pages/Settings';
+import { SystemConfig } from './types';
 
 const Navbar = () => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPlus+', companyLogo: '' });
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
+    const loadConfig = () => {
+      const saved = localStorage.getItem('crmplus_system_config');
+      if (saved) setConfig(JSON.parse(saved));
+    };
+
+    loadConfig();
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('storage', loadConfig);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('storage', loadConfig);
+    };
   }, []);
 
   if (location.pathname.startsWith('/v/')) return null;
@@ -39,16 +53,21 @@ const Navbar = () => {
     { name: 'Oficina', path: '/oficina' },
     { name: 'Orçamentos', path: '/orcamento', locked: true },
     { name: 'Restaurante', path: '/restaurante', locked: true },
+    { name: 'Configurações', path: '/config' },
   ];
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#0f1115]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
       <div className="flex items-center gap-12">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="bg-violet-600 p-1.5 rounded-lg shadow-xl shadow-violet-600/30">
-            <Plus size={20} className="text-white" strokeWidth={4} />
-          </div>
-          <span className="text-2xl font-black tracking-tighter text-white uppercase">CRM<span className="text-violet-500">Plus+</span></span>
+          {config.companyLogo ? (
+            <img src={config.companyLogo} className="w-10 h-10 rounded-lg object-cover border border-white/10" alt="Logo" />
+          ) : (
+            <div className="bg-violet-600 p-1.5 rounded-lg shadow-xl shadow-violet-600/30">
+              <Plus size={20} className="text-white" strokeWidth={4} />
+            </div>
+          )}
+          <span className="text-2xl font-black tracking-tighter text-white uppercase">{config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || '+'}</span></span>
         </Link>
         
         <div className="hidden lg:flex items-center gap-8">
@@ -70,7 +89,7 @@ const Navbar = () => {
           <Search size={16} className="text-slate-500" />
           <input placeholder="Busca global..." className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest w-24 focus:w-48 transition-all" />
         </div>
-        <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-[10px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform">ADMIN</div>
+        <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-[10px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">ADMIN</div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden">
           <Menu size={28} />
         </button>
@@ -112,6 +131,7 @@ const App: React.FC = () => {
                 <Route path="/oficina/*" element={<Oficina />} />
                 <Route path="/orcamento" element={<LockedModule name="Vendas" />} />
                 <Route path="/restaurante" element={<LockedModule name="Gastro Hub" />} />
+                <Route path="/config" element={<Settings />} />
               </Routes>
             } />
           </Routes>
