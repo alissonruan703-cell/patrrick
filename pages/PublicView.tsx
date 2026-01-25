@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Printer, Check, Plus, Box, Wrench, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react';
+import { Printer, Check, Plus, Box, Wrench, ThumbsUp, ThumbsDown, AlertCircle, Camera, Search } from 'lucide-react';
 
 const PublicView: React.FC = () => {
   const { data } = useParams();
@@ -98,7 +98,7 @@ const PublicView: React.FC = () => {
             <div className="space-y-4">
                <div className="flex items-center gap-4 mb-6">
                 {companyLogo ? (
-                   <div className="bg-white/5 p-1 rounded-xl border border-white/10 w-16 h-16 flex items-center justify-center overflow-hidden print:border-slate-200">
+                   <div className="bg-white/10 p-2 rounded-2xl border border-white/10 w-20 h-20 flex items-center justify-center overflow-hidden print:border-slate-200 shadow-xl">
                       <img src={companyLogo} alt="Logo" className="w-full h-full object-contain" />
                    </div>
                 ) : (
@@ -151,6 +151,26 @@ const PublicView: React.FC = () => {
           <TableSection title="Peças e Componentes" icon={<Box size={20}/>} items={parts} total={totalParts} />
           <TableSection title="Mão de Obra e Serviços" icon={<Wrench size={20}/>} items={services} total={totalServices} />
           <TableSection title="Outros / Notas" icon={<Check size={20}/>} items={others} total={totalOthers} />
+
+          {/* Galeria de Fotos da OS */}
+          {os.photos && os.photos.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 px-2">
+                 <Camera className="text-violet-500" size={20} />
+                 <h3 className="text-sm font-black text-white uppercase tracking-widest print:hidden">Registros Fotográficos</h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
+                {os.photos.map((photo: string, i: number) => (
+                  <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/5 bg-black/40 group relative">
+                    <img src={photo} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={`Foto ${i}`} />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Search size={24} className="text-white" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {os.observation && (
             <div className="p-6 bg-[#0f1115] rounded-2xl border border-violet-500/20 space-y-3 print:bg-slate-50 print:border-slate-200">

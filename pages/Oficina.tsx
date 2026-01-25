@@ -198,6 +198,7 @@ const Oficina: React.FC = () => {
       items: selectedOS.items,
       total: selectedOS.total,
       date: selectedOS.createdAt,
+      photos: selectedOS.photos || [], // Enviando as fotos da OS para o cliente
       // Incluindo branding da empresa no link
       companyName: systemConfig.companyName,
       companyLogo: systemConfig.companyLogo
