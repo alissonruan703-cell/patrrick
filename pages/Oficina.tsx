@@ -102,7 +102,6 @@ const Oficina: React.FC = () => {
         }
       }
       
-      // Definição do que é considerado Histórico: Entregue ou Reprovado
       const isHistory = o.status === 'Entregue' || o.status === 'Reprovado';
       
       if (statusFilter !== 'Todos' && o.status !== statusFilter) return false;
@@ -244,14 +243,14 @@ const Oficina: React.FC = () => {
     if (e.target) e.target.value = '';
   };
 
-  const getStatusColorClass = (status: ServiceOrder['status']) => {
+  const getStatusClasses = (status: ServiceOrder['status']) => {
     switch(status) {
-      case 'Orçamento': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30';
-      case 'Execução': return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
-      case 'Pronto': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30';
-      case 'Reprovado': return 'bg-red-500/10 text-red-500 border-red-500/30';
-      case 'Entregue': return 'bg-slate-500/10 text-slate-500 border-slate-500/30';
-      default: return 'bg-violet-500/10 text-violet-500 border-violet-500/30';
+      case 'Orçamento': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30 ring-yellow-500/20';
+      case 'Execução': return 'bg-blue-500/10 text-blue-500 border-blue-500/30 ring-blue-500/20';
+      case 'Pronto': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 ring-emerald-500/20';
+      case 'Reprovado': return 'bg-red-500/10 text-red-500 border-red-500/30 ring-red-500/20';
+      case 'Entregue': return 'bg-slate-500/10 text-slate-500 border-slate-500/30 ring-slate-500/20';
+      default: return 'bg-violet-500/10 text-violet-500 border-violet-500/30 ring-violet-500/20';
     }
   };
 
@@ -337,44 +336,52 @@ const Oficina: React.FC = () => {
             {filteredOrders.length > 0 ? filteredOrders.map(o => (
               <div 
                 key={o.id} 
-                className={`p-5 rounded-2xl border border-white/5 bg-[#1a1d23] transition-all flex flex-col justify-between min-h-[200px] shadow-lg hover:border-white/10 group`}
+                className="p-5 rounded-2xl border border-white/5 bg-[#1a1d23] transition-all flex flex-col justify-between min-h-[220px] shadow-lg hover:border-violet-500/30 group relative"
               >
                 <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="text-[10px] font-black text-violet-500 font-mono bg-violet-500/10 px-2 py-0.5 rounded">#{o.id}</div>
+                  <div className="flex justify-between items-center mb-5">
+                    <div className="text-[10px] font-black text-violet-500 font-mono bg-violet-500/10 px-2.5 py-1 rounded-md">#{o.id}</div>
                     
-                    {/* LISTA SUSPENSA DE STATUS - EM CIMA DOS DETALHES */}
-                    <div className="relative">
+                    {/* DROPDOWN DE STATUS - PREMIUM DESIGN */}
+                    <div className="relative group/status min-w-[100px]">
                       <select 
                         value={o.status}
                         onChange={(e) => updateOrderStatus(o.id, e.target.value as any)}
-                        className={`appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border outline-none cursor-pointer transition-all ${getStatusColorClass(o.status)}`}
+                        className={`appearance-none w-full pl-3 pr-8 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ring-1 outline-none cursor-pointer transition-all duration-300 ${getStatusClasses(o.status)}`}
                       >
                         {statusOptions.map(s => (
                           <option key={s} value={s} className="bg-[#1a1d23] text-white uppercase">{s}</option>
                         ))}
                       </select>
-                      <ChevronDown size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                      <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 group-hover/status:opacity-100 transition-opacity" />
                     </div>
                   </div>
 
-                  <div onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="cursor-pointer space-y-1">
-                    <h3 className="text-sm font-black text-white truncate group-hover:text-violet-400 transition-colors">{o.clientName}</h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{o.vehicle} • {o.plate}</p>
+                  <div onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="cursor-pointer space-y-1.5">
+                    <h3 className="text-[15px] font-black text-white truncate group-hover:text-violet-400 transition-colors uppercase tracking-tight">{o.clientName}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded">{o.vehicle}</span>
+                      <span className="text-[10px] font-black text-violet-500/80 font-mono tracking-widest">{o.plate}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-slate-600 text-[8px] font-bold uppercase">
-                    <Calendar size={10} /> {o.createdAt}
+                <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-slate-500 text-[9px] font-black uppercase tracking-widest">
+                    <Calendar size={12} className="text-violet-500" /> {o.createdAt}
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-white">R$ {o.total.toFixed(2)}</p>
+                    <p className="text-[12px] font-black text-white bg-white/5 px-3 py-1 rounded-lg border border-white/10">R$ {o.total.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
             )) : (
-              <div className="col-span-full py-20 text-center text-slate-600 uppercase font-black tracking-widest">Nenhum registro encontrado</div>
+              <div className="col-span-full py-24 text-center">
+                 <div className="bg-white/5 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-white/5">
+                    <Search size={24} className="text-slate-600" />
+                 </div>
+                 <p className="text-slate-600 uppercase font-black tracking-[0.3em] text-xs">Nenhum registro encontrado</p>
+              </div>
             )}
           </div>
         </div>
@@ -411,16 +418,16 @@ const Oficina: React.FC = () => {
                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter">O.S. <span className="text-violet-500">#{selectedOS.id}</span></h2>
                 </div>
                 <div className="flex items-center gap-3 text-slate-400 font-bold uppercase text-[11px] ml-10">
-                  <span className="text-lg text-white">{selectedOS.clientName}</span>
-                  <span className="w-1 h-1 bg-slate-700 rounded-full" />
-                  <span className="text-violet-500 font-mono tracking-widest">{selectedOS.plate}</span>
+                  <span className="text-lg text-white font-black">{selectedOS.clientName}</span>
+                  <span className="w-1.5 h-1.5 bg-violet-600 rounded-full" />
+                  <span className="text-violet-500 font-mono tracking-widest bg-violet-500/10 px-2 py-0.5 rounded">{selectedOS.plate}</span>
                 </div>
               </div>
               
               <div className="flex items-center gap-4 w-full xl:w-auto">
                 <div className="text-right p-4 bg-black/40 rounded-2xl border border-white/5 min-w-[160px]">
                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Geral</p>
-                   <h3 className="text-2xl font-black text-white">R$ {selectedOS.total.toFixed(2)}</h3>
+                   <h3 className="text-2xl font-black text-white tracking-tighter">R$ {selectedOS.total.toFixed(2)}</h3>
                 </div>
                 <button 
                   onClick={() => {
@@ -440,12 +447,12 @@ const Oficina: React.FC = () => {
                     <table className="w-full text-[12px] min-w-[600px]">
                       <thead className="bg-[#1a1d23] text-[8px] uppercase font-black text-slate-500 border-b border-white/5">
                         <tr>
-                          <th className="px-6 py-4 text-left">Tipo</th>
-                          <th className="px-6 py-4 text-left">Descrição do Item</th>
-                          <th className="px-6 py-4 text-left">Marca</th>
-                          <th className="px-6 py-4 text-center">Qtd</th>
-                          <th className="px-6 py-4 text-right">Unitário</th>
-                          <th className="px-6 py-4 text-right">Subtotal</th>
+                          <th className="px-6 py-4 text-left tracking-[0.2em]">Tipo</th>
+                          <th className="px-6 py-4 text-left tracking-[0.2em]">Descrição do Item</th>
+                          <th className="px-6 py-4 text-left tracking-[0.2em]">Marca</th>
+                          <th className="px-6 py-4 text-center tracking-[0.2em]">Qtd</th>
+                          <th className="px-6 py-4 text-right tracking-[0.2em]">Unitário</th>
+                          <th className="px-6 py-4 text-right tracking-[0.2em]">Subtotal</th>
                           <th className="px-6 py-4 text-right"></th>
                         </tr>
                       </thead>
@@ -457,11 +464,11 @@ const Oficina: React.FC = () => {
                                 {item.type}
                               </span>
                             </td>
-                            <td className="px-6 py-5 font-bold text-white">{item.description}</td>
-                            <td className="px-6 py-5 text-slate-500">{item.brand}</td>
+                            <td className="px-6 py-5 font-bold text-white uppercase text-[11px]">{item.description}</td>
+                            <td className="px-6 py-5 text-slate-500 uppercase text-[10px] font-bold">{item.brand}</td>
                             <td className="px-6 py-5 text-center font-black">{item.quantity}</td>
-                            <td className="px-6 py-5 text-right">R$ {item.price.toFixed(2)}</td>
-                            <td className="px-6 py-5 text-right font-black text-white">R$ {(item.price * item.quantity).toFixed(2)}</td>
+                            <td className="px-6 py-5 text-right font-mono">R$ {item.price.toFixed(2)}</td>
+                            <td className="px-6 py-5 text-right font-black text-white font-mono">R$ {(item.price * item.quantity).toFixed(2)}</td>
                             <td className="px-6 py-5 text-right">
                               <button onClick={() => removeItem(item.id)} className="text-slate-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
                             </td>
@@ -476,10 +483,10 @@ const Oficina: React.FC = () => {
                               <option value="NOTA">Nota</option>
                             </select>
                           </td>
-                          <td className="px-4 py-4"><input placeholder="Descrição..." value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="w-full bg-transparent border-none text-[12px] font-bold focus:ring-0 text-white placeholder:text-slate-700" /></td>
-                          <td className="px-4 py-4"><input placeholder="Marca..." value={newItemBrand} onChange={e => setNewItemBrand(e.target.value)} className="w-full bg-transparent border-none text-[12px] focus:ring-0 text-white placeholder:text-slate-700" /></td>
+                          <td className="px-4 py-4"><input placeholder="Descrição..." value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="w-full bg-transparent border-none text-[11px] font-black uppercase focus:ring-0 text-white placeholder:text-slate-700" /></td>
+                          <td className="px-4 py-4"><input placeholder="Marca..." value={newItemBrand} onChange={e => setNewItemBrand(e.target.value)} className="w-full bg-transparent border-none text-[11px] font-bold uppercase focus:ring-0 text-white placeholder:text-slate-700" /></td>
                           <td className="px-4 py-4 text-center"><input type="number" value={newItemQty} onChange={e => setNewItemQty(e.target.value)} className="w-10 bg-transparent border-none text-[12px] font-black focus:ring-0 text-center text-white" /></td>
-                          <td className="px-4 py-4 text-right"><input placeholder="0.00" type="number" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} className="w-20 bg-transparent border-none text-[12px] font-black focus:ring-0 text-right text-violet-400" /></td>
+                          <td className="px-4 py-4 text-right"><input placeholder="0.00" type="number" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} className="w-20 bg-transparent border-none text-[12px] font-black focus:ring-0 text-right text-violet-400 font-mono" /></td>
                           <td className="px-4 py-4 text-right">
                              <button onClick={addItemInline} className="p-2 bg-violet-600 text-white rounded-lg hover:bg-violet-500 transition-all shadow-lg"><Plus size={16} strokeWidth={4} /></button>
                           </td>
@@ -491,7 +498,7 @@ const Oficina: React.FC = () => {
 
                   <div className="bg-[#0f1115] p-6 rounded-2xl border border-white/5 space-y-4">
                      <div className="flex items-center gap-3 text-slate-400">
-                        <FileText size={18} />
+                        <FileText size={18} className="text-violet-500" />
                         <h4 className="text-[10px] font-black uppercase tracking-widest">Observações Técnicas</h4>
                      </div>
                      <textarea 
@@ -503,7 +510,7 @@ const Oficina: React.FC = () => {
                           setOrders(updated);
                           localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
                         }}
-                        className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/20 h-28 resize-none"
+                        className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/20 h-28 resize-none font-medium"
                      />
                   </div>
                </div>
@@ -528,14 +535,14 @@ const Oficina: React.FC = () => {
                       ))}
                       <button onClick={() => fileInputRef.current?.click()} className="aspect-square bg-black/40 border-2 border-dashed border-white/5 rounded-xl flex flex-col items-center justify-center text-slate-700 hover:text-violet-500 transition-all">
                         <ImagePlus size={32} />
-                        <span className="text-[8px] font-black uppercase mt-2">Anexar</span>
+                        <span className="text-[8px] font-black uppercase mt-2 tracking-widest">Anexar</span>
                         <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
                       </button>
                     </div>
                   </div>
                   <div className="p-5 bg-red-600/5 rounded-2xl border border-red-500/10 space-y-4">
                      <button onClick={deleteOS} className="w-full py-3 bg-red-600/10 text-red-500 font-black rounded-xl uppercase text-[9px] tracking-widest border border-red-500/10 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2">
-                       <Trash size={14} /> Excluir Registro Permanente
+                       <Trash size={14} /> Excluir O.S. Permanente
                      </button>
                   </div>
                </div>
@@ -555,15 +562,15 @@ const Oficina: React.FC = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Cliente</label>
-                    <input required value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20" />
+                    <input required value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 font-bold uppercase" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp</label>
-                    <input required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20" />
+                    <input required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 font-mono" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Veículo</label>
-                    <input required value={formData.vehicle} onChange={e => setFormData({...formData, vehicle: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20" />
+                    <input required value={formData.vehicle} onChange={e => setFormData({...formData, vehicle: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 font-bold uppercase" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Placa</label>
@@ -572,7 +579,7 @@ const Oficina: React.FC = () => {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Descrição do Problema</label>
-                  <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 resize-none" />
+                  <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 resize-none font-medium" />
                 </div>
                 <button type="submit" className="w-full py-5 bg-white text-black font-black rounded-2xl hover:bg-slate-200 transition-all uppercase tracking-[0.2em] text-xs shadow-xl active:scale-95">Gerar Ordem de Serviço</button>
               </form>

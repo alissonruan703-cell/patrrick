@@ -84,7 +84,7 @@ const Catalog: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0f1115] overflow-hidden">
       
-      {/* 1. Hero Section - Design de Impacto */}
+      {/* 1. Hero Section */}
       <section className="relative h-[90vh] flex items-center justify-center px-6 lg:px-20">
         <div className="absolute inset-0 z-0">
           <img 
@@ -104,7 +104,9 @@ const Catalog: React.FC = () => {
 
           <div className="flex flex-col items-center">
              {config.companyLogo && (
-               <img src={config.companyLogo} alt="Logo Empresa" className="w-24 h-24 mb-6 rounded-2xl object-cover shadow-2xl border border-white/10" />
+               <div className="h-20 w-auto px-4 py-2 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mb-6 shadow-2xl">
+                 <img src={config.companyLogo} alt="Logo Empresa" className="h-full w-auto object-contain max-w-[200px]" />
+               </div>
              )}
             <h1 className="text-6xl sm:text-8xl md:text-[8rem] font-black text-white leading-[0.85] tracking-tighter uppercase break-words px-4">
               {config.companyName.split(' ')[0]}<br/>
@@ -191,19 +193,23 @@ const Catalog: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Footer Reorganizado */}
+      {/* 4. Footer */}
       <footer className="mt-20 px-12 py-32 border-t border-white/5 bg-black/40">
         <div className="max-w-7xl mx-auto flex flex-col items-center space-y-16">
           <div className="flex flex-col items-center gap-6">
-            <div className="flex items-center gap-4 text-5xl font-black text-white">
+            <div className="flex items-center gap-6">
               {config.companyLogo ? (
-                <img src={config.companyLogo} className="w-16 h-16 rounded-xl object-cover" alt="Logo" />
+                <div className="h-12 w-auto px-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
+                  <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[150px]" alt="Logo" />
+                </div>
               ) : (
                 <div className="bg-violet-600 p-2.5 rounded-xl shadow-2xl shadow-violet-600/40">
                   <Plus className="text-white" size={32} strokeWidth={4} />
                 </div>
               )}
-              {config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || '+'}</span>
+              <div className="text-5xl font-black text-white tracking-tighter uppercase">
+                {config.companyName.split(' ')[0]}<span className="text-violet-500 ml-1">{config.companyName.split(' ').slice(1).join(' ') || '+'}</span>
+              </div>
             </div>
             <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px]">Management Intelligence Platform</p>
           </div>

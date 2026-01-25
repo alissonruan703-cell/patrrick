@@ -51,21 +51,24 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#0f1115]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
-      <div className="flex items-center gap-10">
-        <Link to="/" className="flex items-center gap-2.5">
+      <div className="flex items-center gap-6">
+        <Link to="/" className="flex items-center gap-4 group">
           {config.companyLogo ? (
-            <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center p-2 transition-all">
-              <img src={config.companyLogo} className="max-w-full max-h-full object-contain" alt="Logo" />
+            <div className="h-10 w-auto min-w-[40px] px-2 rounded-lg overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center transition-all group-hover:border-violet-500/50">
+              <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[120px]" alt="Logo" />
             </div>
           ) : (
             <div className="bg-violet-600 p-2 rounded-xl shadow-xl shadow-violet-600/30">
               <Plus size={16} className="text-white" strokeWidth={4} />
             </div>
           )}
-          <span className="text-xl font-black tracking-tighter text-white uppercase">{config.companyName.split(' ')[0]}<span className="text-violet-500">{config.companyName.split(' ').slice(1).join(' ') || ''}</span></span>
+          <span className="text-xl font-black tracking-tighter text-white uppercase group-hover:text-violet-400 transition-colors">
+            {config.companyName.split(' ')[0]}
+            <span className="text-violet-500 ml-1">{config.companyName.split(' ').slice(1).join(' ') || ''}</span>
+          </span>
         </Link>
         
-        <div className="hidden lg:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-8 ml-6">
           {navItems.map((item) => (
             <Link 
               key={item.path} 
