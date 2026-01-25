@@ -54,8 +54,8 @@ const Navbar = () => {
       <div className="flex items-center gap-6">
         <Link to="/" className="flex items-center gap-4 group">
           {config.companyLogo ? (
-            <div className="h-10 w-auto min-w-[40px] px-2 rounded-lg overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center transition-all group-hover:border-violet-500/50">
-              <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[120px]" alt="Logo" />
+            <div className="h-10 w-auto flex items-center justify-center transition-all group-hover:scale-110 duration-500 bg-transparent">
+              <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[150px]" alt="Logo" />
             </div>
           ) : (
             <div className="bg-violet-600 p-2 rounded-xl shadow-xl shadow-violet-600/30">
@@ -85,7 +85,7 @@ const Navbar = () => {
       <div className="flex items-center gap-6 text-white">
         <div className="hidden md:flex items-center gap-4 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
           <Search size={14} className="text-slate-500" />
-          <input placeholder="Buscar..." className="bg-transparent border-none outline-none text-[9px] font-black uppercase tracking-widest w-20 focus:w-32 transition-all" />
+          <input placeholder="BUSCAR..." className="bg-transparent border-none outline-none text-[9px] font-black uppercase tracking-widest w-20 focus:w-32 transition-all" />
         </div>
         <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-[9px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">ADM</div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden">

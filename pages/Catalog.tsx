@@ -104,8 +104,8 @@ const Catalog: React.FC = () => {
 
           <div className="flex flex-col items-center">
              {config.companyLogo && (
-               <div className="h-20 w-auto px-4 py-2 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mb-6 shadow-2xl">
-                 <img src={config.companyLogo} alt="Logo Empresa" className="h-full w-auto object-contain max-w-[200px]" />
+               <div className="h-24 w-auto flex items-center justify-center mb-10 animate-in slide-in-from-top duration-1000 transition-transform hover:scale-105 bg-transparent">
+                 <img src={config.companyLogo} alt="Logo Empresa" className="h-full w-auto object-contain max-w-[320px]" />
                </div>
              )}
             <h1 className="text-6xl sm:text-8xl md:text-[8rem] font-black text-white leading-[0.85] tracking-tighter uppercase break-words px-4">
@@ -197,10 +197,10 @@ const Catalog: React.FC = () => {
       <footer className="mt-20 px-12 py-32 border-t border-white/5 bg-black/40">
         <div className="max-w-7xl mx-auto flex flex-col items-center space-y-16">
           <div className="flex flex-col items-center gap-6">
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-10">
               {config.companyLogo ? (
-                <div className="h-12 w-auto px-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-                  <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[150px]" alt="Logo" />
+                <div className="h-16 w-auto flex items-center justify-center bg-transparent">
+                  <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[220px]" alt="Logo" />
                 </div>
               ) : (
                 <div className="bg-violet-600 p-2.5 rounded-xl shadow-2xl shadow-violet-600/40">
@@ -211,7 +211,7 @@ const Catalog: React.FC = () => {
                 {config.companyName.split(' ')[0]}<span className="text-violet-500 ml-1">{config.companyName.split(' ').slice(1).join(' ') || '+'}</span>
               </div>
             </div>
-            <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px]">Management Intelligence Platform</p>
+            <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px]">MANAGEMENT INTELLIGENCE PLATFORM</p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-12 md:gap-24 text-sm font-black text-slate-500 uppercase tracking-[0.2em]">

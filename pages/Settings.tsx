@@ -52,9 +52,9 @@ const Settings: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
         <div className="md:col-span-1 space-y-6">
            <div className="bg-[#1a1d23] border border-white/5 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
-              <div className="relative group mx-auto w-40 h-40">
+              <div className="relative group mx-auto w-44 h-44">
                 {config.companyLogo ? (
-                   <div className="w-full h-full bg-white/5 rounded-2xl border-2 border-violet-500/30 flex items-center justify-center overflow-hidden p-2">
+                   <div className="w-full h-full flex items-center justify-center overflow-hidden bg-transparent">
                       <img src={config.companyLogo} className="w-full h-full object-contain" alt="Empresa Logo" />
                    </div>
                 ) : (
@@ -72,7 +72,7 @@ const Settings: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-white font-black uppercase text-xs tracking-widest">Logo da Empresa</h3>
-                <p className="text-[10px] text-slate-500 mt-2 font-bold leading-relaxed uppercase">Recomendado: Logos com fundo transparente (PNG)</p>
+                <p className="text-[10px] text-slate-500 mt-2 font-bold leading-relaxed uppercase">Logo transparente é o formato recomendado para este layout.</p>
               </div>
               {config.companyLogo && (
                 <button 
@@ -92,18 +92,18 @@ const Settings: React.FC = () => {
                 <input 
                   value={config.companyName}
                   onChange={e => setConfig({...config, companyName: e.target.value})}
-                  placeholder="Ex: Oficina Mecânica do Zé"
+                  placeholder="Ex: Tracbel S/A"
                   className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
                 />
               </div>
 
               <div className="h-px bg-white/5" />
 
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-400 font-medium">As alterações afetam o Dashboard, Navbar e Orçamentos públicos.</p>
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <p className="text-xs text-slate-400 font-medium">Configurações globais de identidade visual.</p>
                 <button 
                   onClick={handleSave}
-                  className="px-10 py-4 bg-violet-600 text-white font-black rounded-2xl uppercase text-xs tracking-widest hover:bg-violet-500 transition-all flex items-center gap-3 shadow-xl shadow-violet-600/20"
+                  className="w-full md:w-auto px-10 py-4 bg-violet-600 text-white font-black rounded-2xl uppercase text-xs tracking-widest hover:bg-violet-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-violet-600/20"
                 >
                   {saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
                   {saved ? 'Salvo!' : 'Salvar Alterações'}
@@ -113,10 +113,10 @@ const Settings: React.FC = () => {
 
            <div className="p-8 bg-blue-600/5 border border-blue-500/10 rounded-3xl space-y-4">
               <h4 className="text-blue-400 font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
-                 <Info size={14} /> Dica de Branding
+                 <Info size={14} /> Transparência Nativa
               </h4>
               <p className="text-slate-400 text-xs leading-relaxed">
-                Utilize nomes curtos e impactantes. Se o nome tiver mais de uma palavra, a primeira será destacada no logo dinâmico da Navbar.
+                O sistema foi otimizado para integrar logos transparentes (PNG) diretamente sobre o fundo escuro, removendo bordas e containers delimitadores para um visual mais premium.
               </p>
            </div>
         </div>

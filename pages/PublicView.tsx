@@ -128,10 +128,10 @@ const PublicView: React.FC = () => {
         <div className="p-8 border-b border-white/5 bg-gradient-to-br from-[#22272e] to-[#1a1d23] print:bg-none print:border-slate-200">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4">
-               <div className="flex items-center gap-4 mb-4">
+               <div className="flex items-center gap-6 mb-4">
                 {logo ? (
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center p-2 shadow-xl">
-                    <img src={logo} className="max-w-full max-h-full object-contain" alt="Logo Empresa" />
+                  <div className="h-16 w-auto flex items-center justify-center transition-all">
+                    <img src={logo} className="h-full w-auto object-contain max-w-[200px]" alt="Logo Empresa" />
                   </div>
                 ) : (
                   <div className="bg-violet-600 w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-xl shadow-violet-600/30">
