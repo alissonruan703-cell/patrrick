@@ -52,9 +52,11 @@ const Settings: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
         <div className="md:col-span-1 space-y-6">
            <div className="bg-[#1a1d23] border border-white/5 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
-              <div className="relative group mx-auto w-32 h-32">
+              <div className="relative group mx-auto w-40 h-40">
                 {config.companyLogo ? (
-                   <img src={config.companyLogo} className="w-full h-full object-cover rounded-2xl border-2 border-violet-500/30" alt="Empresa Logo" />
+                   <div className="w-full h-full bg-white/5 rounded-2xl border-2 border-violet-500/30 flex items-center justify-center overflow-hidden p-2">
+                      <img src={config.companyLogo} className="w-full h-full object-contain" alt="Empresa Logo" />
+                   </div>
                 ) : (
                    <div className="w-full h-full bg-black/40 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center text-slate-700">
                       <Building2 size={48} />
@@ -70,7 +72,7 @@ const Settings: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-white font-black uppercase text-xs tracking-widest">Logo da Empresa</h3>
-                <p className="text-[10px] text-slate-500 mt-2 font-bold leading-relaxed uppercase">Recomendado: Imagem Quadrada 512x512px</p>
+                <p className="text-[10px] text-slate-500 mt-2 font-bold leading-relaxed uppercase">Recomendado: Logos com fundo transparente (PNG)</p>
               </div>
               {config.companyLogo && (
                 <button 

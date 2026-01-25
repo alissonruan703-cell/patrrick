@@ -78,6 +78,9 @@ const PublicView: React.FC = () => {
     );
   };
 
+  const companyName = os.companyName || 'CRMPlus+';
+  const companyLogo = os.companyLogo || '';
+
   return (
     <div className="min-h-screen bg-[#0f1115] p-4 lg:p-20 text-slate-200 print:bg-white print:p-0">
       <div className="max-w-4xl mx-auto bg-[#1a1d23] rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden print:shadow-none print:border-none print:bg-white print:text-black">
@@ -93,9 +96,18 @@ const PublicView: React.FC = () => {
         <div className="p-10 border-b border-white/5 bg-gradient-to-br from-[#22272e] to-[#1a1d23] print:bg-none print:border-slate-200">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4">
-               <div className="flex items-center gap-2 mb-6">
-                <div className="bg-violet-600 p-2 rounded-lg print:hidden"><Plus size={20} className="text-white" /></div>
-                <span className="text-xl font-black text-white print:text-black">CRM<span className="text-violet-500">Plus+</span></span>
+               <div className="flex items-center gap-4 mb-6">
+                {companyLogo ? (
+                   <div className="bg-white/5 p-1 rounded-xl border border-white/10 w-16 h-16 flex items-center justify-center overflow-hidden print:border-slate-200">
+                      <img src={companyLogo} alt="Logo" className="w-full h-full object-contain" />
+                   </div>
+                ) : (
+                   <div className="bg-violet-600 p-2 rounded-lg print:hidden"><Plus size={20} className="text-white" /></div>
+                )}
+                <span className="text-2xl font-black text-white print:text-black uppercase tracking-tighter">
+                  {companyName.split(' ')[0]}
+                  <span className="text-violet-500">{companyName.split(' ').slice(1).join(' ') || '+'}</span>
+                </span>
                </div>
                <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none print:text-black">Orçamento de Serviço <br/><span className="text-violet-500 text-2xl tracking-normal">Documento O.S. #{os.id}</span></h1>
                <div className="flex items-center gap-4 text-slate-400 font-bold text-xs">
@@ -197,7 +209,7 @@ const PublicView: React.FC = () => {
           </div>
         </div>
       </div>
-      <p className="mt-8 text-center text-[10px] text-slate-700 uppercase tracking-[0.5em] font-black print:hidden">Excelência e Transparência • Plataforma CRMPlus+</p>
+      <p className="mt-8 text-center text-[10px] text-slate-700 uppercase tracking-[0.5em] font-black print:hidden">Excelência e Transparência • Plataforma {companyName}</p>
     </div>
   );
 };

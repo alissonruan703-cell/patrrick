@@ -7,7 +7,7 @@ import {
   ImagePlus, Trash, History, LayoutGrid, CheckCircle2,
   Settings, Briefcase, Box, Tag, Filter, Calendar, FileText, ArrowLeft
 } from 'lucide-react';
-import { ServiceOrder, ServiceItem } from '../types';
+import { ServiceOrder, ServiceItem, SystemConfig } from '../types';
 
 type OficinaTab = 'ativos' | 'historico' | 'nova';
 
@@ -34,20 +34,22 @@ const Oficina: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ companyName: 'CRMPlus+', companyLogo: '' });
 
-  // Carrega dados iniciais e escuta mudanças em outras abas (Ex: Aprovação do Cliente)
   useEffect(() => {
-    const loadOrders = () => {
-      const saved = localStorage.getItem('crmplus_oficina_orders');
-      if (saved) setOrders(JSON.parse(saved));
+    const loadData = () => {
+      const savedOrders = localStorage.getItem('crmplus_oficina_orders');
+      if (savedOrders) setOrders(JSON.parse(savedOrders));
+      
+      const savedConfig = localStorage.getItem('crmplus_system_config');
+      if (savedConfig) setSystemConfig(JSON.parse(savedConfig));
     };
 
-    loadOrders();
+    loadData();
 
-    // Sincronização entre abas (Instantânea)
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'crmplus_oficina_orders') {
-        loadOrders();
+      if (e.key === 'crmplus_oficina_orders' || e.key === 'crmplus_system_config') {
+        loadData();
       }
     };
 
@@ -55,7 +57,6 @@ const Oficina: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Atualiza a O.S. selecionada se os dados mudarem externamente
   useEffect(() => {
     if (selectedOS) {
       const updated = orders.find(o => o.id === selectedOS.id);
@@ -65,7 +66,6 @@ const Oficina: React.FC = () => {
     }
   }, [orders, selectedOS]);
 
-  // Salva no localStorage sempre que houver mudança local
   useEffect(() => {
     localStorage.setItem('crmplus_oficina_orders', JSON.stringify(orders));
   }, [orders]);
@@ -197,7 +197,10 @@ const Oficina: React.FC = () => {
       observation: selectedOS.observation || '',
       items: selectedOS.items,
       total: selectedOS.total,
-      date: selectedOS.createdAt
+      date: selectedOS.createdAt,
+      // Incluindo branding da empresa no link
+      companyName: systemConfig.companyName,
+      companyLogo: systemConfig.companyLogo
     };
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
     const baseUrl = window.location.href.split('#')[0];
