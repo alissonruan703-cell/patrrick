@@ -8,7 +8,8 @@ export interface ServiceItem {
   id: string;
   type: 'PEÇA' | 'MÃO DE OBRA' | 'NOTA';
   description: string;
-  quantity: number;
+  brand: string; // Nova coluna
+  quantity: number; // Nova coluna
   price: number;
   timestamp: string;
 }

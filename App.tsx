@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -9,95 +9,108 @@ import {
   Menu, 
   X,
   Lock,
-  Plus
+  Plus,
+  Search,
+  Bell,
+  User
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
 import LockedModule from './pages/LockedModule';
 import PublicView from './pages/PublicView';
 
-const Sidebar = ({ isOpen, toggle }: { isOpen: boolean, toggle: () => void }) => {
+const Navbar = () => {
   const location = useLocation();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (location.pathname.startsWith('/v/')) return null;
 
   const navItems = [
-    { name: 'Navegar', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: 'Minha Oficina', path: '/oficina', icon: <Wrench size={20} /> },
-    { name: 'Orçamentos', path: '/orcamento', icon: <FileText size={20} />, locked: true },
-    { name: 'Restaurante', path: '/restaurante', icon: <Utensils size={20} />, locked: true },
+    { name: 'Início', path: '/' },
+    { name: 'Oficina', path: '/oficina' },
+    { name: 'Orçamentos', path: '/orcamento', locked: true },
+    { name: 'Restaurante', path: '/restaurante', locked: true },
   ];
 
   return (
-    <>
-      {isOpen && <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden" onClick={toggle} />}
-      <aside className={`fixed top-0 left-0 z-50 h-screen w-72 bg-[#0f1115] border-r border-white/5 transition-all duration-500 ease-in-out transform ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div className="flex items-center gap-2 p-8 mb-4">
-          <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-2 rounded-lg shadow-lg shadow-violet-500/20">
-            <Plus size={24} className="text-white" strokeWidth={3} />
+    <nav className={`fixed top-0 w-full z-50 transition-colors duration-500 flex items-center justify-between px-6 lg:px-12 py-4 ${isScrolled ? 'bg-[#0f1115]' : 'bg-gradient-to-b from-black/80 to-transparent'}`}>
+      <div className="flex items-center gap-8 lg:gap-12">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="bg-violet-600 p-1.5 rounded-lg shadow-lg shadow-violet-600/20">
+            <Plus size={20} className="text-white" strokeWidth={3} />
           </div>
-          <span className="text-2xl font-black tracking-tighter text-white">CRM<span className="text-violet-500">Plus+</span></span>
-        </div>
+          <span className="text-xl lg:text-2xl font-black tracking-tighter text-white">CRM<span className="text-violet-500">Plus+</span></span>
+        </Link>
         
-        <nav className="px-4 space-y-2">
+        <div className="hidden lg:flex items-center gap-6">
           {navItems.map((item) => (
             <Link 
               key={item.path} 
-              to={item.locked ? '#' : item.path} 
-              onClick={() => !item.locked && toggle()}
-              className={`group flex items-center justify-between px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 ${location.pathname === item.path ? 'bg-white/5 text-white shadow-[0_0_20px_rgba(139,92,246,0.1)] border border-white/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              to={item.locked ? '#' : item.path}
+              className={`text-sm font-bold transition-colors flex items-center gap-1.5 ${location.pathname === item.path ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              <div className="flex items-center gap-4">
-                <span className={`${location.pathname === item.path ? 'text-violet-500' : 'text-slate-500 group-hover:text-violet-400'}`}>{item.icon}</span>
-                {item.name}
-              </div>
-              {item.locked && <Lock size={14} className="opacity-20" />}
+              {item.name}
+              {item.locked && <Lock size={12} className="opacity-40" />}
             </Link>
           ))}
-        </nav>
-
-        <div className="absolute bottom-8 left-0 w-full px-8">
-          <div className="p-6 rounded-3xl bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 border border-white/5">
-            <p className="text-xs font-black text-violet-400 uppercase tracking-widest mb-2">Plano Pro</p>
-            <p className="text-[10px] text-slate-400 leading-relaxed mb-4">Acesso total às ferramentas de gestão inteligentes.</p>
-            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-              <div className="w-full h-full bg-violet-500"></div>
-            </div>
-          </div>
         </div>
-      </aside>
-    </>
+      </div>
+
+      <div className="flex items-center gap-6 text-white">
+        <Search size={20} className="hidden lg:block cursor-pointer hover:text-violet-500 transition-colors" />
+        <Bell size={20} className="hidden lg:block cursor-pointer hover:text-violet-500 transition-colors" />
+        <div className="w-8 h-8 rounded bg-violet-600 flex items-center justify-center text-xs font-bold shadow-lg">JS</div>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden">
+          <Menu size={28} />
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-[#0f1115] z-[60] p-8 flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-300">
+          <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-6 right-6 text-white">
+            <X size={32} />
+          </button>
+          {navItems.map((item) => (
+            <Link 
+              key={item.path} 
+              to={item.locked ? '#' : item.path}
+              onClick={() => !item.locked && setIsMobileMenuOpen(false)}
+              className={`text-2xl font-black ${location.pathname === item.path ? 'text-violet-500' : 'text-white'}`}
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+      )}
+    </nav>
   );
 };
 
 const App: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
   return (
     <HashRouter>
-      <div className="min-h-screen bg-[#0f1115] flex text-slate-200">
-        <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} />
-        <main className="flex-1 flex flex-col">
+      <div className="min-h-screen bg-[#0f1115] text-slate-200">
+        <Navbar />
+        <main className="pt-0">
           <Routes>
             <Route path="/v/:data" element={<PublicView />} />
             <Route path="/*" element={
-              <div className="lg:ml-72 flex-1">
-                <header className="lg:hidden p-6 border-b border-white/5 flex items-center justify-between bg-[#0f1115]">
-                   <div className="flex items-center gap-2">
-                    <div className="bg-violet-600 p-1.5 rounded-lg"><Plus size={18} className="text-white" /></div>
-                    <span className="font-black text-white">CRMPlus+</span>
-                   </div>
-                   <button onClick={toggleSidebar} className="text-white"><Menu size={28}/></button>
-                </header>
-                <div className="p-6 lg:p-12 animate-in fade-in duration-700">
-                  <Routes>
-                    <Route path="/" element={<Catalog />} />
-                    <Route path="/oficina/*" element={<Oficina />} />
-                    <Route path="/orcamento" element={<LockedModule name="Orçamento" />} />
-                    <Route path="/restaurante" element={<LockedModule name="Restaurante" />} />
-                  </Routes>
-                </div>
-              </div>
+              <Routes>
+                <Route path="/" element={<Catalog />} />
+                <Route path="/oficina/*" element={<Oficina />} />
+                <Route path="/orcamento" element={<LockedModule name="Orçamento" />} />
+                <Route path="/restaurante" element={<LockedModule name="Restaurante" />} />
+              </Routes>
             } />
           </Routes>
         </main>
