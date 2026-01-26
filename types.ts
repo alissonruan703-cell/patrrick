@@ -9,6 +9,13 @@ export interface SystemConfig {
   companyLogo: string;
 }
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  avatar: string;
+  pin: string;
+}
+
 export interface ServiceItem {
   id: string;
   type: 'PEÇA' | 'MÃO DE OBRA' | 'NOTA';

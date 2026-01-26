@@ -1,30 +1,39 @@
 
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { 
-  Plus, 
-  Search, 
-  Lock,
-  Menu,
-  X
+  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
 import LockedModule from './pages/LockedModule';
 import PublicView from './pages/PublicView';
 import Settings from './pages/Settings';
-import { SystemConfig } from './types';
+import AuthPages from './pages/AuthPages';
+import { SystemConfig, UserProfile } from './types';
 
-const Navbar = () => {
+// Componente para proteger rotas baseadas no login e perfil selecionado
+// Fix: Use React.FC to explicitly define children prop and avoid inference issues
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
+  const isProfileSelected = sessionStorage.getItem('crmplus_active_profile') !== null;
+  const isPinVerified = sessionStorage.getItem('crmplus_pin_verified') === 'true';
+
+  if (!isAccountLoggedIn) return <Navigate to="/login" replace />;
+  if (!isProfileSelected) return <Navigate to="/profiles" replace />;
+  if (!isPinVerified) return <Navigate to="/pin" replace />;
+
+  return <>{children}</>;
+};
+
+const Navbar = ({ activeProfile, onLogout }: { activeProfile: UserProfile | null, onLogout: () => void }) => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     const loadConfig = () => {
       const saved = localStorage.getItem('crmplus_system_config');
       if (saved) setConfig(JSON.parse(saved));
@@ -39,7 +48,10 @@ const Navbar = () => {
     };
   }, []);
 
-  if (location.pathname.startsWith('/v/')) return null;
+  if (location.pathname.startsWith('/v/') || 
+      location.pathname === '/login' || 
+      location.pathname === '/profiles' || 
+      location.pathname === '/pin') return null;
 
   const navItems = [
     { name: 'Dashboard', path: '/' },
@@ -54,8 +66,8 @@ const Navbar = () => {
       <div className="flex items-center gap-6">
         <Link to="/" className="flex items-center gap-4 group">
           {config.companyLogo ? (
-            <div className="h-10 w-auto flex items-center justify-center transition-all group-hover:scale-110 duration-500 bg-transparent">
-              <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[150px]" alt="Logo" />
+            <div className="h-10 w-auto flex items-center justify-center bg-transparent transition-transform group-hover:scale-105">
+              <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[120px]" alt="Logo" />
             </div>
           ) : (
             <div className="bg-violet-600 p-2 rounded-xl shadow-xl shadow-violet-600/30">
@@ -64,7 +76,6 @@ const Navbar = () => {
           )}
           <span className="text-xl font-black tracking-tighter text-white uppercase group-hover:text-violet-400 transition-colors">
             {config.companyName.split(' ')[0]}
-            <span className="text-violet-500 ml-1">{config.companyName.split(' ').slice(1).join(' ') || ''}</span>
           </span>
         </Link>
         
@@ -82,22 +93,26 @@ const Navbar = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-6 text-white">
-        <div className="hidden md:flex items-center gap-4 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
-          <Search size={14} className="text-slate-500" />
-          <input placeholder="BUSCAR..." className="bg-transparent border-none outline-none text-[9px] font-black uppercase tracking-widest w-20 focus:w-32 transition-all" />
+      <div className="flex items-center gap-4 sm:gap-6 text-white">
+        <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full">
+           <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20">
+              <img src={activeProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin'} className="w-full h-full" alt="Perfil" />
+           </div>
+           <span className="text-[10px] font-black uppercase tracking-widest">{activeProfile?.name}</span>
         </div>
-        <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-[9px] font-black shadow-2xl shadow-violet-600/20 cursor-pointer border border-white/10 hover:scale-110 transition-transform uppercase">ADM</div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden">
-          <Menu size={20} />
+        
+        <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all">
+          <LogOut size={16} />
+        </button>
+
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden text-white">
+          <Menu size={24} />
         </button>
       </div>
 
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-[#0f1115] z-[60] p-8 flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-500">
-          <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8 text-white">
-            <X size={32} />
-          </button>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8 text-white"><X size={32} /></button>
           {navItems.map((item) => (
             <Link 
               key={item.path} 
@@ -115,21 +130,39 @@ const Navbar = () => {
 };
 
 const App: React.FC = () => {
+  const [activeProfile, setActiveProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem('crmplus_active_profile');
+    if (saved) setActiveProfile(JSON.parse(saved));
+  }, []);
+
+  const handleLogout = () => {
+    sessionStorage.clear();
+    setActiveProfile(null);
+    window.location.href = '/';
+  };
+
   return (
     <HashRouter>
       <div className="min-h-screen bg-[#0f1115] text-slate-200 selection:bg-violet-600/30 selection:text-violet-400">
-        <Navbar />
+        <Navbar activeProfile={activeProfile} onLogout={handleLogout} />
         <main>
           <Routes>
+            <Route path="/login" element={<AuthPages.Login />} />
+            <Route path="/profiles" element={<AuthPages.ProfileSelector onProfileSelect={setActiveProfile} />} />
+            <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
             <Route path="/v/:data" element={<PublicView />} />
             <Route path="/*" element={
-              <Routes>
-                <Route path="/" element={<Catalog />} />
-                <Route path="/oficina/*" element={<Oficina />} />
-                <Route path="/orcamento" element={<LockedModule name="Vendas" />} />
-                <Route path="/restaurante" element={<LockedModule name="Gastro Hub" />} />
-                <Route path="/config" element={<Settings />} />
-              </Routes>
+              <ProtectedRoute>
+                <Routes>
+                  <Route path="/" element={<Catalog />} />
+                  <Route path="/oficina/*" element={<Oficina />} />
+                  <Route path="/orcamento" element={<LockedModule name="Vendas" />} />
+                  <Route path="/restaurante" element={<LockedModule name="Gastro Hub" />} />
+                  <Route path="/config" element={<Settings />} />
+                </Routes>
+              </ProtectedRoute>
             } />
           </Routes>
         </main>
