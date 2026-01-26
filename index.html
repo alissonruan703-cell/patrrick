@@ -4,31 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRMPLUS</title>
+    <title>CRMPlus+ | Conexão e Resultados</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #0f1115;
-            color: #f8fafc;
+            background-color: #050505;
+            color: #e2e8f0; /* slate-200 base */
             overflow-x: hidden;
             width: 100vw;
         }
         #root { min-height: 100vh; }
         
-        /* Barra de rolagem ultra-fina para evitar que o site "pule" */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #0f1115; }
-        ::-webkit-scrollbar-thumb { 
-            background: #2d3748; 
-            border-radius: 20px;
-        }
-        ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
-        
         html { 
             scroll-behavior: smooth;
-            overflow-y: overlay; /* Faz a scrollbar ficar por cima do conteúdo em navegadores suportados */
+            scrollbar-gutter: stable;
+            overflow-y: overlay;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #00f0ff, #8b5cf6, #d946ef);
+            border-radius: 10px;
+            border: 2px solid #050505;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .neon-text-cyan {
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        input::placeholder {
+            color: rgba(148, 163, 184, 0.4);
         }
     </style>
 <script type="importmap">
@@ -44,7 +62,7 @@
 }
 </script>
 </head>
-<body class="selection:bg-violet-500 selection:text-white">
+<body class="selection:bg-cyan-500/40 selection:text-white">
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
 </body>

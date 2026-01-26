@@ -2,9 +2,9 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Plus, Search, X, Send, Trash2,
-  ImagePlus, Trash, Filter, Calendar, FileText, ArrowLeft, ChevronDown
+  ImagePlus, Trash, Filter, Calendar, FileText, ArrowLeft, ChevronDown, Zap
 } from 'lucide-react';
-import { ServiceOrder, ServiceItem, SystemConfig } from '../types';
+import { ServiceOrder, ServiceItem, SystemConfig, UserProfile, LogEntry } from '../types';
 
 type OficinaTab = 'ativos' | 'historico' | 'nova';
 
@@ -13,575 +13,103 @@ const Oficina: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('Todos');
   const [view, setView] = useState<'lista' | 'detalhes'>('lista');
   const [selectedOS, setSelectedOS] = useState<ServiceOrder | null>(null);
+  const [activeProfile, setActiveProfile] = useState<UserProfile | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterPlate, setFilterPlate] = useState('');
-  const [filterDateStart, setFilterDateStart] = useState('');
-  const [filterDateEnd, setFilterDateEnd] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  
-  const [newItemType, setNewItemType] = useState<'PEÇA' | 'MÃO DE OBRA' | 'NOTA'>('PEÇA');
-  const [newItemDesc, setNewItemDesc] = useState('');
-  const [newItemBrand, setNewItemBrand] = useState('');
-  const [newItemQty, setNewItemQty] = useState('1');
-  const [newItemPrice, setNewItemPrice] = useState('');
-
-  const [formData, setFormData] = useState({ clientName: '', plate: '', vehicle: '', phone: '', description: '' });
-  const [osPhotos, setOsPhotos] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
-  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
 
-  const statusOptions: ServiceOrder['status'][] = ['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'];
+  const addLog = (action: string, details: string) => {
+    if (!activeProfile) return;
+    const logs = JSON.parse(localStorage.getItem('crmplus_logs') || '[]');
+    const newLog: LogEntry = { id: Date.now().toString(), timestamp: new Date().toLocaleString(), userId: activeProfile.id, userName: activeProfile.name, action, details, system: 'OFICINA' };
+    localStorage.setItem('crmplus_logs', JSON.stringify([newLog, ...logs].slice(0, 1000)));
+  };
 
   const loadData = () => {
     const savedOrders = localStorage.getItem('crmplus_oficina_orders');
-    if (savedOrders) {
-      const parsed = JSON.parse(savedOrders);
-      if (JSON.stringify(parsed) !== JSON.stringify(orders)) {
-        setOrders(parsed);
-      }
-    }
-    
-    const savedConfig = localStorage.getItem('crmplus_system_config');
-    if (savedConfig) setSystemConfig(JSON.parse(savedConfig));
+    if (savedOrders) setOrders(JSON.parse(savedOrders));
+    const savedProfile = sessionStorage.getItem('crmplus_active_profile');
+    if (savedProfile) setActiveProfile(JSON.parse(savedProfile));
   };
 
-  useEffect(() => {
-    loadData();
-
-    const handleSync = () => {
-      loadData();
-    };
-
-    window.addEventListener('storage', handleSync);
-    window.addEventListener('crmplus_update', handleSync);
-    
-    return () => {
-      window.removeEventListener('storage', handleSync);
-      window.removeEventListener('crmplus_update', handleSync);
-    };
-  }, [orders]);
-
-  useEffect(() => {
-    if (selectedOS) {
-      const updated = orders.find(o => o.id === selectedOS.id);
-      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedOS)) {
-        setSelectedOS(updated);
-      }
-    }
-  }, [orders, selectedOS]);
-
-  const updateOrderStatus = (orderId: string, newStatus: ServiceOrder['status']) => {
-    const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
-    setOrders(updated);
-    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('crmplus_update'));
-  };
+  useEffect(() => { loadData(); }, []);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
-      const matchesSearch = o.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           o.plate.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesPlate = filterPlate ? o.plate.toLowerCase().includes(filterPlate.toLowerCase()) : true;
-
-      let matchesDate = true;
-      if (filterDateStart || filterDateEnd) {
-        const [day, month, year] = o.createdAt.split('/').map(Number);
-        const orderDate = new Date(year, month - 1, day);
-        
-        if (filterDateStart) {
-          const start = new Date(filterDateStart);
-          if (orderDate < start) matchesDate = false;
-        }
-        if (filterDateEnd) {
-          const end = new Date(filterDateEnd);
-          if (orderDate > end) matchesDate = false;
-        }
-      }
-      
+      const matchesSearch = o.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || o.plate.toLowerCase().includes(searchTerm.toLowerCase());
       const isHistory = o.status === 'Entregue' || o.status === 'Reprovado';
-      
       if (statusFilter !== 'Todos' && o.status !== statusFilter) return false;
-
-      if (activeTab === 'ativos') {
-        if (isHistory) return false;
-      } else {
-        if (!isHistory) return false;
-      }
-      
-      return matchesSearch && matchesPlate && matchesDate;
-    }).sort((a, b) => {
-      const dateA = new Date(a.createdAt.split('/').reverse().join('-'));
-      const dateB = new Date(b.createdAt.split('/').reverse().join('-'));
-      return dateB.getTime() - dateA.getTime();
+      if (activeTab === 'ativos') { if (isHistory) return false; } else { if (!isHistory) return false; }
+      return matchesSearch;
     });
-  }, [orders, searchTerm, activeTab, statusFilter, filterPlate, filterDateStart, filterDateEnd]);
-
-  const handleCreateOS = (e: React.FormEvent) => {
-    e.preventDefault();
-    const nova: ServiceOrder = {
-      id: (Math.floor(Math.random() * 9000) + 1000).toString(),
-      ...formData,
-      status: 'Aberto',
-      createdAt: new Date().toLocaleDateString('pt-BR'),
-      total: 0,
-      items: [],
-      observation: '',
-      photos: osPhotos
-    };
-    const updated = [nova, ...orders];
-    setOrders(updated);
-    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
-    setFormData({ clientName: '', plate: '', vehicle: '', phone: '', description: '' });
-    setOsPhotos([]);
-    setActiveTab('ativos');
-    setView('lista');
-  };
-
-  const addItemInline = () => {
-    if (!selectedOS || !newItemDesc) return;
-    const qty = parseFloat(newItemQty) || 1;
-    const price = parseFloat(newItemPrice) || 0;
-    
-    const item: ServiceItem = {
-      id: Date.now().toString(),
-      type: newItemType,
-      description: newItemDesc,
-      brand: newItemBrand || '-',
-      quantity: qty,
-      price: price,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    
-    const updatedItems = [...selectedOS.items, item];
-    const updatedTotal = updatedItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-    
-    const updatedOrder = { ...selectedOS, items: updatedItems, total: updatedTotal };
-    const allUpdated = orders.map(o => o.id === selectedOS.id ? updatedOrder : o);
-    
-    setOrders(allUpdated);
-    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(allUpdated));
-    setSelectedOS(updatedOrder);
-    
-    setNewItemDesc('');
-    setNewItemBrand('');
-    setNewItemQty('1');
-    setNewItemPrice('');
-  };
-
-  const removeItem = (id: string) => {
-    if (!selectedOS) return;
-    const updatedItems = selectedOS.items.filter(i => i.id !== id);
-    const updatedTotal = updatedItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-    const updatedOrder = { ...selectedOS, items: updatedItems, total: updatedTotal };
-    const allUpdated = orders.map(o => o.id === selectedOS.id ? updatedOrder : o);
-    
-    setOrders(allUpdated);
-    localStorage.setItem('crmplus_oficina_orders', JSON.stringify(allUpdated));
-    setSelectedOS(updatedOrder);
-  };
-
-  const deleteOS = () => {
-    if (!selectedOS) return;
-    if (window.confirm("Deseja deletar permanentemente esta O.S.?")) {
-      const targetId = selectedOS.id;
-      const updated = orders.filter(o => o.id !== targetId);
-      setOrders(updated);
-      localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
-      setSelectedOS(null);
-      setView('lista');
-    }
-  };
-
-  const generateShareLink = () => {
-    if (!selectedOS) return "";
-    const data = {
-      i: selectedOS.id,
-      n: selectedOS.clientName,
-      v: selectedOS.vehicle,
-      p: selectedOS.plate,
-      d: selectedOS.description,
-      o: selectedOS.observation || '',
-      it: selectedOS.items.map(item => ({
-        t: item.type[0], 
-        d: item.description,
-        b: item.brand,
-        q: item.quantity,
-        p: item.price
-      })),
-      t: selectedOS.total,
-      dt: selectedOS.createdAt,
-      cn: systemConfig.companyName
-    };
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-    const baseUrl = window.location.href.split('#')[0];
-    return `${baseUrl}#/v/${encoded}`;
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      if (view === 'detalhes' && selectedOS) {
-        const updatedPhotos = [...(selectedOS.photos || []), base64String];
-        const updatedOrder = { ...selectedOS, photos: updatedPhotos };
-        const allUpdated = orders.map(o => o.id === selectedOS.id ? updatedOrder : o);
-        setOrders(allUpdated);
-        localStorage.setItem('crmplus_oficina_orders', JSON.stringify(allUpdated));
-        setSelectedOS(updatedOrder);
-      } else if (activeTab === 'nova') {
-        setOsPhotos(prev => [...prev, base64String]);
-      }
-    };
-    reader.readAsDataURL(file);
-    if (e.target) e.target.value = '';
-  };
+  }, [orders, searchTerm, activeTab, statusFilter]);
 
   const getStatusClasses = (status: ServiceOrder['status']) => {
     switch(status) {
-      case 'Orçamento': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30 ring-yellow-500/20';
-      case 'Execução': return 'bg-blue-500/10 text-blue-500 border-blue-500/30 ring-blue-500/20';
-      case 'Pronto': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 ring-emerald-500/20';
-      case 'Reprovado': return 'bg-red-500/10 text-red-500 border-red-500/30 ring-red-500/20';
-      case 'Entregue': return 'bg-slate-500/10 text-slate-500 border-slate-500/30 ring-slate-500/20';
-      default: return 'bg-violet-500/10 text-violet-500 border-violet-500/30 ring-violet-500/20';
+      case 'Orçamento': return 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.2)]';
+      case 'Execução': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.2)]';
+      case 'Pronto': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.2)]';
+      case 'Reprovado': return 'bg-red-500/20 text-red-400 border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
+      case 'Entregue': return 'bg-slate-500/20 text-slate-300 border-slate-500/40';
+      default: return 'bg-violet-500/20 text-violet-400 border-violet-500/40';
     }
   };
 
   return (
-    <div className="pt-24 px-4 sm:px-6 lg:px-10 max-w-screen-2xl mx-auto space-y-6 animate-in fade-in duration-700 text-[13px] pb-10">
+    <div className="pt-24 px-6 lg:px-12 max-w-screen-2xl mx-auto space-y-10 animate-in fade-in duration-700 text-[13px] pb-10 bg-[#050505] min-h-screen">
       
-      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-6 bg-[#1a1d23] p-6 rounded-2xl border border-white/5 shadow-xl">
-        <div className="space-y-4">
-          <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter">OFICINA <span className="text-violet-500">PRO+</span></h1>
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar py-1">
-             <button 
-              onClick={() => { setActiveTab('ativos'); setView('lista'); setStatusFilter('Todos'); }}
-              className={`px-4 py-2 rounded-lg font-black uppercase tracking-widest transition-all text-[9px] sm:text-[10px] whitespace-nowrap ${activeTab === 'ativos' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-400 hover:bg-white/5'}`}
-             >
-               Ativos
-             </button>
-             <button 
-              onClick={() => { setActiveTab('historico'); setView('lista'); setStatusFilter('Todos'); }}
-              className={`px-4 py-2 rounded-lg font-black uppercase tracking-widest transition-all text-[9px] sm:text-[10px] whitespace-nowrap ${activeTab === 'historico' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-400 hover:bg-white/5'}`}
-             >
-               Histórico
-             </button>
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-8 bg-white/[0.02] backdrop-blur-md p-10 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full"></div>
+        <div className="space-y-6 relative z-10">
+          <h1 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">OFICINA <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">PRO+</span></h1>
+          <div className="flex items-center gap-3 py-1">
+             <button onClick={() => { setActiveTab('ativos'); setView('lista'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'ativos' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Operacional</button>
+             <button onClick={() => { setActiveTab('historico'); setView('lista'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'historico' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Histórico</button>
           </div>
         </div>
-        <button 
-          onClick={() => setActiveTab('nova')} 
-          className="px-6 py-4 sm:py-3 bg-white text-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2 shadow-xl"
-        >
-          <Plus size={16} strokeWidth={3} /> Nova O.S.
-        </button>
+        <button onClick={() => setActiveTab('nova')} className="px-10 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:brightness-125 hover:scale-105 transition-all flex items-center justify-center gap-3 shadow-[0_15px_40px_rgba(0,240,255,0.25)] relative z-10"><Plus size={18} strokeWidth={4} /> Nova O.S.</button>
+      </div>
+
+      <div className="relative z-10 group max-w-xl">
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-400 transition-colors" size={20} />
+        <input 
+          placeholder="Pesquisar por cliente ou placa..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-5 pl-16 pr-6 text-white font-bold text-sm outline-none focus:ring-2 focus:ring-cyan-500/20 backdrop-blur-md transition-all"
+        />
       </div>
 
       {view === 'lista' && activeTab !== 'nova' && (
-        <div className="space-y-4">
-          <div className="bg-[#1a1d23] p-4 sm:p-5 rounded-2xl border border-white/5 space-y-4 shadow-xl">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input 
-                  placeholder="Pesquisar por cliente, placa..." 
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-violet-500/20 text-white text-[12px] transition-all"
-                />
-              </div>
-              <button 
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-[10px] font-black uppercase transition-all ${showFilters ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
-              >
-                <Filter size={16} /> {showFilters ? 'Recolher Filtros' : 'Filtros'}
-              </button>
-            </div>
-
-            {showFilters && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t border-white/5 animate-in slide-in-from-top-4 duration-500">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Placa</label>
-                  <input value={filterPlate} onChange={e => setFilterPlate(e.target.value)} placeholder="Placa" className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white uppercase font-mono" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 relative z-10">
+          {filteredOrders.map(o => (
+            <div key={o.id} className="p-8 rounded-[2.5rem] border border-white/10 bg-white/[0.02] backdrop-blur-md transition-all flex flex-col justify-between min-h-[260px] shadow-xl hover:border-cyan-500/40 group hover:shadow-[0_0_40px_rgba(0,240,255,0.1)]">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-cyan-400 font-mono bg-cyan-400/10 px-3 py-1.5 rounded-xl border border-cyan-400/30 shadow-[0_0_10px_rgba(0,240,255,0.1)]">#{o.id}</span>
+                  <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusClasses(o.status)}`}>{o.status}</div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Status</label>
-                  <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white outline-none">
-                    <option value="Todos">Todos</option>
-                    {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-500 uppercase ml-1">De</label>
-                  <input type="date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Até</label>
-                  <input type="date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} className="w-full px-4 py-2 bg-black/40 border border-white/5 rounded-lg text-xs text-white" />
-                </div>
-                <div className="flex items-end">
-                  <button onClick={() => { setFilterPlate(''); setFilterDateStart(''); setFilterDateEnd(''); setSearchTerm(''); setStatusFilter('Todos'); }} className="w-full py-2 bg-red-600/10 text-red-500 font-black rounded-lg text-[9px] uppercase border border-red-500/10 hover:bg-red-600 hover:text-white transition-all">Limpar</button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredOrders.length > 0 ? filteredOrders.map(o => (
-              <div 
-                key={o.id} 
-                className="p-5 rounded-2xl border border-white/5 bg-[#1a1d23] transition-all flex flex-col justify-between min-h-[220px] shadow-lg hover:border-violet-500/30 group relative"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-5">
-                    <div className="text-[10px] font-black text-violet-500 font-mono bg-violet-500/10 px-2.5 py-1 rounded-md">#{o.id}</div>
-                    
-                    <div className="relative group/status min-w-[100px]">
-                      <select 
-                        value={o.status}
-                        onChange={(e) => updateOrderStatus(o.id, e.target.value as any)}
-                        className={`appearance-none w-full pl-3 pr-8 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ring-1 outline-none cursor-pointer transition-all duration-300 ${getStatusClasses(o.status)}`}
-                      >
-                        {statusOptions.map(s => (
-                          <option key={s} value={s} className="bg-[#1a1d23] text-white uppercase">{s}</option>
-                        ))}
-                      </select>
-                      <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 group-hover/status:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-
-                  <div onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="cursor-pointer space-y-1.5">
-                    <h3 className="text-[15px] font-black text-white truncate group-hover:text-violet-400 transition-colors uppercase tracking-tight">{o.clientName}</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded">{o.vehicle}</span>
-                      <span className="text-[10px] font-black text-violet-500/80 font-mono tracking-widest">{o.plate}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-slate-500 text-[9px] font-black uppercase tracking-widest">
-                    <Calendar size={12} className="text-violet-500" /> {o.createdAt}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[12px] font-black text-white bg-white/5 px-3 py-1 rounded-lg border border-white/10">R$ {o.total.toFixed(2)}</p>
+                <div onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="cursor-pointer space-y-3">
+                  <h3 className="text-xl font-black text-white group-hover:text-cyan-400 transition-colors uppercase tracking-tight truncate">{o.clientName}</h3>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-bold text-slate-200 uppercase tracking-widest">{o.vehicle}</span>
+                    <div className="w-1.5 h-1.5 bg-white/20 rounded-full"></div>
+                    <span className="text-[11px] font-black text-cyan-400 font-mono tracking-widest neon-text-cyan">{o.plate}</span>
                   </div>
                 </div>
               </div>
-            )) : (
-              <div className="col-span-full py-24 text-center">
-                 <div className="bg-white/5 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-white/5">
-                    <Search size={24} className="text-slate-600" />
-                 </div>
-                 <p className="text-slate-600 uppercase font-black tracking-[0.3em] text-xs">Nenhum registro encontrado</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {view === 'detalhes' && selectedOS && (
-        <div className="space-y-6 animate-in slide-in-from-bottom-5 duration-700">
-          
-          <div className="bg-[#1a1d23] p-3 rounded-2xl border border-white/5 flex items-center justify-between gap-2 shadow-xl sticky top-20 z-40 backdrop-blur-xl bg-[#1a1d23]/80">
-            <div className="flex flex-1 items-center gap-2 overflow-x-auto no-scrollbar">
-               <button 
-                onClick={() => setView('lista')}
-                className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 text-[9px] font-black uppercase tracking-widest border border-white/5 transition-all shrink-0"
-               >
-                 <ArrowLeft size={16} /> <span className="hidden sm:inline">Voltar</span>
-               </button>
-               {statusOptions.map((s) => (
-                <button 
-                  key={s}
-                  onClick={() => updateOrderStatus(selectedOS.id, s)}
-                  className={`px-4 py-3 rounded-xl flex items-center justify-center transition-all border shrink-0 ${selectedOS.status === s ? 'bg-violet-600 border-violet-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-slate-500 hover:text-slate-300'}`}
-                >
-                  <span className="text-[9px] font-black uppercase tracking-widest">{s}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-[#1a1d23] p-5 sm:p-8 rounded-3xl border border-white/5 shadow-2xl space-y-8">
-            <div className="flex flex-col xl:flex-row justify-between items-start gap-6">
-              <div className="space-y-1 w-full">
-                <div className="flex items-center gap-3 sm:gap-4 mb-2">
-                   <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter">O.S. <span className="text-violet-500">#{selectedOS.id}</span></h2>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-slate-400 font-bold uppercase text-[11px]">
-                  <span className="text-lg sm:text-xl text-white font-black truncate">{selectedOS.clientName}</span>
-                  <div className="hidden sm:block w-1.5 h-1.5 bg-violet-600 rounded-full" />
-                  <span className="text-violet-500 font-mono tracking-widest bg-violet-500/10 px-2 py-0.5 rounded w-fit">{selectedOS.plate}</span>
-                </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full xl:w-auto">
-                <div className="text-right p-4 bg-black/40 rounded-2xl border border-white/5 sm:min-w-[160px]">
-                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Geral</p>
-                   <h3 className="text-2xl font-black text-white tracking-tighter">R$ {selectedOS.total.toFixed(2)}</h3>
-                </div>
-                <button 
-                  onClick={() => {
-                    const link = generateShareLink();
-                    window.open(`https://wa.me/55${selectedOS.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Olá! Segue o link do orçamento para a O.S. #${selectedOS.id}:\n\n${link}`)}`, '_blank');
-                  }} 
-                  className="w-full sm:w-auto px-6 py-4 bg-emerald-600 text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-2 hover:bg-emerald-500 transition-all uppercase tracking-widest shadow-lg"
-                >
-                  <Send size={16} fill="white"/> Enviar WhatsApp
-                </button>
+              <div className="pt-6 border-t border-white/10 flex items-center justify-between">
+                <span className="text-slate-300 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><Calendar size={12} className="text-cyan-400" /> {o.createdAt}</span>
+                <span className="text-white font-black text-base shadow-[0_0_15px_rgba(255,255,255,0.1)]">R$ {o.total.toFixed(2)}</span>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-               <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-[#0f1115] rounded-2xl overflow-hidden border border-white/5 overflow-x-auto no-scrollbar">
-                    <table className="w-full text-[12px] min-w-[700px]">
-                      <thead className="bg-[#1a1d23] text-[8px] uppercase font-black text-slate-500 border-b border-white/5">
-                        <tr>
-                          <th className="px-6 py-4 text-left tracking-[0.2em]">Tipo</th>
-                          <th className="px-6 py-4 text-left tracking-[0.2em]">Descrição do Item</th>
-                          <th className="px-6 py-4 text-left tracking-[0.2em]">Marca</th>
-                          <th className="px-6 py-4 text-center tracking-[0.2em]">Qtd</th>
-                          <th className="px-6 py-4 text-right tracking-[0.2em]">Unitário</th>
-                          <th className="px-6 py-4 text-right tracking-[0.2em]">Subtotal</th>
-                          <th className="px-6 py-4 text-right"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5 text-slate-300">
-                        {selectedOS.items.map((item, i) => (
-                          <tr key={i} className="hover:bg-white/5 transition-colors group">
-                            <td className="px-6 py-5">
-                              <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${item.type === 'PEÇA' ? 'bg-blue-500/10 text-blue-500' : item.type === 'MÃO DE OBRA' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-500'}`}>
-                                {item.type}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5 font-bold text-white uppercase text-[11px]">{item.description}</td>
-                            <td className="px-6 py-5 text-slate-500 uppercase text-[10px] font-bold">{item.brand}</td>
-                            <td className="px-6 py-5 text-center font-black">{item.quantity}</td>
-                            <td className="px-6 py-5 text-right font-mono text-[10px]">R$ {item.price.toFixed(2)}</td>
-                            <td className="px-6 py-5 text-right font-black text-white font-mono">R$ {(item.price * item.quantity).toFixed(2)}</td>
-                            <td className="px-6 py-5 text-right">
-                              <button onClick={() => removeItem(item.id)} className="text-slate-700 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 transition-all p-2"><Trash2 size={16}/></button>
-                            </td>
-                          </tr>
-                        ))}
-                        
-                        <tr className="bg-violet-600/5">
-                          <td className="px-4 py-4">
-                            <select value={newItemType} onChange={e => setNewItemType(e.target.value as any)} className="bg-[#1a1d23] border border-white/10 rounded px-2 py-2 text-[9px] font-black text-white uppercase outline-none focus:ring-2 focus:ring-violet-500/20">
-                              <option value="PEÇA">Peça</option>
-                              <option value="MÃO DE OBRA">M.O.</option>
-                              <option value="NOTA">Nota</option>
-                            </select>
-                          </td>
-                          <td className="px-4 py-4"><input placeholder="Descrição..." value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="w-full bg-transparent border-none text-[11px] font-black uppercase focus:ring-0 text-white placeholder:text-slate-700" /></td>
-                          <td className="px-4 py-4"><input placeholder="Marca..." value={newItemBrand} onChange={e => setNewItemBrand(e.target.value)} className="w-full bg-transparent border-none text-[11px] font-bold uppercase focus:ring-0 text-white placeholder:text-slate-700" /></td>
-                          <td className="px-4 py-4 text-center"><input type="number" value={newItemQty} onChange={e => setNewItemQty(e.target.value)} className="w-10 bg-transparent border-none text-[12px] font-black focus:ring-0 text-center text-white" /></td>
-                          <td className="px-4 py-4 text-right"><input placeholder="0.00" type="number" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} className="w-20 bg-transparent border-none text-[12px] font-black focus:ring-0 text-right text-violet-400 font-mono" /></td>
-                          <td className="px-4 py-4 text-right">
-                             <button onClick={addItemInline} className="p-3 bg-violet-600 text-white rounded-lg hover:bg-violet-500 transition-all shadow-lg"><Plus size={16} strokeWidth={4} /></button>
-                          </td>
-                          <td></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="bg-[#0f1115] p-5 sm:p-6 rounded-2xl border border-white/5 space-y-4">
-                     <div className="flex items-center gap-3 text-slate-400">
-                        <FileText size={18} className="text-violet-500" />
-                        <h4 className="text-[10px] font-black uppercase tracking-widest">Observações Técnicas</h4>
-                     </div>
-                     <textarea 
-                        placeholder="Observações que o cliente verá..."
-                        value={selectedOS.observation || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updated = orders.map(o => o.id === selectedOS.id ? { ...o, observation: val } : o);
-                          setOrders(updated);
-                          localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
-                        }}
-                        className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 outline-none focus:ring-2 focus:ring-violet-500/20 h-28 resize-none font-medium"
-                     />
-                  </div>
-               </div>
-
-               <div className="space-y-6">
-                  <div className="p-5 bg-black/20 rounded-2xl border border-white/5 space-y-4 shadow-xl">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Galeria de Fotos</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3">
-                      {selectedOS.photos?.map((p, i) => (
-                        <div key={i} className="aspect-square rounded-xl overflow-hidden border border-white/10 relative group">
-                          <img src={p} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                          <div className="absolute inset-0 bg-black/40 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-                             <Trash2 size={20} className="text-red-500" onClick={(e) => {
-                               e.stopPropagation();
-                               const upPhotos = selectedOS.photos?.filter((_, idx) => idx !== i);
-                               const updated = orders.map(o => o.id === selectedOS.id ? { ...o, photos: upPhotos } : o);
-                               setOrders(updated);
-                               localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
-                             }} />
-                          </div>
-                        </div>
-                      ))}
-                      <button onClick={() => fileInputRef.current?.click()} className="aspect-square bg-black/40 border-2 border-dashed border-white/5 rounded-xl flex flex-col items-center justify-center text-slate-700 hover:text-violet-500 transition-all">
-                        <ImagePlus size={28} />
-                        <span className="text-[8px] font-black uppercase mt-2 tracking-widest">Anexar</span>
-                        <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-5 bg-red-600/5 rounded-2xl border border-red-500/10">
-                     <button onClick={deleteOS} className="w-full py-4 bg-red-600/10 text-red-500 font-black rounded-xl uppercase text-[9px] tracking-widest border border-red-500/10 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2">
-                       <Trash size={14} /> Excluir O.S. Permanente
-                     </button>
-                  </div>
-               </div>
+          ))}
+          {filteredOrders.length === 0 && (
+            <div className="col-span-full py-32 text-center space-y-4 opacity-40">
+               <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto"><Search size={32} className="text-slate-300"/></div>
+               <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-[10px]">Nenhuma O.S. encontrada</p>
             </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'nova' && (
-        <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-5 duration-500 px-2 sm:px-0">
-           <div className="bg-[#1a1d23] rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
-              <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
-                <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-widest">Abertura de O.S.</h2>
-                <button onClick={() => setActiveTab('ativos')} className="text-slate-500 hover:text-white p-1"><X size={24}/></button>
-              </div>
-              <form onSubmit={handleCreateOS} className="p-6 sm:p-8 space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Cliente</label>
-                    <input required value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} className="w-full px-4 py-4 sm:py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 font-bold uppercase" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp</label>
-                    <input required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-4 sm:py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 font-mono" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Veículo</label>
-                    <input required value={formData.vehicle} onChange={e => setFormData({...formData, vehicle: e.target.value})} className="w-full px-4 py-4 sm:py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 font-bold uppercase" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Placa</label>
-                    <input required value={formData.plate} onChange={e => setFormData({...formData, plate: e.target.value})} className="w-full px-4 py-4 sm:py-3 bg-black/40 border border-white/5 rounded-xl text-sm uppercase font-mono text-white outline-none focus:ring-2 focus:ring-violet-500/20" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Descrição do Problema</label>
-                  <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-4 bg-black/40 border border-white/5 rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/20 resize-none font-medium" />
-                </div>
-                <button type="submit" className="w-full py-5 sm:py-5 bg-white text-black font-black rounded-2xl hover:bg-slate-200 transition-all uppercase tracking-[0.2em] text-xs shadow-xl active:scale-95">Gerar Ordem de Serviço</button>
-              </form>
-           </div>
+          )}
         </div>
       )}
 

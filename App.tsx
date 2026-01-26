@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { 
-  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key
+  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
@@ -11,23 +11,32 @@ import PublicView from './pages/PublicView';
 import Settings from './pages/Settings';
 import AuthPages from './pages/AuthPages';
 import AdminMaster from './pages/AdminMaster';
+import ActivityLog from './pages/ActivityLog';
 import { SystemConfig, UserProfile } from './types';
 
-// Componente para proteger rotas baseadas no login e perfil selecionado
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ProtectedModule: React.FC<{ children: React.ReactNode, permission: string }> = ({ children, permission }) => {
   const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
-  const isProfileSelected = sessionStorage.getItem('crmplus_active_profile') !== null;
+  const profileRaw = sessionStorage.getItem('crmplus_active_profile');
   const isPinVerified = sessionStorage.getItem('crmplus_pin_verified') === 'true';
 
   if (!isAccountLoggedIn) return <Navigate to="/login" replace />;
-  
-  // Se for o admin master, permitir navegar para o painel se logado na conta master
-  if (sessionStorage.getItem('crmplus_is_master') === 'true') return <>{children}</>;
-
-  if (!isProfileSelected) return <Navigate to="/profiles" replace />;
+  if (!profileRaw) return <Navigate to="/profiles" replace />;
   if (!isPinVerified) return <Navigate to="/pin" replace />;
 
-  return <>{children}</>;
+  const profile: UserProfile = JSON.parse(profileRaw);
+  
+  if (!profile.modules?.includes(permission) && permission !== 'any') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-10 text-center">
+        <Lock size={64} className="text-red-500 mb-6" />
+        <h1 className="text-2xl font-black text-white uppercase mb-4">Acesso Negado</h1>
+        <p className="text-slate-400 max-w-md mb-8">Seu perfil não possui permissão para acessar o módulo de <span className="text-white font-bold uppercase">{permission}</span>.</p>
+        <Link to="/" className="px-8 py-3 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px]">Voltar ao Início</Link>
+      </div>
+    );
+  }
+
+  return <>{children</>;
 };
 
 const MasterRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -47,6 +56,9 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
 
+  const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
+  const isMaster = sessionStorage.getItem('crmplus_is_master') === 'true';
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     const loadConfig = () => {
@@ -65,8 +77,8 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
 
   if (location.pathname.startsWith('/v/') || 
       location.pathname === '/login' || 
+      location.pathname === '/signup' || 
       location.pathname === '/profiles' || 
-      location.pathname === '/admin-panel' ||
       location.pathname === '/pin') return null;
 
   const handleSwitchProfile = () => {
@@ -77,12 +89,19 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/' },
-    { name: 'Oficina', path: '/oficina' },
-    { name: 'Orçamentos', path: '/orcamento', locked: true },
-    { name: 'Restaurante', path: '/restaurante', locked: true },
-    { name: 'Configurações', path: '/config' },
+    { name: 'Oficina', path: '/oficina', module: 'oficina' },
+    { name: 'Orçamentos', path: '/orcamento', module: 'orcamento', locked: true },
+    { name: 'Restaurante', path: '/restaurante', module: 'restaurante', locked: true },
+    { name: 'Configurações', path: '/config', module: 'config' },
+    { name: 'Auditoria', path: '/logs', module: 'config', action: 'view_logs' },
   ];
+
+  const filteredNavItems = navItems.filter(item => 
+    isMaster || (
+      activeProfile?.modules?.includes(item.module) && 
+      (!item.action || activeProfile?.actions?.includes(item.action))
+    )
+  );
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#0f1115]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
@@ -102,56 +121,75 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
           </span>
         </Link>
         
-        <div className="hidden lg:flex items-center gap-8 ml-6">
-          {navItems.map((item) => (
-            <Link 
-              key={item.path} 
-              to={item.locked ? '#' : item.path}
-              className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${location.pathname === item.path ? 'text-violet-500' : 'text-slate-400 hover:text-white'}`}
-            >
-              {item.name}
-              {item.locked && <Lock size={10} className="opacity-40" />}
-            </Link>
-          ))}
-        </div>
+        {isAccountLoggedIn && !isMaster && (
+          <div className="hidden lg:flex items-center gap-8 ml-6">
+            <Link to="/" className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/' ? 'text-violet-500' : 'text-slate-400 hover:text-white'}`}>Dashboard</Link>
+            {filteredNavItems.map((item) => (
+              <Link 
+                key={item.path} 
+                to={item.locked ? '#' : item.path}
+                className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${location.pathname === item.path ? 'text-violet-500' : 'text-slate-400 hover:text-white'}`}
+              >
+                {item.name}
+                {item.locked && <Lock size={10} className="opacity-40" />}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6 text-white">
-        <button 
-          onClick={handleSwitchProfile}
-          title="Trocar Perfil"
-          className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 hover:border-violet-500/50 hover:shadow-[0_0_15px_rgba(139,92,246,0.2)] transition-all group/profile active:scale-95"
-        >
-           <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20 group-hover/profile:border-violet-500 transition-colors">
-              <img src={activeProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin'} className="w-full h-full" alt="Perfil" />
-           </div>
-           <span className="text-[10px] font-black uppercase tracking-widest group-hover/profile:text-violet-400 transition-colors">{activeProfile?.name}</span>
-        </button>
-        
-        <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all shadow-lg active:scale-95" title="Sair da Conta">
-          <LogOut size={16} />
-        </button>
+        {isAccountLoggedIn ? (
+          <>
+            {isMaster ? (
+              <Link to="/admin-panel" className="px-6 py-2 bg-violet-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-600/20">
+                Painel Master
+              </Link>
+            ) : (
+              <button 
+                onClick={handleSwitchProfile}
+                className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all group/profile"
+              >
+                 <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20">
+                    <img src={activeProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin'} className="w-full h-full" alt="Perfil" />
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest">{activeProfile?.name || 'Selecionar'}</span>
+              </button>
+            )}
+            
+            <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all shadow-lg" title="Sair">
+              <LogOut size={16} />
+            </button>
+          </>
+        ) : (
+          <div className="flex gap-4">
+             <button 
+               onClick={() => navigate('/login')}
+               className="px-6 py-3 border border-white/10 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-white/5 transition-all"
+             >
+               Entrar
+             </button>
+             <button 
+               onClick={() => navigate('/signup')}
+               className="px-8 py-3 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-violet-500 transition-all shadow-xl shadow-violet-600/20 flex items-center gap-2"
+             >
+               Começar
+             </button>
+          </div>
+        )}
 
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden text-white">
-          <Menu size={24} />
-        </button>
+        {isAccountLoggedIn && (
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden text-white">
+            <Menu size={24} />
+          </button>
+        )}
       </div>
 
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-[#0f1115] z-[60] p-8 flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-500">
           <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8 text-white"><X size={32} /></button>
-          
-          <div className="flex flex-col items-center gap-4 mb-8">
-             <button onClick={() => { setIsMobileMenuOpen(false); handleSwitchProfile(); }} className="flex flex-col items-center gap-4">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden border-4 border-violet-600 shadow-2xl">
-                   <img src={activeProfile?.avatar} className="w-full h-full object-cover" alt="Perfil" />
-                </div>
-                <span className="text-xl font-black uppercase text-white">{activeProfile?.name}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-violet-500 bg-violet-500/10 px-4 py-1 rounded-full">Trocar Perfil</span>
-             </button>
-          </div>
-
-          {navItems.map((item) => (
+          <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-black uppercase tracking-tighter text-white">Dashboard</Link>
+          {filteredNavItems.map((item) => (
             <Link 
               key={item.path} 
               to={item.locked ? '#' : item.path}
@@ -178,7 +216,8 @@ const App: React.FC = () => {
   const handleLogout = () => {
     sessionStorage.clear();
     setActiveProfile(null);
-    window.location.href = '/';
+    window.location.hash = '#/';
+    window.location.reload();
   };
 
   const handleProfileReset = () => {
@@ -195,7 +234,9 @@ const App: React.FC = () => {
         />
         <main>
           <Routes>
+            <Route path="/" element={<Catalog />} />
             <Route path="/login" element={<AuthPages.Login />} />
+            <Route path="/signup" element={<AuthPages.Signup />} />
             <Route path="/profiles" element={<AuthPages.ProfileSelector onProfileSelect={setActiveProfile} />} />
             <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
             <Route path="/v/:data" element={<PublicView />} />
@@ -204,16 +245,30 @@ const App: React.FC = () => {
                 <AdminMaster />
               </MasterRoute>
             } />
-            <Route path="/*" element={
-              <ProtectedRoute>
-                <Routes>
-                  <Route path="/" element={<Catalog />} />
-                  <Route path="/oficina/*" element={<Oficina />} />
-                  <Route path="/orcamento" element={<LockedModule name="Vendas" />} />
-                  <Route path="/restaurante" element={<LockedModule name="Gastro Hub" />} />
-                  <Route path="/config" element={<Settings />} />
-                </Routes>
-              </ProtectedRoute>
+            <Route path="/oficina/*" element={
+              <ProtectedModule permission="oficina">
+                <Oficina />
+              </ProtectedModule>
+            } />
+            <Route path="/config" element={
+              <ProtectedModule permission="config">
+                <Settings />
+              </ProtectedModule>
+            } />
+            <Route path="/logs" element={
+              <ProtectedModule permission="config">
+                <ActivityLog />
+              </ProtectedModule>
+            } />
+            <Route path="/orcamento" element={
+              <ProtectedModule permission="orcamento">
+                <LockedModule name="Vendas" />
+              </ProtectedModule>
+            } />
+            <Route path="/restaurante" element={
+              <ProtectedModule permission="restaurante">
+                <LockedModule name="Gastro Hub" />
+              </ProtectedModule>
             } />
           </Routes>
         </main>
