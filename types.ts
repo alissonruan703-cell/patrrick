@@ -23,6 +23,7 @@ export interface AccountLicense {
   password: string;
   status: 'Ativo' | 'Bloqueado';
   createdAt: string;
+  expirationDate: string; // Nova propriedade
 }
 
 export interface ServiceItem {

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Key, Plus, Trash2, Edit3, X, Check, Search, LogOut, Globe, UserCircle } from 'lucide-react';
+import { Shield, Key, Plus, Trash2, Edit3, X, Check, Search, LogOut, Globe, UserCircle, Calendar, AlertTriangle } from 'lucide-react';
 import { AccountLicense } from '../types';
 
 const AdminMaster: React.FC = () => {
@@ -10,10 +10,15 @@ const AdminMaster: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ companyName: '', username: '', password: '', status: 'Ativo' as 'Ativo' | 'Bloqueado' });
+  const [formData, setFormData] = useState({ 
+    companyName: '', 
+    username: '', 
+    password: '', 
+    status: 'Ativo' as 'Ativo' | 'Bloqueado',
+    expirationDate: '' 
+  });
 
   useEffect(() => {
-    // Verificar se é o admin master logado
     const isMaster = sessionStorage.getItem('crmplus_is_master') === 'true';
     if (!isMaster) {
       navigate('/login');
@@ -24,14 +29,14 @@ const AdminMaster: React.FC = () => {
     if (saved) {
       setLicenses(JSON.parse(saved));
     } else {
-      // Conta inicial de teste se não houver nada
-      const initial = [{
+      const initial: AccountLicense[] = [{
         id: '1',
         companyName: 'Hc Pneus',
         username: 'hcpneus',
         password: 'Volvo@24',
         status: 'Ativo',
-        createdAt: new Date().toLocaleDateString('pt-BR')
+        createdAt: new Date().toLocaleDateString('pt-BR'),
+        expirationDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
       }];
       setLicenses(initial);
       localStorage.setItem('crmplus_accounts', JSON.stringify(initial));
@@ -39,7 +44,7 @@ const AdminMaster: React.FC = () => {
   }, []);
 
   const handleSave = () => {
-    if (!formData.companyName || !formData.username || !formData.password) return;
+    if (!formData.companyName || !formData.username || !formData.password || !formData.expirationDate) return;
 
     let updated: AccountLicense[];
     if (editingId) {
@@ -57,7 +62,7 @@ const AdminMaster: React.FC = () => {
     localStorage.setItem('crmplus_accounts', JSON.stringify(updated));
     setShowModal(false);
     setEditingId(null);
-    setFormData({ companyName: '', username: '', password: '', status: 'Ativo' });
+    setFormData({ companyName: '', username: '', password: '', status: 'Ativo', expirationDate: '' });
   };
 
   const deleteLicense = (id: string) => {
@@ -72,6 +77,27 @@ const AdminMaster: React.FC = () => {
     l.companyName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     l.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const isExpired = (date: string) => {
+    const expDate = new Date(date);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return expDate < today;
+  };
+
+  const isCloseToExpiry = (date: string) => {
+    const expDate = new Date(date);
+    const today = new Date();
+    const diffTime = expDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 7;
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0c10] text-slate-300 p-6 lg:p-12">
@@ -100,7 +126,7 @@ const AdminMaster: React.FC = () => {
           <button 
             onClick={() => {
               setEditingId(null);
-              setFormData({ companyName: '', username: '', password: '', status: 'Ativo' });
+              setFormData({ companyName: '', username: '', password: '', status: 'Ativo', expirationDate: '' });
               setShowModal(true);
             }}
             className="px-8 py-3 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-violet-500 transition-all shadow-xl shadow-violet-600/20 flex items-center gap-2"
@@ -137,58 +163,77 @@ const AdminMaster: React.FC = () => {
                 <th className="px-8 py-6">Login de Acesso</th>
                 <th className="px-8 py-6">Senha Master</th>
                 <th className="px-8 py-6">Criação</th>
+                <th className="px-8 py-6">Expiração</th>
                 <th className="px-8 py-6">Status</th>
                 <th className="px-8 py-6 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filtered.map(l => (
-                <tr key={l.id} className="hover:bg-white/[0.02] transition-colors group">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-violet-600/10 rounded-xl flex items-center justify-center text-violet-500 font-black">
-                         {l.companyName[0].toUpperCase()}
-                       </div>
-                       <span className="text-white font-black uppercase text-sm tracking-tight">{l.companyName}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <code className="bg-black/40 px-3 py-1.5 rounded-lg text-emerald-400 font-bold text-xs">{l.username}</code>
-                  </td>
-                  <td className="px-8 py-6">
-                    <code className="bg-black/40 px-3 py-1.5 rounded-lg text-violet-400 font-bold text-xs">{l.password}</code>
-                  </td>
-                  <td className="px-8 py-6 text-xs text-slate-500 font-bold">{l.createdAt}</td>
-                  <td className="px-8 py-6">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${l.status === 'Ativo' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-                      {l.status}
-                    </span>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                       <button 
-                        onClick={() => {
-                          setEditingId(l.id);
-                          setFormData({ companyName: l.companyName, username: l.username, password: l.password, status: l.status });
-                          setShowModal(true);
-                        }}
-                        className="p-2 text-slate-600 hover:text-white transition-colors"
-                       >
-                         <Edit3 size={18} />
-                       </button>
-                       <button 
-                        onClick={() => deleteLicense(l.id)}
-                        className="p-2 text-slate-600 hover:text-red-500 transition-colors"
-                       >
-                         <Trash2 size={18} />
-                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map(l => {
+                const expired = isExpired(l.expirationDate);
+                const closeToExpiry = isCloseToExpiry(l.expirationDate);
+                
+                return (
+                  <tr key={l.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 bg-violet-600/10 rounded-xl flex items-center justify-center text-violet-500 font-black">
+                           {l.companyName[0].toUpperCase()}
+                         </div>
+                         <span className="text-white font-black uppercase text-sm tracking-tight">{l.companyName}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <code className="bg-black/40 px-3 py-1.5 rounded-lg text-emerald-400 font-bold text-xs">{l.username}</code>
+                    </td>
+                    <td className="px-8 py-6">
+                      <code className="bg-black/40 px-3 py-1.5 rounded-lg text-violet-400 font-bold text-xs">{l.password}</code>
+                    </td>
+                    <td className="px-8 py-6 text-xs text-slate-500 font-bold">{l.createdAt}</td>
+                    <td className="px-8 py-6">
+                      <div className={`flex items-center gap-2 font-mono text-xs font-bold ${expired ? 'text-red-500' : closeToExpiry ? 'text-amber-500' : 'text-slate-400'}`}>
+                         <Calendar size={14} className="opacity-50" />
+                         {formatDate(l.expirationDate)}
+                         {expired && <AlertTriangle size={14} className="animate-pulse" />}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${l.status === 'Ativo' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                        {l.status}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                         <button 
+                          onClick={() => {
+                            setEditingId(l.id);
+                            setFormData({ 
+                              companyName: l.companyName, 
+                              username: l.username, 
+                              password: l.password, 
+                              status: l.status,
+                              expirationDate: l.expirationDate || ''
+                            });
+                            setShowModal(true);
+                          }}
+                          className="p-2 text-slate-600 hover:text-white transition-colors"
+                         >
+                           <Edit3 size={18} />
+                         </button>
+                         <button 
+                          onClick={() => deleteLicense(l.id)}
+                          className="p-2 text-slate-600 hover:text-red-500 transition-colors"
+                         >
+                           <Trash2 size={18} />
+                         </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-8 py-20 text-center">
+                  <td colSpan={7} className="px-8 py-20 text-center">
                     <div className="flex flex-col items-center gap-4">
                        <div className="p-4 bg-white/5 rounded-full text-slate-700">
                          <Globe size={40} />
@@ -244,6 +289,21 @@ const AdminMaster: React.FC = () => {
                         />
                     </div>
                  </div>
+                 
+                 {/* Novo campo: Data de Expiração */}
+                 <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Data de Expiração da Licença</label>
+                    <div className="relative">
+                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-violet-500 opacity-50" size={18} />
+                       <input 
+                         type="date"
+                         value={formData.expirationDate}
+                         onChange={e => setFormData({...formData, expirationDate: e.target.value})}
+                         className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-6 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-violet-500/20"
+                       />
+                    </div>
+                 </div>
+
                  <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Status da Licença</label>
                     <div className="flex gap-4">
