@@ -10,6 +10,7 @@ import LockedModule from './pages/LockedModule';
 import PublicView from './pages/PublicView';
 import Settings from './pages/Settings';
 import AuthPages from './pages/AuthPages';
+import AdminMaster from './pages/AdminMaster';
 import { SystemConfig, UserProfile } from './types';
 
 // Componente para proteger rotas baseadas no login e perfil selecionado
@@ -19,9 +20,19 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const isPinVerified = sessionStorage.getItem('crmplus_pin_verified') === 'true';
 
   if (!isAccountLoggedIn) return <Navigate to="/login" replace />;
+  
+  // Se for o admin master, permitir navegar para o painel se logado na conta master
+  if (sessionStorage.getItem('crmplus_is_master') === 'true') return <>{children}</>;
+
   if (!isProfileSelected) return <Navigate to="/profiles" replace />;
   if (!isPinVerified) return <Navigate to="/pin" replace />;
 
+  return <>{children}</>;
+};
+
+const MasterRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isMaster = sessionStorage.getItem('crmplus_is_master') === 'true';
+  if (!isMaster) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 
@@ -55,6 +66,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   if (location.pathname.startsWith('/v/') || 
       location.pathname === '/login' || 
       location.pathname === '/profiles' || 
+      location.pathname === '/admin-panel' ||
       location.pathname === '/pin') return null;
 
   const handleSwitchProfile = () => {
@@ -105,7 +117,6 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6 text-white">
-        {/* Botão de Troca de Perfil */}
         <button 
           onClick={handleSwitchProfile}
           title="Trocar Perfil"
@@ -188,6 +199,11 @@ const App: React.FC = () => {
             <Route path="/profiles" element={<AuthPages.ProfileSelector onProfileSelect={setActiveProfile} />} />
             <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
             <Route path="/v/:data" element={<PublicView />} />
+            <Route path="/admin-panel" element={
+              <MasterRoute>
+                <AdminMaster />
+              </MasterRoute>
+            } />
             <Route path="/*" element={
               <ProtectedRoute>
                 <Routes>

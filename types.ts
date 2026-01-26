@@ -16,6 +16,15 @@ export interface UserProfile {
   pin: string;
 }
 
+export interface AccountLicense {
+  id: string;
+  companyName: string;
+  username: string;
+  password: string;
+  status: 'Ativo' | 'Bloqueado';
+  createdAt: string;
+}
+
 export interface ServiceItem {
   id: string;
   type: 'PEÇA' | 'MÃO DE OBRA' | 'NOTA';
