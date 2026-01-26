@@ -13,7 +13,6 @@ import AuthPages from './pages/AuthPages';
 import { SystemConfig, UserProfile } from './types';
 
 // Componente para proteger rotas baseadas no login e perfil selecionado
-// Fix: Use React.FC to explicitly define children prop and avoid inference issues
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
   const isProfileSelected = sessionStorage.getItem('crmplus_active_profile') !== null;
@@ -26,8 +25,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-const Navbar = ({ activeProfile, onLogout }: { activeProfile: UserProfile | null, onLogout: () => void }) => {
+const Navbar = ({ activeProfile, onLogout, onProfileReset }: { 
+  activeProfile: UserProfile | null, 
+  onLogout: () => void,
+  onProfileReset: () => void 
+}) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
@@ -52,6 +56,13 @@ const Navbar = ({ activeProfile, onLogout }: { activeProfile: UserProfile | null
       location.pathname === '/login' || 
       location.pathname === '/profiles' || 
       location.pathname === '/pin') return null;
+
+  const handleSwitchProfile = () => {
+    sessionStorage.removeItem('crmplus_active_profile');
+    sessionStorage.removeItem('crmplus_pin_verified');
+    onProfileReset();
+    navigate('/profiles');
+  };
 
   const navItems = [
     { name: 'Dashboard', path: '/' },
@@ -94,14 +105,19 @@ const Navbar = ({ activeProfile, onLogout }: { activeProfile: UserProfile | null
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6 text-white">
-        <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full">
-           <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20">
+        {/* Botão de Troca de Perfil */}
+        <button 
+          onClick={handleSwitchProfile}
+          title="Trocar Perfil"
+          className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 hover:border-violet-500/50 hover:shadow-[0_0_15px_rgba(139,92,246,0.2)] transition-all group/profile active:scale-95"
+        >
+           <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20 group-hover/profile:border-violet-500 transition-colors">
               <img src={activeProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin'} className="w-full h-full" alt="Perfil" />
            </div>
-           <span className="text-[10px] font-black uppercase tracking-widest">{activeProfile?.name}</span>
-        </div>
+           <span className="text-[10px] font-black uppercase tracking-widest group-hover/profile:text-violet-400 transition-colors">{activeProfile?.name}</span>
+        </button>
         
-        <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all">
+        <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all shadow-lg active:scale-95" title="Sair da Conta">
           <LogOut size={16} />
         </button>
 
@@ -113,6 +129,17 @@ const Navbar = ({ activeProfile, onLogout }: { activeProfile: UserProfile | null
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-[#0f1115] z-[60] p-8 flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-500">
           <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8 text-white"><X size={32} /></button>
+          
+          <div className="flex flex-col items-center gap-4 mb-8">
+             <button onClick={() => { setIsMobileMenuOpen(false); handleSwitchProfile(); }} className="flex flex-col items-center gap-4">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden border-4 border-violet-600 shadow-2xl">
+                   <img src={activeProfile?.avatar} className="w-full h-full object-cover" alt="Perfil" />
+                </div>
+                <span className="text-xl font-black uppercase text-white">{activeProfile?.name}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-violet-500 bg-violet-500/10 px-4 py-1 rounded-full">Trocar Perfil</span>
+             </button>
+          </div>
+
           {navItems.map((item) => (
             <Link 
               key={item.path} 
@@ -143,10 +170,18 @@ const App: React.FC = () => {
     window.location.href = '/';
   };
 
+  const handleProfileReset = () => {
+    setActiveProfile(null);
+  };
+
   return (
     <HashRouter>
       <div className="min-h-screen bg-[#0f1115] text-slate-200 selection:bg-violet-600/30 selection:text-violet-400">
-        <Navbar activeProfile={activeProfile} onLogout={handleLogout} />
+        <Navbar 
+          activeProfile={activeProfile} 
+          onLogout={handleLogout} 
+          onProfileReset={handleProfileReset} 
+        />
         <main>
           <Routes>
             <Route path="/login" element={<AuthPages.Login />} />
