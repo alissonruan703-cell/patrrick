@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { ShieldCheck, Rocket, Eye, EyeOff, CheckCircle2, Shield, Plus, Edit3, User, LayoutGrid, Settings, Trash2, FileText, Activity, Key, Lock, AlertCircle, Mail } from 'lucide-react';
+import { ShieldCheck, Rocket, Eye, EyeOff, CheckCircle2, Shield, Plus, Edit3, User, LayoutGrid, Settings, Trash2, FileText, Activity, Key, Lock, AlertCircle, Mail, ArrowLeft } from 'lucide-react';
 import { UserProfile, AccountLicense } from '../types';
 
 const AVATAR_OPTIONS = [
@@ -70,6 +70,13 @@ const Login = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] p-6 relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,240,255,0.08),transparent_70%)]"></div>
+      
+      {/* Botão Voltar */}
+      <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:border-cyan-500/50 transition-all group z-20">
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+        <span className="text-[10px] font-black uppercase tracking-widest">Catálogo</span>
+      </Link>
+
       <div className="w-full max-w-md space-y-8 animate-in fade-in duration-700 relative z-10">
         <div className="text-center space-y-4">
           <div className="bg-gradient-to-br from-cyan-400 to-violet-600 p-4 rounded-[2rem] w-fit mx-auto shadow-[0_0_40px_rgba(0,240,255,0.4)]"><ShieldCheck className="text-white" size={32}/></div>
@@ -151,6 +158,12 @@ const Signup = () => {
     <div className="min-h-screen bg-[#050505] p-6 lg:p-12 relative flex flex-col items-center overflow-x-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(217,70,239,0.06),transparent_70%)]"></div>
       
+      {/* Botão Voltar */}
+      <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:border-magenta-500/50 transition-all group z-20">
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+        <span className="text-[10px] font-black uppercase tracking-widest">Voltar ao Catálogo</span>
+      </Link>
+
       <div className="w-full max-w-3xl space-y-10 relative z-10 my-10 animate-in fade-in slide-in-from-bottom-10 duration-1000">
         <div className="text-center space-y-4">
           <div className="bg-gradient-to-br from-violet-600 to-magenta-500 p-4 rounded-[2rem] w-fit mx-auto shadow-[0_0_40px_rgba(217,70,239,0.4)]"><Rocket className="text-white" size={32}/></div>
