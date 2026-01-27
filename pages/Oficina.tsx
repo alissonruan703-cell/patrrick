@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Plus, Search, X, Send, Trash2,
-  Calendar, FileText, ArrowLeft, ChevronDown, Zap, User, Car, Phone, Hash, ClipboardList, Package, Wrench, DollarSign, Share2, Check, AlertCircle, Clock, ShieldAlert
+  Calendar, FileText, ArrowLeft, ChevronDown, Zap, User, Car, Phone, Hash, ClipboardList, Package, Wrench, DollarSign, Share2, Check, AlertCircle, Clock, ShieldAlert, ImagePlus, Camera, Eye
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem, UserProfile, LogEntry } from '../types';
 
@@ -18,6 +18,7 @@ const Oficina: React.FC = () => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para Nova OS
   const [newOS, setNewOS] = useState<Partial<ServiceOrder>>({
@@ -61,6 +62,7 @@ const Oficina: React.FC = () => {
       id: (orders.length + 101).toString(),
       createdAt: new Date().toLocaleDateString('pt-BR'),
       items: [],
+      photos: [],
       total: 0,
       status: 'Aberto'
     };
@@ -105,6 +107,33 @@ const Oficina: React.FC = () => {
     saveOrders(updatedOrders);
     setNewItem({ type: 'PEÇA', description: '', brand: '', quantity: 1, price: 0 });
     addLog('ADD_ITEM', `Item "${item.description}" -> O.S. #${selectedOS.id}`);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedOS) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      const updatedPhotos = [...(selectedOS.photos || []), base64];
+      const updatedOS = { ...selectedOS, photos: updatedPhotos };
+      const updatedOrders = orders.map(o => o.id === selectedOS.id ? updatedOS : o);
+      
+      setSelectedOS(updatedOS);
+      saveOrders(updatedOrders);
+      addLog('ADD_PHOTO', `Foto anexada à O.S. #${selectedOS.id}`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = (index: number) => {
+    if (!selectedOS) return;
+    const updatedPhotos = (selectedOS.photos || []).filter((_, i) => i !== index);
+    const updatedOS = { ...selectedOS, photos: updatedPhotos };
+    const updatedOrders = orders.map(o => o.id === selectedOS.id ? updatedOS : o);
+    setSelectedOS(updatedOS);
+    saveOrders(updatedOrders);
   };
 
   const generatePublicLink = () => {
@@ -250,21 +279,44 @@ const Oficina: React.FC = () => {
       {/* Tela: Detalhes da O.S. (Onde gerencia o Orçamento) */}
       {view === 'detalhes' && selectedOS && (
         <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in zoom-in-95 duration-500">
-           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-              <button onClick={() => setView('lista')} className="flex items-center gap-3 text-slate-500 hover:text-white transition-all text-[11px] font-black uppercase tracking-[0.2em] group"><ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Controle</button>
-              <div className="flex items-center gap-4">
-                 <button onClick={copyLink} className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-cyan-400 hover:border-cyan-500/30 transition-all shadow-xl">
-                   {copyFeedback ? <Check size={18} className="text-emerald-500" /> : <Share2 size={18}/>} 
-                   {copyFeedback ? 'Link Copiado!' : 'Link do Cliente'}
-                 </button>
-                 {hasPermission('delete_os') && (
-                    <button onClick={() => handleDeleteOS(selectedOS.id)} className="p-4 bg-red-600/10 text-red-500 border border-red-500/20 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl"><Trash2 size={20}/></button>
-                 )}
+           {/* Topo: Ações e Status */}
+           <div className="flex flex-col gap-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                 <button onClick={() => setView('lista')} className="flex items-center gap-3 text-slate-500 hover:text-white transition-all text-[11px] font-black uppercase tracking-[0.2em] group"><ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Controle</button>
+                 <div className="flex items-center gap-4">
+                    <button onClick={copyLink} className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-cyan-400 hover:border-cyan-500/30 transition-all shadow-xl">
+                      {copyFeedback ? <Check size={18} className="text-emerald-500" /> : <Share2 size={18}/>} 
+                      {copyFeedback ? 'Link Copiado!' : 'Link do Cliente'}
+                    </button>
+                    {hasPermission('delete_os') && (
+                       <button onClick={() => handleDeleteOS(selectedOS.id)} className="p-4 bg-red-600/10 text-red-500 border border-red-500/20 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl"><Trash2 size={20}/></button>
+                    )}
+                 </div>
               </div>
+
+              {/* LISTA PARA ALTERAR O STATUS - AGORA NO TOPO */}
+              {hasPermission('edit_os') && (
+                <div className="bg-white/[0.02] border border-white/10 p-6 rounded-[2rem] space-y-4 animate-in slide-in-from-top-4">
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center mb-2 flex items-center justify-center gap-3">
+                     <Clock size={12} className="text-cyan-400" /> Fluxo de Trabalho Operacional
+                   </p>
+                   <div className="flex flex-wrap justify-center gap-3">
+                      {['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'].map(st => (
+                        <button 
+                          key={st} 
+                          onClick={() => handleUpdateStatus(selectedOS.id, st as any)} 
+                          className={`px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${selectedOS.status === st ? 'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_20px_rgba(0,240,255,0.3)]' : 'bg-black/40 border-white/5 text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                          {st}
+                        </button>
+                      ))}
+                   </div>
+                </div>
+              )}
            </div>
 
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-              {/* Sidebar: Dados do Veículo e Status */}
+              {/* Sidebar: Dados do Veículo e Fotos */}
               <div className="lg:col-span-4 space-y-10">
                  <div className="bg-white/[0.02] border border-white/10 p-10 rounded-[3.5rem] backdrop-blur-3xl space-y-10 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-[50px] rounded-full"></div>
@@ -278,17 +330,43 @@ const Oficina: React.FC = () => {
                        <div className="space-y-1"><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Veículo</p><p className="text-xl font-black text-white uppercase">{selectedOS.vehicle}</p><p className="text-cyan-400 font-black tracking-widest text-lg neon-text-cyan font-mono">{selectedOS.plate}</p></div>
                        <div className="p-6 bg-white/[0.03] border border-white/5 rounded-3xl space-y-2"><p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Diagnóstico Inicial</p><p className="text-slate-300 text-xs italic leading-relaxed">"{selectedOS.description}"</p></div>
                     </div>
-                    
-                    {hasPermission('edit_os') && (
-                      <div className="space-y-4 pt-10 border-t border-white/5 relative z-10">
-                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Controle Operacional</p>
-                         <div className="grid grid-cols-2 gap-3">
-                            {['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'].map(st => (
-                              <button key={st} onClick={() => handleUpdateStatus(selectedOS.id, st as any)} className={`py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-widest border transition-all ${selectedOS.status === st ? 'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_20px_rgba(0,240,255,0.3)]' : 'bg-black/40 border-white/5 text-slate-500 hover:text-white hover:bg-white/5'}`}>{st}</button>
-                            ))}
-                         </div>
-                      </div>
-                    )}
+                 </div>
+
+                 {/* CAMPO PARA ANEXAR FOTO */}
+                 <div className="bg-white/[0.02] border border-white/10 p-8 rounded-[3.5rem] space-y-8 shadow-2xl">
+                    <div className="flex items-center justify-between">
+                       <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
+                          <Camera size={18} className="text-cyan-400" /> Galeria de Mídia
+                       </h3>
+                       <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-3 bg-cyan-500 text-black rounded-xl hover:brightness-110 transition-all shadow-lg shadow-cyan-500/20 active:scale-90"
+                       >
+                          <Plus size={18} strokeWidth={3} />
+                       </button>
+                       <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                       {(selectedOS.photos || []).map((photo, idx) => (
+                          <div key={idx} className="relative group aspect-square rounded-2xl overflow-hidden border border-white/10 bg-black/40">
+                             <img src={photo} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Serviço ${idx}`} />
+                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                <button className="p-2 bg-white text-black rounded-lg shadow-xl"><Eye size={14}/></button>
+                                <button onClick={() => removePhoto(idx)} className="p-2 bg-red-600 text-white rounded-lg shadow-xl"><Trash2 size={14}/></button>
+                             </div>
+                          </div>
+                       ))}
+                       {(!selectedOS.photos || selectedOS.photos.length === 0) && (
+                          <div 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="col-span-2 py-10 border-2 border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-cyan-500/30 transition-all opacity-30 hover:opacity-100"
+                          >
+                             <ImagePlus size={32} />
+                             <p className="text-[9px] font-black uppercase tracking-widest text-center">Anexar evidências fotográficas</p>
+                          </div>
+                       )}
+                    </div>
                  </div>
               </div>
 
@@ -304,7 +382,7 @@ const Oficina: React.FC = () => {
                        </div>
                     </div>
 
-                    {/* Formulário de Adição (Apenas se tiver permissão e status permitir) */}
+                    {/* Formulário de Adição */}
                     {hasPermission('edit_os') && (selectedOS.status === 'Aberto' || selectedOS.status === 'Orçamento') && (
                       <div className="grid grid-cols-1 sm:grid-cols-4 gap-5 p-8 bg-white/5 rounded-[2.5rem] border border-white/10 relative z-10 shadow-2xl">
                          <div className="sm:col-span-1 space-y-2">
