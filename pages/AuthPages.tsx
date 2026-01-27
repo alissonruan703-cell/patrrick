@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { ShieldCheck, Rocket, Eye, EyeOff, CheckCircle2, Shield, Plus, Edit3, User, LayoutGrid, Settings, Trash2, FileText, Activity, Key, Lock, AlertCircle, Mail, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Rocket, Eye, EyeOff, CheckCircle2, Shield, Plus, Edit3, User, LayoutGrid, Settings, Trash2, FileText, Activity, Key, Lock, AlertCircle, Mail, ArrowLeft, X } from 'lucide-react';
 import { UserProfile, AccountLicense } from '../types';
 
 const AVATAR_OPTIONS = [
@@ -251,6 +251,8 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
   const [isConfirmingMasterPin, setIsConfirmingMasterPin] = useState(false);
   const [masterPinInput, setMasterPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'save' | 'delete'>('save');
+  const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<UserProfile>({ 
     id: '', name: '', pin: '', avatar: AVATAR_OPTIONS[0], modules: [], actions: [] 
@@ -269,6 +271,15 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
   const initiateAction = () => {
     if (!formData.name || formData.pin.length !== 4) { alert("Nome e PIN de 4 dígitos são obrigatórios."); return; }
     if (formData.modules.length === 0) { alert("Selecione pelo menos um sistema de acesso."); return; }
+    setPendingAction('save');
+    setIsConfirmingMasterPin(true);
+  };
+
+  const initiateDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (id === '1') { alert("O perfil Master não pode ser excluído."); return; }
+    setTargetDeleteId(id);
+    setPendingAction('delete');
     setIsConfirmingMasterPin(true);
   };
 
@@ -279,14 +290,20 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
       const storageKey = `crmplus_profiles_${accountId}`;
       let updated: UserProfile[];
 
-      if (showModal === 'add') { updated = [...profiles, { ...formData, id: Date.now().toString() }]; }
-      else { updated = profiles.map(p => p.id === editingProfile?.id ? { ...formData } : p); }
+      if (pendingAction === 'delete' && targetDeleteId) {
+        updated = profiles.filter(p => p.id !== targetDeleteId);
+      } else if (showModal === 'add') { 
+        updated = [...profiles, { ...formData, id: Date.now().toString() }]; 
+      } else { 
+        updated = profiles.map(p => p.id === editingProfile?.id ? { ...formData } : p); 
+      }
 
       setProfiles(updated);
       localStorage.setItem(storageKey, JSON.stringify(updated));
       setShowModal('none');
       setIsConfirmingMasterPin(false);
       setMasterPinInput('');
+      setTargetDeleteId(null);
     } else {
       setPinError(true);
       setMasterPinInput('');
@@ -311,7 +328,7 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
         <p className="text-cyan-400 font-bold uppercase tracking-[0.4em] text-[10px] neon-text-cyan">{account?.companyName}</p>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-16 mb-24 max-w-6xl">
+      <div className="flex flex-wrap justify-center gap-16 mb-24 max-w-6xl px-4">
         {profiles.map((p, idx) => (
           <div key={p.id} onClick={() => {
             if (isManaging) { setEditingProfile(p); setFormData({ ...p }); setShowModal('edit'); }
@@ -320,12 +337,23 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
               onProfileSelect(p);
               navigate('/pin'); 
             }
-          }} className="flex flex-col items-center gap-6 cursor-pointer group animate-in zoom-in duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
-            <div className={`w-40 h-40 rounded-[3.5rem] border-4 overflow-hidden transition-all group-hover:scale-110 shadow-2xl relative bg-[#0a0a0a] ${isManaging ? 'border-cyan-500 shadow-cyan-500/30' : 'border-white/10 group-hover:border-cyan-500'}`}>
+          }} className="flex flex-col items-center gap-6 cursor-pointer group animate-in zoom-in duration-500 relative" style={{ animationDelay: `${idx * 100}ms` }}>
+            <div className={`w-32 h-32 sm:w-40 sm:h-40 rounded-[3.5rem] border-4 overflow-hidden transition-all group-hover:scale-110 shadow-2xl relative bg-[#0a0a0a] ${isManaging ? 'border-cyan-500 shadow-cyan-500/30' : 'border-white/10 group-hover:border-cyan-500'}`}>
                <img src={p.avatar} className="w-full h-full object-cover" alt={p.name} />
                {p.id === '1' && <div className="absolute top-2 right-2 bg-cyan-500 text-black p-1.5 rounded-full shadow-lg"><Shield size={14} fill="currentColor" /></div>}
+               
+               {/* Botão de Excluir Perfil */}
+               {isManaging && p.id !== '1' && (
+                 <button 
+                  onClick={(e) => initiateDelete(e, p.id)}
+                  className="absolute top-0 right-0 p-2 bg-red-600 text-white rounded-bl-3xl hover:bg-red-500 transition-colors shadow-xl"
+                  title="Excluir Perfil"
+                 >
+                   <Trash2 size={16} />
+                 </button>
+               )}
             </div>
-            <span className="text-slate-300 group-hover:text-white font-black uppercase text-sm tracking-widest transition-colors">{p.name} {p.id === '1' && "(Master)"}</span>
+            <span className="text-slate-300 group-hover:text-white font-black uppercase text-[10px] sm:text-xs tracking-widest transition-colors text-center max-w-[120px] truncate">{p.name} {p.id === '1' && "(Master)"}</span>
           </div>
         ))}
         {isManaging && (
@@ -333,22 +361,28 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
              setFormData({ id: '', name: '', pin: '', avatar: AVATAR_OPTIONS[0], modules: ['oficina'], actions: ['create_os', 'edit_os'] });
              setShowModal('add');
            }} className="flex flex-col items-center gap-6 cursor-pointer group">
-            <div className="w-40 h-40 rounded-[3.5rem] border-4 border-dashed border-white/10 flex items-center justify-center text-slate-700 hover:border-cyan-500 hover:text-cyan-500 transition-all hover:scale-110">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[3.5rem] border-4 border-dashed border-white/10 flex items-center justify-center text-slate-700 hover:border-cyan-500 hover:text-cyan-500 transition-all hover:scale-110">
                <Plus size={48} />
             </div>
-            <span className="text-slate-600 font-black uppercase text-sm tracking-widest">Novo Perfil</span>
+            <span className="text-slate-600 font-black uppercase text-xs tracking-widest">Novo Perfil</span>
           </div>
         )}
       </div>
 
-      <button onClick={() => setIsManaging(!isManaging)} className="px-16 py-5 border-2 border-white/10 rounded-3xl font-black uppercase text-[10px] tracking-[0.4em] text-slate-400 hover:text-cyan-400 hover:border-cyan-400/30 transition-all bg-white/[0.02] backdrop-blur-sm">
-        {isManaging ? 'Sair do Gerenciamento' : 'Gerenciar Perfis'}
-      </button>
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
+        <button onClick={() => setIsManaging(!isManaging)} className="px-16 py-5 border-2 border-white/10 rounded-3xl font-black uppercase text-[10px] tracking-[0.4em] text-slate-400 hover:text-cyan-400 hover:border-cyan-400/30 transition-all bg-white/[0.02] backdrop-blur-sm">
+          {isManaging ? 'Sair do Gerenciamento' : 'Gerenciar Perfis'}
+        </button>
+        <button onClick={() => navigate('/login')} className="px-8 py-5 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:text-white transition-colors">Logoff de Conta</button>
+      </div>
 
-      {showModal !== 'none' && (
+      {showModal !== 'none' || isConfirmingMasterPin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/98 p-6 animate-in fade-in duration-300 overflow-y-auto">
            <div className="w-full max-w-2xl bg-[#0a0a0a] rounded-[3.5rem] p-8 md:p-12 border border-white/10 shadow-2xl space-y-10 my-10 relative">
-              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">{showModal === 'add' ? 'Novo' : 'Editar'} <span className="text-cyan-400">Operador</span></h2>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
+                {pendingAction === 'delete' ? 'Excluir' : showModal === 'add' ? 'Novo' : 'Editar'} 
+                <span className="text-cyan-400 ml-2">Operador</span>
+              </h2>
               
               {!isConfirmingMasterPin ? (
                 <div className="space-y-10">
@@ -371,7 +405,6 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">PIN de Acesso do Operador</label>
                       <input maxLength={4} type="password" readOnly={formData.id === '1' && showModal === 'edit'} value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value.replace(/\D/g,'')})} className="w-full bg-black border border-white/10 p-5 rounded-2xl text-white font-black text-center text-2xl tracking-[1em] outline-none" />
-                      <p className="text-[8px] text-slate-500 font-bold uppercase mt-2">PIN definido no momento da criação.</p>
                     </div>
                   </div>
 
@@ -390,32 +423,22 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Permissões Especiais</label>
-                    <div className="flex flex-wrap gap-2">
-                      {ACTION_DEFINITIONS.map(a => {
-                        const isActive = formData.actions.includes(a.id) || formData.id === '1';
-                        return (
-                          <button key={a.id} onClick={() => togglePermission(a.id)} className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-[9px] font-black uppercase tracking-widest ${isActive ? 'bg-violet-600 border-violet-500 text-white' : 'bg-black border-white/5 text-slate-600'}`}>{a.icon} {a.name}</button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
                   <div className="flex gap-4 pt-6">
                      <button onClick={() => setShowModal('none')} className="flex-1 py-5 bg-white/5 text-slate-400 rounded-2xl font-black uppercase text-[10px]">Cancelar</button>
-                     <button onClick={initiateAction} className="flex-1 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl uppercase text-[10px] shadow-lg">Confirmar Operador</button>
+                     <button onClick={initiateAction} className="flex-1 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl uppercase text-[10px] shadow-lg">Confirmar Alterações</button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-10 animate-in slide-in-from-right-10 duration-500">
-                  <div className="p-8 bg-violet-600/10 border border-violet-500/20 rounded-[2.5rem] text-center space-y-6">
-                    <div className="w-16 h-16 bg-violet-600 rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-violet-600/30">
+                  <div className={`p-8 border rounded-[2.5rem] text-center space-y-6 ${pendingAction === 'delete' ? 'bg-red-600/10 border-red-500/20' : 'bg-violet-600/10 border-violet-500/20'}`}>
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-xl ${pendingAction === 'delete' ? 'bg-red-600' : 'bg-violet-600'}`}>
                       <Lock className="text-white" size={32} />
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-xl font-black text-white uppercase tracking-tight">Autorização Master Necessária</h3>
-                      <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold leading-relaxed">Insira o PIN do Proprietário para salvar as alterações do operador.</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold leading-relaxed">
+                        {pendingAction === 'delete' ? 'Você está prestes a EXCLUIR um operador permanentemente.' : 'Insira o PIN Master para salvar.'}
+                      </p>
                     </div>
                   </div>
 
@@ -426,20 +449,22 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
                       autoFocus
                       value={masterPinInput} 
                       onChange={e => setMasterPinInput(e.target.value.replace(/\D/g, ''))} 
-                      className={`w-full bg-black border-2 py-8 rounded-[2.5rem] text-4xl font-black text-center text-white outline-none tracking-[1em] transition-all ${pinError ? 'border-red-500 animate-shake shadow-[0_0_30px_rgba(239,68,68,0.2)]' : 'border-white/10 focus:border-violet-500 focus:shadow-[0_0_30px_rgba(139,92,246,0.2)]'}`} 
+                      className={`w-full bg-black border-2 py-8 rounded-[2.5rem] text-4xl font-black text-center text-white outline-none tracking-[1em] transition-all ${pinError ? 'border-red-500 animate-shake shadow-[0_0_30px_rgba(239,68,68,0.2)]' : 'border-white/10 focus:border-violet-500'}`} 
                       placeholder="0000"
                     />
                     <div className="flex flex-col items-center gap-4">
-                      <button onClick={finalizeAction} className="w-full py-6 bg-violet-600 text-white font-black rounded-[2rem] uppercase text-[11px] tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-500 transition-all">Validar Autorização</button>
-                      <button onClick={() => { setIsConfirmingMasterPin(false); setMasterPinInput(''); }} className="text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all">Voltar à Edição</button>
+                      <button onClick={finalizeAction} className={`w-full py-6 text-white font-black rounded-[2rem] uppercase text-[11px] tracking-widest shadow-xl transition-all ${pendingAction === 'delete' ? 'bg-red-600 hover:bg-red-500' : 'bg-violet-600 hover:bg-violet-500'}`}>
+                        {pendingAction === 'delete' ? 'Confirmar Exclusão' : 'Validar Alteração'}
+                      </button>
+                      <button onClick={() => { setIsConfirmingMasterPin(false); setMasterPinInput(''); setTargetDeleteId(null); }} className="text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all">Cancelar Ação</button>
                     </div>
                   </div>
 
                   <div className="p-6 bg-black/40 border border-white/5 rounded-2xl flex items-start gap-4">
                     <Mail size={16} className="text-slate-500 shrink-0" />
                     <div className="space-y-1">
-                      <p className="text-[9px] font-black text-slate-300 uppercase">Perdeu seu PIN Master?</p>
-                      <p className="text-[9px] text-slate-500 font-bold uppercase">Entre em contato: <span className="text-cyan-400">suporte@crmplus.store</span></p>
+                      <p className="text-[9px] font-black text-slate-300 uppercase">Esqueceu o PIN?</p>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase">Suporte: <span className="text-cyan-400">suporte@crmplus.store</span></p>
                     </div>
                   </div>
                 </div>
@@ -470,8 +495,15 @@ const PinEntry = ({ profile }: { profile: UserProfile | null }) => {
   if (!activeProfile) return <Navigate to="/profiles" replace />;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#050505] animate-in zoom-in duration-500 overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#050505] animate-in zoom-in duration-500 overflow-hidden relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,240,255,0.05),transparent_70%)]"></div>
+      
+      {/* Botão Voltar ao Catálogo */}
+      <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:border-cyan-500/50 transition-all group z-20">
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+        <span className="text-[10px] font-black uppercase tracking-widest">Catálogo</span>
+      </Link>
+
       <div className="mb-16 text-center space-y-8 flex flex-col items-center relative z-10">
         <div className="w-52 h-52 rounded-[4.5rem] border-4 border-cyan-500 overflow-hidden shadow-[0_0_80px_rgba(0,240,255,0.25)] bg-[#0a0a0a]">
            <img src={activeProfile.avatar} className="w-full h-full object-cover bg-[#0a0a0a]" alt="Operador" />
