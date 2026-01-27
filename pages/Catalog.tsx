@@ -1,19 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, FileText, Utensils, Play, Info, Plus, ChevronRight, Shield, Zap, BarChart3, Rocket } from 'lucide-react';
-import { SystemConfig } from '../types';
+import { Wrench, FileText, Utensils, Play, Rocket, Lock } from 'lucide-react';
+import { SystemConfig, AccountLicense } from '../types';
 
-const ModuleCard: React.FC<{ mod: any, onNavigate: (path: string) => void }> = ({ mod, onNavigate }) => {
+const ModuleCard: React.FC<{ mod: any, onNavigate: (path: string) => void, isAllowed: boolean }> = ({ mod, onNavigate, isAllowed }) => {
   return (
     <div 
-      onClick={() => mod.status === 'ACTIVE' && onNavigate(mod.path)}
-      className={`relative group overflow-hidden rounded-[2.5rem] bg-[#0a0a0a] border border-white/10 transition-all duration-700 hover:border-cyan-500/50 hover:shadow-[0_0_60px_rgba(0,240,255,0.2)] cursor-pointer`}
+      onClick={() => isAllowed && onNavigate(mod.path)}
+      className={`relative group overflow-hidden rounded-[2.5rem] bg-[#0a0a0a] border transition-all duration-700 ${isAllowed ? 'border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_60px_rgba(0,240,255,0.2)] cursor-pointer' : 'border-white/5 opacity-80 cursor-not-allowed'}`}
     >
       <div className="aspect-[16/10] overflow-hidden">
         <img 
           src={mod.image} 
-          className="w-full h-full object-cover opacity-30 group-hover:opacity-60 group-hover:scale-110 transition-all duration-1000 ease-out" 
+          className={`w-full h-full object-cover transition-all duration-1000 ease-out ${isAllowed ? 'opacity-30 group-hover:opacity-60 group-hover:scale-110' : 'opacity-10 grayscale'}`} 
           alt={mod.name}
         />
       </div>
@@ -22,19 +22,19 @@ const ModuleCard: React.FC<{ mod: any, onNavigate: (path: string) => void }> = (
       
       <div className="absolute bottom-0 left-0 w-full p-8 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-br from-cyan-400 to-violet-600 rounded-2xl shadow-lg text-white">
+          <div className={`p-3 rounded-2xl shadow-lg text-white ${isAllowed ? 'bg-gradient-to-br from-cyan-400 to-violet-600' : 'bg-slate-800'}`}>
             {mod.iconSmall}
           </div>
           <h3 className="text-xl font-black text-white uppercase tracking-tight">{mod.name}</h3>
         </div>
         <p className="text-sm text-slate-200 font-medium leading-relaxed opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-0 sm:translate-y-4 sm:group-hover:translate-y-0">
-          {mod.description}
+          {isAllowed ? mod.description : "Contrate este módulo para liberar acesso imediato."}
         </p>
       </div>
 
-      {mod.status === 'LOCKED' && (
+      {!isAllowed && (
         <div className="absolute top-6 right-6 bg-black/80 backdrop-blur-2xl px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(0,240,255,0.8)]" />
+          <Lock size={12} className="text-magenta-500" />
           <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Expansão</span>
         </div>
       )}
@@ -45,10 +45,17 @@ const ModuleCard: React.FC<{ mod: any, onNavigate: (path: string) => void }> = (
 const Catalog: React.FC = () => {
   const navigate = useNavigate();
   const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS+', companyLogo: '' });
+  const [allowedModules, setAllowedModules] = useState<string[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem('crmplus_system_config');
     if (saved) setConfig(JSON.parse(saved));
+    
+    const accountId = sessionStorage.getItem('crmplus_account_id');
+    const accounts = JSON.parse(localStorage.getItem('crmplus_accounts') || '[]');
+    const currentAcc = accounts.find((a: AccountLicense) => a.id === accountId);
+    if (currentAcc) setAllowedModules(currentAcc.allowedModules);
+    else setAllowedModules([]);
   }, []);
 
   const handleModuleClick = (path: string) => {
@@ -67,7 +74,6 @@ const Catalog: React.FC = () => {
       name: 'Oficina Pro+',
       description: 'Gestão de fluxo, O.S. digitais e faturamento industrial em tempo real.',
       iconSmall: <Wrench size={20} />,
-      status: 'ACTIVE',
       path: '/oficina',
       image: 'https://images.unsplash.com/photo-1486006396113-ad750276bc92?auto=format&fit=crop&q=80&w=800'
     },
@@ -76,7 +82,6 @@ const Catalog: React.FC = () => {
       name: 'Vendas Plus',
       description: 'Plataforma de orçamentos rápidos com CRM integrado de alta conversão.',
       iconSmall: <FileText size={20} />,
-      status: 'LOCKED',
       path: '/orcamento',
       image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=800'
     },
@@ -85,11 +90,15 @@ const Catalog: React.FC = () => {
       name: 'Gastro Hub',
       description: 'Operação completa para gastronomia, mesas e delivery unificado.',
       iconSmall: <Utensils size={20} />,
-      status: 'LOCKED',
       path: '/restaurante',
       image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800'
     }
   ];
+
+  const isModuleAllowed = (id: string) => {
+    if (allowedModules.length === 0) return id === 'oficina'; // Default demo logic
+    return allowedModules.includes(id);
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] overflow-x-hidden">
@@ -152,7 +161,7 @@ const Catalog: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
             {systems.map((mod) => (
-              <ModuleCard key={mod.id} mod={mod} onNavigate={handleModuleClick} />
+              <ModuleCard key={mod.id} mod={mod} onNavigate={handleModuleClick} isAllowed={isModuleAllowed(mod.id)} />
             ))}
           </div>
         </div>
