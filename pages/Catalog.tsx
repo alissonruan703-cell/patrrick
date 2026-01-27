@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, FileText, Utensils, Play, Rocket, Lock, Clock } from 'lucide-react';
+import { Wrench, FileText, Utensils, Play, Rocket, Lock, Clock, LayoutDashboard } from 'lucide-react';
 import { SystemConfig, AccountLicense } from '../types';
 
 const ModuleCard: React.FC<{ mod: any, onNavigate: (id: string) => void, isAvailable: boolean }> = ({ mod, onNavigate, isAvailable }) => {
@@ -51,13 +51,21 @@ const ModuleCard: React.FC<{ mod: any, onNavigate: (id: string) => void, isAvail
 const Catalog: React.FC = () => {
   const navigate = useNavigate();
   const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS+', companyLogo: '' });
+  const [isAccountLoggedIn, setIsAccountLoggedIn] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('crmplus_system_config');
     if (saved) setConfig(JSON.parse(saved));
+    
+    const logged = sessionStorage.getItem('crmplus_account_auth') === 'true';
+    setIsAccountLoggedIn(logged);
   }, []);
 
   const handleStartSelection = (moduleId: string) => {
+    if (isAccountLoggedIn) {
+      if (moduleId === 'oficina') navigate('/oficina');
+      return;
+    }
     sessionStorage.setItem('crmplus_selected_module_onboarding', moduleId);
     navigate('/signup');
   };
@@ -116,18 +124,30 @@ const Catalog: React.FC = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <button 
-                onClick={() => navigate('/signup')}
-                className="w-full sm:w-auto px-12 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl hover:brightness-125 hover:scale-105 transition-all text-lg shadow-[0_15px_50px_rgba(0,240,255,0.3)] active:scale-95"
-              >
-                Ativar Minha Licença
-              </button>
-              <button 
-                onClick={() => navigate('/login')}
-                className="w-full sm:w-auto px-12 py-5 bg-white/[0.03] text-white font-black rounded-2xl hover:bg-white/[0.08] transition-all text-lg border border-white/10 backdrop-blur-xl"
-              >
-                Acessar Portal
-              </button>
+              {isAccountLoggedIn ? (
+                <button 
+                  onClick={() => navigate('/oficina')}
+                  className="w-full sm:w-auto px-12 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl hover:brightness-125 hover:scale-105 transition-all text-lg shadow-[0_15px_50px_rgba(0,240,255,0.3)] active:scale-95 flex items-center justify-center gap-4"
+                >
+                  <LayoutDashboard size={24} strokeWidth={3} />
+                  Ir para o Painel Oficina
+                </button>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => navigate('/signup')}
+                    className="w-full sm:w-auto px-12 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl hover:brightness-125 hover:scale-105 transition-all text-lg shadow-[0_15px_50px_rgba(0,240,255,0.3)] active:scale-95"
+                  >
+                    Ativar Minha Licença
+                  </button>
+                  <button 
+                    onClick={() => navigate('/login')}
+                    className="w-full sm:w-auto px-12 py-5 bg-white/[0.03] text-white font-black rounded-2xl hover:bg-white/[0.08] transition-all text-lg border border-white/10 backdrop-blur-xl"
+                  >
+                    Acessar Portal
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
