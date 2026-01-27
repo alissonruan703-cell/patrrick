@@ -111,7 +111,7 @@ const Catalog: React.FC = () => {
         <div className="relative z-10 text-center space-y-12 max-w-6xl animate-in fade-in zoom-in duration-1000">
           <div className="inline-flex items-center gap-3 bg-white/[0.03] backdrop-blur-2xl px-6 py-2.5 rounded-full border border-white/10 mb-4 shadow-[0_0_20px_rgba(0,240,255,0.1)]">
             <Rocket size={14} className="text-cyan-400" fill="currentColor" />
-            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-cyan-400 neon-text-cyan">Plataforma SaaS Multisetorial</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-cyan-400 neon-text-cyan">Sistema por Assinatura</span>
           </div>
 
           <div className="flex flex-col items-center">
