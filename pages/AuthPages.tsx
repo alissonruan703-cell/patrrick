@@ -71,7 +71,7 @@ const Login = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] p-6 relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,240,255,0.08),transparent_70%)]"></div>
       
-      {/* Botão Voltar */}
+      {/* Botão Voltar ao Catálogo */}
       <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:border-cyan-500/50 transition-all group z-20">
         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-[10px] font-black uppercase tracking-widest">Catálogo</span>
@@ -158,7 +158,7 @@ const Signup = () => {
     <div className="min-h-screen bg-[#050505] p-6 lg:p-12 relative flex flex-col items-center overflow-x-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(217,70,239,0.06),transparent_70%)]"></div>
       
-      {/* Botão Voltar */}
+      {/* Botão Voltar ao Catálogo */}
       <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:border-magenta-500/50 transition-all group z-20">
         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-[10px] font-black uppercase tracking-widest">Voltar ao Catálogo</span>

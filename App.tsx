@@ -36,7 +36,7 @@ const ProtectedModule: React.FC<{ children: React.ReactNode, permission: string 
     );
   }
 
-  return <>{children</>;
+  return <>{children}</>;
 };
 
 const MasterRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
