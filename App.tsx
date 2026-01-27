@@ -207,30 +207,22 @@ const Footer = () => {
   return (
     <>
       <footer className="px-6 lg:px-20 py-20 border-t border-white/5 bg-[#050505] relative overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
           <div className="space-y-6">
             <h4 className="text-xl font-black text-white uppercase tracking-tighter">CRM<span className="text-cyan-500">Plus+</span></h4>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] font-black leading-relaxed italic">Ecossistema de gestão inteligente para empresas escaláveis.</p>
           </div>
           
           <div className="space-y-4">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Legal</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Informações</p>
             <div className="flex flex-col gap-2">
-              <button onClick={() => setModalType('privacy')} className="text-xs text-slate-600 hover:text-cyan-400 transition-colors text-left font-bold uppercase tracking-tight">Privacidade</button>
+              <button onClick={() => setModalType('privacy')} className="text-xs text-slate-600 hover:text-cyan-400 transition-colors text-left font-bold uppercase tracking-tight">Política de Privacidade</button>
               <button onClick={() => setModalType('terms')} className="text-xs text-slate-600 hover:text-cyan-400 transition-colors text-left font-bold uppercase tracking-tight">Termos de Uso</button>
             </div>
           </div>
 
           <div className="space-y-4">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sistema</p>
-            <div className="flex flex-col gap-2">
-              <button className="text-xs text-slate-600 hover:text-cyan-400 transition-colors text-left font-bold uppercase tracking-tight">Status da API</button>
-              <button className="text-xs text-slate-600 hover:text-cyan-400 transition-colors text-left font-bold uppercase tracking-tight">Cloud Infra</button>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suporte</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atendimento</p>
             <button 
               onClick={() => setModalType('support')}
               className="w-full flex items-center justify-between p-4 bg-white/[0.03] border border-white/10 rounded-2xl hover:bg-white/5 transition-all group"
@@ -259,17 +251,17 @@ const Footer = () => {
                     <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto text-cyan-500 shadow-lg border border-cyan-500/20">
                       <MessageSquare size={32} />
                     </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Central de <span className="text-cyan-500">Ajuda</span></h2>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Falar com o <span className="text-cyan-500">Suporte</span></h2>
                     <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Relate seu problema ou dúvida para nossa equipe técnica.</p>
                   </div>
 
                   <form onSubmit={handleSendSupport} className="space-y-6">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mensagem</label>
+                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Sua Mensagem</label>
                        <textarea 
                         value={supportMsg}
                         onChange={(e) => setSupportMsg(e.target.value)}
-                        placeholder="Descreva detalhadamente sua solicitação..."
+                        placeholder="Descreva detalhadamente como podemos ajudar..."
                         className="w-full bg-black border border-white/10 rounded-2xl p-6 text-white min-h-[150px] outline-none focus:ring-2 focus:ring-cyan-500/20 font-medium"
                        />
                     </div>
@@ -279,7 +271,7 @@ const Footer = () => {
                       className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 transition-all ${sent ? 'bg-emerald-500 text-white' : 'bg-cyan-500 text-black hover:brightness-110 shadow-xl shadow-cyan-500/20'}`}
                     >
                       {sent ? <CheckCircle2 size={18} /> : <Send size={18} />}
-                      {sent ? 'Mensagem Enviada!' : 'Enviar ao Suporte'}
+                      {sent ? 'Mensagem Enviada!' : 'Enviar Mensagem'}
                     </button>
                   </form>
                 </div>
@@ -299,7 +291,7 @@ const Footer = () => {
                     <p>Ao contratar nossos serviços, você garante que as informações inseridas no sistema são de sua inteira responsabilidade, servindo o CRMPlus+ apenas como provedor da tecnologia de gestão.</p>
                     <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center gap-4">
                       <Info size={20} className="text-cyan-400 shrink-0" />
-                      <p className="text-[9px] font-black tracking-widest">Este documento é uma síntese dos termos completos aceitos no momento do cadastro.</p>
+                      <p className="text-[9px] font-black tracking-widest">Para suporte jurídico adicional, utilize nosso canal oficial de atendimento.</p>
                     </div>
                   </div>
                 </div>
