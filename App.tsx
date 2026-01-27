@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { 
-  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity
+  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity, LayoutGrid, Rocket, FileText, Utensils, Settings as SettingsIcon, AlertTriangle
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
@@ -53,7 +53,8 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   const location = useLocation();
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+  const [showDevModal, setShowDevModal] = useState(false);
   const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
 
   const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
@@ -65,14 +66,9 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
       const saved = localStorage.getItem('crmplus_system_config');
       if (saved) setConfig(JSON.parse(saved));
     };
-
     loadConfig();
     window.addEventListener('scroll', handleScroll);
-    window.addEventListener('storage', loadConfig);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('storage', loadConfig);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   if (location.pathname.startsWith('/v/') || 
@@ -88,120 +84,111 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
     navigate('/profiles');
   };
 
-  const navItems = [
-    { name: 'Oficina', path: '/oficina', module: 'oficina' },
-    { name: 'Orçamentos', path: '/orcamento', module: 'orcamento', locked: true },
-    { name: 'Restaurante', path: '/restaurante', module: 'restaurante', locked: true },
-    { name: 'Configurações', path: '/config', module: 'config' },
-    { name: 'Auditoria', path: '/logs', module: 'config', action: 'view_logs' },
+  const systems = [
+    { id: 'oficina', name: 'Oficina Pro+', icon: <Rocket size={16}/>, path: '/oficina', active: true },
+    { id: 'orcamento', name: 'Vendas Plus', icon: <FileText size={16}/>, path: '/orcamento', active: false },
+    { id: 'restaurante', name: 'Gastro Hub', icon: <Utensils size={16}/>, path: '/restaurante', active: false },
   ];
 
-  const filteredNavItems = navItems.filter(item => 
-    isMaster || (
-      activeProfile?.modules?.includes(item.module) && 
-      (!item.action || activeProfile?.actions?.includes(item.action))
-    )
-  );
-
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#0f1115]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
-      <div className="flex items-center gap-6">
-        <Link to="/" className="flex items-center gap-4 group">
-          {config.companyLogo ? (
-            <div className="h-10 w-auto flex items-center justify-center bg-transparent transition-transform group-hover:scale-105">
-              <img src={config.companyLogo} className="h-full w-auto object-contain max-w-[120px]" alt="Logo" />
-            </div>
-          ) : (
-            <div className="bg-violet-600 p-2 rounded-xl shadow-xl shadow-violet-600/30">
-              <Plus size={16} className="text-white" strokeWidth={4} />
+    <>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#050505]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
+        <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-4 group">
+            {config.companyLogo ? (
+              <img src={config.companyLogo} className="h-8 w-auto object-contain" alt="Logo" />
+            ) : (
+              <div className="bg-cyan-500 p-2 rounded-xl shadow-xl shadow-cyan-500/30">
+                <Rocket size={16} className="text-black" />
+              </div>
+            )}
+            <span className="text-xl font-black tracking-tighter text-white uppercase group-hover:text-cyan-400 transition-colors">
+              {config.companyName.split(' ')[0]}
+            </span>
+          </Link>
+
+          {isAccountLoggedIn && !isMaster && (
+            <div className="relative">
+               <button 
+                onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all group"
+               >
+                 <LayoutGrid size={16} />
+                 <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Módulos</span>
+               </button>
+
+               {isSwitcherOpen && (
+                 <div className="absolute top-full left-0 mt-3 w-64 bg-[#0a0a0a] border border-white/10 rounded-2xl p-4 shadow-2xl animate-in fade-in slide-in-from-top-2">
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-4 px-2">Trocar de Sistema</p>
+                    <div className="space-y-1">
+                      {systems.map(s => (
+                        <button 
+                          key={s.id}
+                          onClick={() => {
+                            setIsSwitcherOpen(false);
+                            if (s.active) navigate(s.path);
+                            else setShowDevModal(true);
+                          }}
+                          className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${location.pathname.startsWith(s.path) ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {s.icon}
+                            <span className="text-[10px] font-black uppercase tracking-tight">{s.name}</span>
+                          </div>
+                          {!s.active && <Lock size={12} className="opacity-40" />}
+                        </button>
+                      ))}
+                    </div>
+                 </div>
+               )}
             </div>
           )}
-          <span className="text-xl font-black tracking-tighter text-white uppercase group-hover:text-violet-400 transition-colors">
-            {config.companyName.split(' ')[0]}
-          </span>
-        </Link>
-        
-        {isAccountLoggedIn && !isMaster && (
-          <div className="hidden lg:flex items-center gap-8 ml-6">
-            <Link to="/" className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/' ? 'text-violet-500' : 'text-slate-400 hover:text-white'}`}>Dashboard</Link>
-            {filteredNavItems.map((item) => (
-              <Link 
-                key={item.path} 
-                to={item.locked ? '#' : item.path}
-                className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${location.pathname === item.path ? 'text-violet-500' : 'text-slate-400 hover:text-white'}`}
-              >
-                {item.name}
-                {item.locked && <Lock size={10} className="opacity-40" />}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
 
-      <div className="flex items-center gap-4 sm:gap-6 text-white">
-        {isAccountLoggedIn ? (
-          <>
-            {isMaster ? (
-              <Link to="/admin-panel" className="px-6 py-2 bg-violet-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-600/20">
-                Painel Master
-              </Link>
-            ) : (
-              <button 
-                onClick={handleSwitchProfile}
-                className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all group/profile"
-              >
-                 <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20">
-                    <img src={activeProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin'} className="w-full h-full" alt="Perfil" />
-                 </div>
-                 <span className="text-[10px] font-black uppercase tracking-widest">{activeProfile?.name || 'Selecionar'}</span>
+        <div className="flex items-center gap-4 sm:gap-6">
+          {isAccountLoggedIn ? (
+            <>
+              {!isMaster && (
+                <button 
+                  onClick={handleSwitchProfile}
+                  className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all"
+                >
+                  <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20">
+                    <img src={activeProfile?.avatar || ''} className="w-full h-full" alt="Perfil" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white">{activeProfile?.name}</span>
+                </button>
+              )}
+              <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all shadow-lg" title="Sair">
+                <LogOut size={16} />
               </button>
-            )}
-            
-            <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all shadow-lg" title="Sair">
-              <LogOut size={16} />
-            </button>
-          </>
-        ) : (
-          <div className="flex gap-4">
-             <button 
-               onClick={() => navigate('/login')}
-               className="px-6 py-3 border border-white/10 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-white/5 transition-all"
-             >
-               Entrar
-             </button>
-             <button 
-               onClick={() => navigate('/signup')}
-               className="px-8 py-3 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-violet-500 transition-all shadow-xl shadow-violet-600/20 flex items-center gap-2"
-             >
-               Começar
-             </button>
-          </div>
-        )}
+            </>
+          ) : (
+            <div className="flex gap-4">
+               <button onClick={() => navigate('/login')} className="px-6 py-2.5 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10">Entrar</button>
+               <button onClick={() => navigate('/signup')} className="px-6 py-2.5 bg-cyan-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-cyan-500/30">Criar Conta</button>
+            </div>
+          )}
+        </div>
+      </nav>
 
-        {isAccountLoggedIn && (
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden text-white">
-            <Menu size={24} />
-          </button>
-        )}
-      </div>
-
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-[#0f1115] z-[60] p-8 flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-500">
-          <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8 text-white"><X size={32} /></button>
-          <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-black uppercase tracking-tighter text-white">Dashboard</Link>
-          {filteredNavItems.map((item) => (
-            <Link 
-              key={item.path} 
-              to={item.locked ? '#' : item.path}
-              onClick={() => !item.locked && setIsMobileMenuOpen(false)}
-              className={`text-2xl font-black uppercase tracking-tighter ${location.pathname === item.path ? 'text-violet-500' : 'text-white'}`}
-            >
-              {item.name}
-            </Link>
-          ))}
+      {/* Modal Em Desenvolvimento */}
+      {showDevModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in">
+           <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 p-10 rounded-[3rem] text-center space-y-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/10 blur-[60px] rounded-full"></div>
+              <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-lg">
+                <AlertTriangle size={40} />
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Em Desenvolvimento</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">Estamos trabalhando duro para liberar este módulo. Fique ligado, novidades em breve!</p>
+              </div>
+              <button onClick={() => setShowDevModal(false)} className="w-full py-5 bg-white text-black font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl">Entendido</button>
+           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 };
 
@@ -220,17 +207,13 @@ const App: React.FC = () => {
     window.location.reload();
   };
 
-  const handleProfileReset = () => {
-    setActiveProfile(null);
-  };
-
   return (
     <HashRouter>
-      <div className="min-h-screen bg-[#0f1115] text-slate-200 selection:bg-violet-600/30 selection:text-violet-400">
+      <div className="min-h-screen bg-[#050505] text-slate-200">
         <Navbar 
           activeProfile={activeProfile} 
           onLogout={handleLogout} 
-          onProfileReset={handleProfileReset} 
+          onProfileReset={() => setActiveProfile(null)} 
         />
         <main>
           <Routes>
@@ -240,36 +223,12 @@ const App: React.FC = () => {
             <Route path="/profiles" element={<AuthPages.ProfileSelector onProfileSelect={setActiveProfile} />} />
             <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
             <Route path="/v/:data" element={<PublicView />} />
-            <Route path="/admin-panel" element={
-              <MasterRoute>
-                <AdminMaster />
-              </MasterRoute>
-            } />
-            <Route path="/oficina/*" element={
-              <ProtectedModule permission="oficina">
-                <Oficina />
-              </ProtectedModule>
-            } />
-            <Route path="/config" element={
-              <ProtectedModule permission="config">
-                <Settings />
-              </ProtectedModule>
-            } />
-            <Route path="/logs" element={
-              <ProtectedModule permission="config">
-                <ActivityLog />
-              </ProtectedModule>
-            } />
-            <Route path="/orcamento" element={
-              <ProtectedModule permission="orcamento">
-                <LockedModule name="Vendas" />
-              </ProtectedModule>
-            } />
-            <Route path="/restaurante" element={
-              <ProtectedModule permission="restaurante">
-                <LockedModule name="Gastro Hub" />
-              </ProtectedModule>
-            } />
+            <Route path="/admin-panel" element={<MasterRoute><AdminMaster /></MasterRoute>} />
+            <Route path="/oficina/*" element={<ProtectedModule permission="oficina"><Oficina /></ProtectedModule>} />
+            <Route path="/config" element={<ProtectedModule permission="config"><Settings /></ProtectedModule>} />
+            <Route path="/logs" element={<ProtectedModule permission="config"><ActivityLog /></ProtectedModule>} />
+            <Route path="/orcamento" element={<ProtectedModule permission="orcamento"><LockedModule name="Vendas" /></ProtectedModule>} />
+            <Route path="/restaurante" element={<ProtectedModule permission="restaurante"><LockedModule name="Gastro Hub" /></ProtectedModule>} />
           </Routes>
         </main>
       </div>
