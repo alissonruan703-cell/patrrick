@@ -77,7 +77,7 @@ const Login = () => {
             <button type="submit" className="w-full py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-xl hover:brightness-125 transition-all mt-4">Validar Acesso</button>
           </form>
           <div className="mt-10 pt-8 border-t border-white/10 text-center">
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Nova licença? <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 transition-all">Criar agora</Link></p>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Nova licença? <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 transition-all underline-offset-4">Criar agora</Link></p>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ const Signup = () => {
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedSystem !== 'oficina') {
-      setError('Apenas o sistema de OFICINA está disponível para novas licenças no momento.');
+      setError('Apenas o sistema de OFICINA está disponível para novas ativações no momento.');
       return;
     }
     if (!formData.fullName || !formData.email || !formData.companyName || !formData.username || !formData.password || formData.pin.length !== 4) {
@@ -150,15 +150,15 @@ const Signup = () => {
 
       <div className="w-full max-w-4xl space-y-12 relative z-10 my-10 animate-in fade-in slide-in-from-bottom-10 duration-1000">
         <div className="text-center space-y-4">
-          <div className="bg-gradient-to-br from-violet-600 to-magenta-500 p-4 rounded-[2rem] w-fit mx-auto shadow-2xl"><Rocket className="text-white" size={32}/></div>
-          <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Ativar <span className="text-magenta-500">Licença</span></h1>
-          <p className="text-magenta-400 font-bold uppercase tracking-[0.4em] text-[10px]">Primeiro Passo do seu Ecossistema</p>
+          <div className="bg-gradient-to-br from-violet-600 to-magenta-500 p-4 rounded-[2rem] w-fit mx-auto shadow-2xl shadow-magenta-500/20"><Rocket className="text-white" size={32}/></div>
+          <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Ativar <span className="text-magenta-500">Ecossistema</span></h1>
+          <p className="text-magenta-400 font-bold uppercase tracking-[0.4em] text-[10px]">Primeiro Passo para sua Transformação</p>
         </div>
 
         <div className="bg-white/[0.03] border border-white/10 p-10 rounded-[3.5rem] backdrop-blur-3xl shadow-2xl grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="space-y-10">
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sistema Solicitado</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Segmento Solicitado</label>
               <div className="grid grid-cols-1 gap-3">
                 {MODULE_OPTIONS.map(m => (
                   <button 
@@ -172,8 +172,8 @@ const Signup = () => {
                       <span className="text-[11px] font-black uppercase">{m.name}</span>
                     </div>
                     {!m.active ? (
-                      <div className="flex items-center gap-2 text-amber-500 text-[8px] font-black">
-                        <Clock size={10} /> EM DESENVOLVIMENTO
+                      <div className="flex items-center gap-2 text-amber-500 text-[8px] font-black uppercase">
+                        <Clock size={10} /> Em Breve
                       </div>
                     ) : (
                       selectedSystem === m.id && <CheckCircle2 size={16} className="text-cyan-500" />
@@ -184,7 +184,7 @@ const Signup = () => {
             </div>
 
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Escolha seu Avatar</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Sua Identidade Visual</label>
               <div className="grid grid-cols-5 gap-3 p-4 bg-black/40 rounded-3xl border border-white/5 max-h-48 overflow-y-auto no-scrollbar">
                 {AVATAR_OPTIONS.map(av => (
                   <button key={av} type="button" onClick={() => setFormData({...formData, avatar: av})} className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${formData.avatar === av ? 'border-magenta-500 scale-105' : 'border-transparent opacity-30 hover:opacity-100'}`}>
@@ -206,10 +206,10 @@ const Signup = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Empresa</label>
-                <input value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 text-sm font-bold" />
+                <input value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 text-sm font-bold uppercase" />
               </div>
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Email</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">E-mail Corporativo</label>
                 <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 text-sm font-bold" />
               </div>
             </div>
@@ -220,17 +220,17 @@ const Signup = () => {
                 <input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 text-sm font-bold" />
               </div>
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Senha</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Senha de Acesso</label>
                 <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 text-sm font-bold" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PIN Mestre de 4 Dígitos</label>
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PIN de Operação (4 Dígitos)</label>
               <input maxLength={4} type="password" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value.replace(/\D/g, '')})} className="w-full bg-black/60 border border-magenta-500/30 px-5 py-4 rounded-2xl text-white font-black text-center text-3xl tracking-[1em] outline-none" placeholder="0000" />
             </div>
 
-            <button type="submit" className="w-full py-6 bg-gradient-to-r from-violet-600 to-magenta-500 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-2xl mt-4">Ativar Ecossistema</button>
+            <button type="submit" className="w-full py-6 bg-gradient-to-r from-violet-600 to-magenta-500 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-2xl mt-4">Liberar Minha Conta</button>
           </form>
         </div>
       </div>
@@ -308,7 +308,12 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 relative">
+       <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all z-20">
+        <ArrowLeft size={16} />
+        <span className="text-[10px] font-black uppercase tracking-widest">Catálogo</span>
+      </Link>
+
       <div className="text-center mb-16 space-y-4">
         <h1 className="text-5xl font-black text-white uppercase tracking-tighter">Quem está <span className="text-cyan-400">Operando?</span></h1>
         <p className="text-cyan-400 font-bold uppercase tracking-[0.4em] text-[10px]">{account?.companyName}</p>
@@ -352,7 +357,7 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
       {/* Modal Profile Action */}
       {(showModal !== 'none' || isConfirmingMasterPin) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/98 p-6 animate-in fade-in">
-           <div className="w-full max-w-2xl bg-[#0a0a0a] rounded-[3.5rem] p-12 border border-white/10 shadow-2xl space-y-10 relative">
+           <div className="w-full max-w-2xl bg-[#0a0a0a] rounded-[3.5rem] p-12 border border-white/10 shadow-2xl space-y-10 relative overflow-y-auto max-h-[90vh]">
               <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
                 {pendingAction === 'delete' ? 'Excluir' : showModal === 'add' ? 'Novo' : 'Editar'} <span className="text-cyan-400">Operador</span>
               </h2>
