@@ -115,4 +115,55 @@ const SubscriptionManagement: React.FC = () => {
             <div className="p-8 bg-blue-600/5 border border-blue-500/10 rounded-3xl flex items-center gap-6 relative z-10">
                <TrendingUp size={32} className="text-blue-400 shrink-0" />
                <p className="text-[11px] text-slate-400 leading-relaxed uppercase font-bold tracking-tight">
-                 Ao
+                 Ao ativar novos módulos, seu Ecossistema CRMPlus+ se torna ainda mais robusto, centralizando dados de diferentes setores para decisões estratégicas.
+               </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de Upgrade */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md animate-in fade-in">
+           <div className="w-full max-w-3xl bg-[#0a0a0a] border border-white/10 p-10 lg:p-14 rounded-[4rem] space-y-12 shadow-3xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full"></div>
+              <button onClick={() => setShowUpgradeModal(false)} className="absolute top-10 right-10 text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
+              
+              <div className="text-center space-y-4">
+                 <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Expandir meu <span className="text-cyan-400">Ecossistema</span></h2>
+                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em]">Selecione um novo módulo para ativar agora</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {modulesData.filter(m => !account.allowedModules.includes(m.id)).map(mod => (
+                   <div key={mod.id} className="p-8 bg-white/[0.03] border border-white/10 rounded-[2.5rem] space-y-6 group hover:border-cyan-500/40 transition-all">
+                      <div className="flex items-center gap-4">
+                         <div className="p-4 bg-cyan-500/10 rounded-2xl text-cyan-400 group-hover:scale-110 transition-transform">{mod.icon}</div>
+                         <div>
+                            <p className="text-lg font-black text-white uppercase tracking-tight">{mod.name}</p>
+                            <p className="text-[10px] font-bold text-cyan-400/60 uppercase">{mod.price}</p>
+                         </div>
+                      </div>
+                      <button 
+                        onClick={() => handleUpgrade(mod.id)}
+                        className="w-full py-4 bg-white text-black font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl hover:bg-cyan-500 transition-all"
+                      >
+                        Ativar Agora
+                      </button>
+                   </div>
+                 ))}
+                 {modulesData.filter(m => !account.allowedModules.includes(m.id)).length === 0 && (
+                    <div className="col-span-full py-20 text-center opacity-30 space-y-4">
+                       <Check size={48} className="mx-auto" />
+                       <p className="text-[10px] font-black uppercase tracking-widest">Você já possui todos os módulos disponíveis!</p>
+                    </div>
+                 )}
+              </div>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SubscriptionManagement;
