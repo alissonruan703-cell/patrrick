@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { ShieldCheck, Rocket, Eye, EyeOff, CheckCircle2, Shield, Plus, Edit3, User, LayoutGrid, Settings, Trash2, FileText, Activity, Key, Lock, AlertCircle, Mail, ArrowLeft, X, Clock, Check, ListChecks } from 'lucide-react';
+import { ShieldCheck, Rocket, Eye, EyeOff, CheckCircle2, Shield, Plus, Edit3, User, LayoutGrid, Settings, Trash2, FileText, Activity, Key, Lock, AlertCircle, Mail, ArrowLeft, X, Clock, Check, ListChecks, Utensils, Zap } from 'lucide-react';
 import { UserProfile, AccountLicense } from '../types';
 
 const AVATAR_OPTIONS = [
@@ -24,6 +24,12 @@ const PERMISSION_OPTIONS = [
   { id: 'view_history', name: 'Ver Histórico', desc: 'Consultar ordens entregues' },
   { id: 'manage_profiles', name: 'Gerir Perfis', desc: 'Criar/Editar outros operadores' },
   { id: 'view_logs', name: 'Ver Logs', desc: 'Acesso à auditoria master' },
+];
+
+const AVAILABLE_MODULES = [
+  { id: 'oficina', name: 'Oficina Pro+', icon: <Rocket size={18}/>, desc: 'Gestão de O.S. e Mecânica' },
+  { id: 'orcamento', name: 'Vendas Plus', icon: <FileText size={18}/>, desc: 'CRM e Faturamento Rápido' },
+  { id: 'restaurante', name: 'Gastro Hub', icon: <Utensils size={18}/>, desc: 'Mesas, Delivery e Pedidos' }
 ];
 
 const Login = () => {
@@ -91,12 +97,22 @@ const Login = () => {
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ fullName: '', email: '', companyName: '', username: '', password: '', pin: '', avatar: AVATAR_OPTIONS[0] });
+  const [selectedModules, setSelectedModules] = useState<string[]>(['oficina']);
   const [error, setError] = useState('');
+
+  const toggleModule = (id: string) => {
+    setSelectedModules(prev => 
+      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+    );
+  };
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.email || !formData.companyName || !formData.username || !formData.password || formData.pin.length !== 4) {
       setError('Todos os campos são obrigatórios. O PIN deve ter 4 dígitos.'); return;
+    }
+    if (selectedModules.length === 0) {
+      setError('Selecione ao menos um módulo para sua assinatura.'); return;
     }
     
     const saved = localStorage.getItem('crmplus_accounts');
@@ -107,11 +123,11 @@ const Signup = () => {
 
     const accountId = Date.now().toString();
     const newAccount: AccountLicense = {
-      id: accountId, fullName: formData.fullName, email: formData.email, companyName: formData.companyName, username: formData.username, password: formData.password, status: 'Ativo', createdAt: new Date().toLocaleDateString('pt-BR'), expirationDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], allowedModules: ['oficina', 'config']
+      id: accountId, fullName: formData.fullName, email: formData.email, companyName: formData.companyName, username: formData.username, password: formData.password, status: 'Ativo', createdAt: new Date().toLocaleDateString('pt-BR'), expirationDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], allowedModules: [...selectedModules, 'config']
     };
 
     const masterProfile: UserProfile = {
-      id: '1', name: formData.fullName.split(' ')[0], avatar: formData.avatar, pin: formData.pin, modules: ['oficina', 'config'], actions: PERMISSION_OPTIONS.map(p => p.id)
+      id: '1', name: formData.fullName.split(' ')[0], avatar: formData.avatar, pin: formData.pin, modules: [...selectedModules, 'config'], actions: PERMISSION_OPTIONS.map(p => p.id)
     };
 
     localStorage.setItem('crmplus_accounts', JSON.stringify([...accounts, newAccount]));
@@ -129,16 +145,39 @@ const Signup = () => {
         <ArrowLeft size={16} />
         <span className="text-[10px] font-black uppercase tracking-widest">Voltar ao Catálogo</span>
       </Link>
-      <div className="w-full max-w-4xl space-y-12 relative z-10 my-10 animate-in fade-in duration-1000">
+      <div className="w-full max-w-5xl space-y-12 relative z-10 my-10 animate-in fade-in duration-1000">
         <div className="text-center space-y-4">
           <div className="bg-gradient-to-br from-violet-600 to-magenta-500 p-4 rounded-[2rem] w-fit mx-auto shadow-2xl"><Rocket className="text-white" size={32}/></div>
           <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Ativar <span className="text-magenta-500">Ecossistema</span></h1>
           <p className="text-magenta-400 font-bold uppercase tracking-[0.4em] text-[10px]">Primeiro Passo para sua Transformação</p>
         </div>
-        <div className="bg-white/[0.03] border border-white/10 p-10 rounded-[3.5rem] backdrop-blur-3xl shadow-2xl">
-          <form onSubmit={handleSignup} className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="space-y-8">
-              <div className="space-y-4">
+        <div className="bg-white/[0.03] border border-white/10 p-10 lg:p-14 rounded-[3.5rem] backdrop-blur-3xl shadow-2xl">
+          <form onSubmit={handleSignup} className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <div className="space-y-10">
+              <div className="space-y-6">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Zap size={14} className="text-magenta-500"/> Escolha seus Módulos</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {AVAILABLE_MODULES.map(mod => (
+                    <button 
+                      key={mod.id}
+                      type="button"
+                      onClick={() => toggleModule(mod.id)}
+                      className={`flex items-center gap-5 p-5 rounded-3xl border transition-all text-left group ${selectedModules.includes(mod.id) ? 'bg-magenta-500/10 border-magenta-500/40 shadow-lg shadow-magenta-500/5' : 'bg-black/40 border-white/5 opacity-50 hover:opacity-100'}`}
+                    >
+                      <div className={`p-3 rounded-2xl ${selectedModules.includes(mod.id) ? 'bg-magenta-500 text-white' : 'bg-white/5 text-slate-500 group-hover:text-white'}`}>
+                        {mod.icon}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`text-[11px] font-black uppercase tracking-tight ${selectedModules.includes(mod.id) ? 'text-white' : 'text-slate-500'}`}>{mod.name}</p>
+                        <p className="text-[9px] font-bold text-slate-600 uppercase mt-1">{mod.desc}</p>
+                      </div>
+                      {selectedModules.includes(mod.id) && <Check size={16} className="text-magenta-500" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-6">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Avatar Operador Master</label>
                 <div className="grid grid-cols-5 gap-3 p-4 bg-black/40 rounded-3xl border border-white/5">
                   {AVATAR_OPTIONS.map(av => (
@@ -146,16 +185,11 @@ const Signup = () => {
                   ))}
                 </div>
               </div>
-              <div className="space-y-4">
-                 <div className="p-6 bg-violet-600/10 border border-violet-500/20 rounded-2xl">
-                   <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-2 flex items-center gap-2"><Shield size={14}/> Perfil Master</p>
-                   <p className="text-[11px] text-slate-400 leading-relaxed uppercase font-bold tracking-tight">O primeiro perfil criado terá acesso total a todos os módulos e auditoria do sistema por padrão.</p>
-                 </div>
-              </div>
             </div>
+
             <div className="space-y-6">
               {error && <div className="p-4 bg-red-600/10 border border-red-500/20 text-red-400 text-[10px] font-black uppercase text-center rounded-2xl">{error}</div>}
-              <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase">Nome Completo</label><input value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 font-bold" /></div>
+              <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase">Nome</label><input value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 font-bold" placeholder="Seu nome ou apelido" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase">Empresa</label><input value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 font-bold uppercase" /></div>
                 <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase">E-mail</label><input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-magenta-500/20 font-bold" /></div>
@@ -165,7 +199,7 @@ const Signup = () => {
                 <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase">Senha</label><input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-2xl text-white font-bold" /></div>
               </div>
               <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PIN Mestre (4 Dígitos)</label><input maxLength={4} type="password" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value.replace(/\D/g, '')})} className="w-full bg-black/60 border border-magenta-500/30 px-5 py-4 rounded-2xl text-white font-black text-center text-3xl tracking-[1em]" placeholder="0000" /></div>
-              <button type="submit" className="w-full py-6 bg-gradient-to-r from-violet-600 to-magenta-500 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-2xl">Ativar Ecossistema</button>
+              <button type="submit" className="w-full py-6 bg-gradient-to-r from-violet-600 to-magenta-500 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-2xl mt-4 active:scale-95 transition-transform">Finalizar e Ativar Acesso</button>
             </div>
           </form>
         </div>

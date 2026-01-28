@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { 
-  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity, LayoutGrid, Rocket, FileText, Utensils, Settings as SettingsIcon, AlertTriangle, Shield, Info, MessageSquare, Send, CheckCircle2
+  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity, LayoutGrid, Rocket, FileText, Utensils, Settings as SettingsIcon, AlertTriangle, Shield, Info, MessageSquare, Send, CheckCircle2, CreditCard
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
@@ -12,6 +12,7 @@ import Settings from './pages/Settings';
 import AuthPages from './pages/AuthPages';
 import AdminMaster from './pages/AdminMaster';
 import ActivityLog from './pages/ActivityLog';
+import SubscriptionManagement from './pages/SubscriptionManagement';
 import { SystemConfig, UserProfile } from './types';
 
 const ProtectedModule: React.FC<{ children: React.ReactNode, permission: string }> = ({ children, permission }) => {
@@ -340,6 +341,7 @@ const App: React.FC = () => {
           <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
           <Route path="/v/:data" element={<PublicView />} />
           <Route path="/admin-panel" element={<MasterRoute><AdminMaster /></MasterRoute>} />
+          <Route path="/assinatura" element={<ProtectedModule permission="config"><SubscriptionManagement /></ProtectedModule>} />
           <Route path="/oficina/*" element={<ProtectedModule permission="oficina"><Oficina /></ProtectedModule>} />
           <Route path="/config" element={<ProtectedModule permission="config"><Settings /></ProtectedModule>} />
           <Route path="/logs" element={<ProtectedModule permission="config"><ActivityLog /></ProtectedModule>} />

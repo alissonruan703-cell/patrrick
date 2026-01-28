@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Building2, ImagePlus, CheckCircle2, Trash, Info } from 'lucide-react';
+import { Save, ArrowLeft, Building2, ImagePlus, CheckCircle2, Trash, Info, CreditCard, ChevronRight } from 'lucide-react';
 import { SystemConfig } from '../types';
 
 const Settings: React.FC = () => {
@@ -38,7 +38,7 @@ const Settings: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
         <div className="space-y-2">
           <h1 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">CONFIGURAÇÕES DO <span className="text-violet-500">SISTEMA</span></h1>
-          <p className="text-slate-400 font-medium text-sm sm:text-base">Personalize a identidade visual da sua plataforma SaaS.</p>
+          <p className="text-slate-400 font-medium text-sm sm:text-base">Personalize a identidade visual e gerencie sua conta SaaS.</p>
         </div>
         <button 
           onClick={() => navigate('/')} 
@@ -82,6 +82,21 @@ const Settings: React.FC = () => {
                 </button>
               )}
            </div>
+
+           {/* Atalho Assinatura */}
+           <button 
+            onClick={() => navigate('/assinatura')}
+            className="w-full p-6 bg-cyan-500/10 border border-cyan-500/20 rounded-3xl flex items-center justify-between group hover:bg-cyan-500/20 transition-all"
+           >
+              <div className="flex items-center gap-4">
+                 <CreditCard className="text-cyan-400" size={24} />
+                 <div className="text-left">
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest">Meu Plano</p>
+                    <p className="text-[8px] font-bold text-slate-500 uppercase">Gerenciar Módulos</p>
+                 </div>
+              </div>
+              <ChevronRight size={16} className="text-cyan-400 group-hover:translate-x-1 transition-transform" />
+           </button>
         </div>
 
         <div className="lg:col-span-2 space-y-8">
@@ -112,7 +127,7 @@ const Settings: React.FC = () => {
 
            <div className="p-6 sm:p-8 bg-blue-600/5 border border-blue-500/10 rounded-3xl space-y-4">
               <h4 className="text-blue-400 font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
-                 <Info size={14} /> Transparência Nativa
+                 <div className="p-1.5 bg-blue-400/10 rounded-lg"><Info size={14} /></div> Transparência Nativa
               </h4>
               <p className="text-slate-400 text-xs leading-relaxed">
                 O sistema foi otimizado para integrar logos transparentes (PNG) diretamente sobre o fundo escuro, removendo bordas e containers delimitadores para um visual mais premium.
