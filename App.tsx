@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { 
-  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity, LayoutGrid, Rocket, FileText, Utensils, Settings as SettingsIcon, AlertTriangle, Shield, Info, MessageSquare, Send, CheckCircle2, CreditCard
+  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity, LayoutGrid, Rocket, FileText, Utensils, Settings as SettingsIcon, AlertTriangle, Shield, Info, MessageSquare, Send, CheckCircle2, CreditCard, Bell
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
@@ -13,6 +13,7 @@ import AuthPages from './pages/AuthPages';
 import AdminMaster from './pages/AdminMaster';
 import ActivityLog from './pages/ActivityLog';
 import SubscriptionManagement from './pages/SubscriptionManagement';
+import Notifications from './pages/Notifications';
 import { SystemConfig, UserProfile } from './types';
 
 const ProtectedModule: React.FC<{ children: React.ReactNode, permission: string }> = ({ children, permission }) => {
@@ -57,6 +58,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [showDevModal, setShowDevModal] = useState(false);
   const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
+  const [notifCount, setNotifCount] = useState(0);
 
   const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
   const isMaster = sessionStorage.getItem('crmplus_is_master') === 'true';
@@ -66,11 +68,19 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
     const loadConfig = () => {
       const saved = localStorage.getItem('crmplus_system_config');
       if (saved) setConfig(JSON.parse(saved));
+      
+      // Contar notificações rápidas para o badge
+      const ordersRaw = localStorage.getItem('crmplus_oficina_orders');
+      if (ordersRaw) {
+        const orders = JSON.parse(ordersRaw);
+        const alerts = orders.filter((o: any) => o.status === 'Aberto' || o.status === 'Pronto').length;
+        setNotifCount(alerts);
+      }
     };
     loadConfig();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [location.pathname]);
 
   if (location.pathname.startsWith('/v/') || 
       location.pathname === '/login' || 
@@ -149,6 +159,19 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
         <div className="flex items-center gap-4 sm:gap-6">
           {isAccountLoggedIn ? (
             <>
+              {/* Ícone de Notificações Estilo YouTube */}
+              <button 
+                onClick={() => navigate('/notificacoes')}
+                className="relative p-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all group"
+              >
+                <Bell size={18} />
+                {notifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[#050505] animate-pulse">
+                    {notifCount}
+                  </span>
+                )}
+              </button>
+
               {!isMaster && (
                 <button 
                   onClick={handleSwitchProfile}
@@ -193,114 +216,37 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   );
 };
 
+// Fix: Define the Footer component to resolve the "Cannot find name 'Footer'" error.
 const Footer = () => {
-  const [modalType, setModalType] = useState<'none' | 'privacy' | 'terms' | 'support'>('none');
-  const [supportMsg, setSupportMsg] = useState('');
-  const [sent, setSent] = useState(false);
-
-  const handleSendSupport = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supportMsg) return;
-    setSent(true);
-    setTimeout(() => { setSent(false); setSupportMsg(''); setModalType('none'); }, 3000);
-  };
-
+  const currentYear = new Date().getFullYear();
   return (
-    <>
-      <footer className="px-6 lg:px-20 py-20 border-t border-white/5 bg-[#050505] relative overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
-          <div className="space-y-6">
-            <h4 className="text-xl font-black text-white uppercase tracking-tighter">CRM<span className="text-cyan-500">Plus+</span></h4>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] font-black leading-relaxed italic">Ecossistema de gestão inteligente para empresas escaláveis.</p>
-          </div>
-          
-          <div className="space-y-4">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Informações</p>
-            <div className="flex flex-col gap-2">
-              <button onClick={() => setModalType('privacy')} className="text-xs text-slate-600 hover:text-cyan-400 transition-colors text-left font-bold uppercase tracking-tight">Política de Privacidade</button>
-              <button onClick={() => setModalType('terms')} className="text-xs text-slate-600 hover:text-cyan-400 transition-colors text-left font-bold uppercase tracking-tight">Termos de Uso</button>
+    <footer className="py-12 px-6 lg:px-12 border-t border-white/5 bg-[#050505]">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+        <div className="flex flex-col items-center md:items-start gap-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-cyan-500 p-1.5 rounded-lg">
+              <Rocket size={12} className="text-black" />
             </div>
+            <span className="text-sm font-black tracking-tighter text-white uppercase">
+              CRM<span className="text-cyan-400">Plus+</span>
+            </span>
           </div>
-
-          <div className="space-y-4">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atendimento</p>
-            <button 
-              onClick={() => setModalType('support')}
-              className="w-full flex items-center justify-between p-4 bg-white/[0.03] border border-white/10 rounded-2xl hover:bg-white/5 transition-all group"
-            >
-              <span className="text-[10px] font-black text-white uppercase tracking-widest">Mensagem ao Suporte</span>
-              <MessageSquare size={16} className="text-cyan-400" />
-            </button>
-          </div>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            Ecossistema de Gestão Corporativa
+          </p>
+        </div>
+        
+        <div className="flex gap-8">
+          <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Termos</a>
+          <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Privacidade</a>
+          <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Suporte</a>
         </div>
 
-        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 text-center">
-          <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em]">© 2025 CRMPlus+ Management Solutions. All Rights Reserved.</p>
-        </div>
-      </footer>
-
-      {modalType !== 'none' && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in">
-           <div className="w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 sm:p-14 relative shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
-              <button onClick={() => setModalType('none')} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors">
-                <X size={24} />
-              </button>
-
-              {modalType === 'support' ? (
-                <div className="space-y-8">
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto text-cyan-500 shadow-lg border border-cyan-500/20">
-                      <MessageSquare size={32} />
-                    </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Falar com o <span className="text-cyan-500">Suporte</span></h2>
-                    <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Relate seu problema ou dúvida para nossa equipe técnica.</p>
-                  </div>
-
-                  <form onSubmit={handleSendSupport} className="space-y-6">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Sua Mensagem</label>
-                       <textarea 
-                        value={supportMsg}
-                        onChange={(e) => setSupportMsg(e.target.value)}
-                        placeholder="Descreva detalhadamente como podemos ajudar..."
-                        className="w-full bg-black border border-white/10 rounded-2xl p-6 text-white min-h-[150px] outline-none focus:ring-2 focus:ring-cyan-500/20 font-medium"
-                       />
-                    </div>
-                    <button 
-                      type="submit"
-                      disabled={sent}
-                      className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 transition-all ${sent ? 'bg-emerald-500 text-white' : 'bg-cyan-500 text-black hover:brightness-110 shadow-xl shadow-cyan-500/20'}`}
-                    >
-                      {sent ? <CheckCircle2 size={18} /> : <Send size={18} />}
-                      {sent ? 'Mensagem Enviada!' : 'Enviar Mensagem'}
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-violet-600/10 rounded-xl text-violet-500 border border-violet-500/20">
-                      {modalType === 'privacy' ? <Shield size={24}/> : <FileText size={24}/>}
-                    </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">
-                      {modalType === 'privacy' ? 'Política de Privacidade' : 'Termos de Uso'}
-                    </h2>
-                  </div>
-                  
-                  <div className="space-y-6 text-slate-400 text-xs leading-relaxed uppercase tracking-wider font-medium text-justify">
-                    <p>Nossa plataforma adota as melhores práticas de segurança digital. Seus dados são criptografados e armazenados em infraestrutura de alta disponibilidade.</p>
-                    <p>Ao contratar nossos serviços, você garante que as informações inseridas no sistema são de sua inteira responsabilidade, servindo o CRMPlus+ apenas como provedor da tecnologia de gestão.</p>
-                    <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center gap-4">
-                      <Info size={20} className="text-cyan-400 shrink-0" />
-                      <p className="text-[9px] font-black tracking-widest">Para suporte jurídico adicional, utilize nosso canal oficial de atendimento.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-           </div>
-        </div>
-      )}
-    </>
+        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+          &copy; {currentYear} CRMPLUS. Todos os direitos reservados.
+        </p>
+      </div>
+    </footer>
   );
 };
 
@@ -341,6 +287,7 @@ const App: React.FC = () => {
           <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
           <Route path="/v/:data" element={<PublicView />} />
           <Route path="/admin-panel" element={<MasterRoute><AdminMaster /></MasterRoute>} />
+          <Route path="/notificacoes" element={<ProtectedModule permission="any"><Notifications /></ProtectedModule>} />
           <Route path="/assinatura" element={<ProtectedModule permission="config"><SubscriptionManagement /></ProtectedModule>} />
           <Route path="/oficina/*" element={<ProtectedModule permission="oficina"><Oficina /></ProtectedModule>} />
           <Route path="/config" element={<ProtectedModule permission="config"><Settings /></ProtectedModule>} />
