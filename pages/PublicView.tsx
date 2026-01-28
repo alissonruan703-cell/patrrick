@@ -58,20 +58,20 @@ const PublicView: React.FC = () => {
       const updated = orders.map((o: any) => String(o.id) === String(osDataFromUrl.id) ? { ...o, status: newStatus } : o);
       localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
 
-      // Registro de Log Master para o Administrador
+      // Registro de Log Master para o Administrador (Este log servirá como notificação no sino)
       const logs = JSON.parse(localStorage.getItem('crmplus_logs') || '[]');
       const newLog = {
         id: Date.now().toString(),
-        timestamp: new Date().toLocaleString(),
+        timestamp: new Date().toISOString(), // Use ISO para facilitar filtros de tempo
         userId: 'CLIENTE',
         userName: `CLIENTE: ${osDataFromUrl.client}`,
         action: newStatus === 'Execução' ? 'APROVADO' : 'REPROVADO',
-        details: `O cliente ${newStatus === 'Execução' ? 'AUTORIZOU' : 'NEGOU'} o orçamento #${osDataFromUrl.id} via link público.`,
+        details: `O cliente ${newStatus === 'Execução' ? 'AUTORIZOU' : 'NEGOU'} o orçamento da Placa ${osDataFromUrl.plate} (#${osDataFromUrl.id}).`,
         system: 'OFICINA'
       };
       localStorage.setItem('crmplus_logs', JSON.stringify([newLog, ...logs].slice(0, 1000)));
 
-      // Sincroniza abas abertas
+      // Sincroniza abas abertas e aciona storage listeners no App.tsx e Oficina.tsx
       window.dispatchEvent(new Event('storage'));
       setCurrentStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
     }

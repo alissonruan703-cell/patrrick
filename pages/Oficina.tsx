@@ -29,8 +29,6 @@ const Oficina: React.FC = () => {
   });
   const [newItem, setNewItem] = useState<Partial<ServiceItem>>({ type: 'PEÇA', description: '', brand: '', quantity: 1, price: 0 });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const hasPermission = (permission: string) => {
     return activeProfile?.actions?.includes(permission) || false;
   };
@@ -38,7 +36,7 @@ const Oficina: React.FC = () => {
   const addLog = (action: string, details: string) => {
     if (!activeProfile) return;
     const logs = JSON.parse(localStorage.getItem('crmplus_logs') || '[]');
-    const newLog: LogEntry = { id: Date.now().toString(), timestamp: new Date().toLocaleString(), userId: activeProfile.id, userName: activeProfile.name, action, details, system: 'OFICINA' };
+    const newLog: LogEntry = { id: Date.now().toString(), timestamp: new Date().toISOString(), userId: activeProfile.id, userName: activeProfile.name, action, details, system: 'OFICINA' };
     localStorage.setItem('crmplus_logs', JSON.stringify([newLog, ...logs].slice(0, 1000)));
   };
 
@@ -47,6 +45,14 @@ const Oficina: React.FC = () => {
     const parsedOrders = savedOrders ? JSON.parse(savedOrders) : [];
     setOrders(parsedOrders);
     
+    // Sincroniza o selecionado caso ele tenha mudado externamente
+    if (selectedOS) {
+      const currentInStorage = parsedOrders.find((o: any) => String(o.id) === String(selectedOS.id));
+      if (currentInStorage && JSON.stringify(currentInStorage) !== JSON.stringify(selectedOS)) {
+        setSelectedOS(currentInStorage);
+      }
+    }
+
     const osIdFromUrl = searchParams.get('id');
     if (osIdFromUrl) {
       const found = parsedOrders.find((o: any) => String(o.id) === String(osIdFromUrl));
@@ -54,13 +60,6 @@ const Oficina: React.FC = () => {
         setSelectedOS(found);
         setView('detalhes');
         setSearchParams({}, { replace: true });
-      }
-    }
-
-    if (selectedOS) {
-      const updated = parsedOrders.find((o: any) => String(o.id) === String(selectedOS.id));
-      if (updated && updated.status !== selectedOS.status) {
-        setSelectedOS(updated);
       }
     }
 
@@ -176,7 +175,6 @@ const Oficina: React.FC = () => {
       const createdAt = new Date(parseInt(os.id) || now.getTime());
       const hoursDiff = Math.abs(now.getTime() - createdAt.getTime()) / 36e5;
 
-      // Mantém histórico apenas de 7 dias para não sobrecarregar
       if (hoursDiff > 168) return; 
 
       if (os.status === 'Aberto' && hoursDiff > 2 && hoursDiff < 24) {
@@ -223,7 +221,7 @@ const Oficina: React.FC = () => {
       if (statusFilter !== 'Todos' && o.status !== statusFilter) return false;
       if (activeTab === 'ativos') { if (isHistory) return false; } 
       else if (activeTab === 'historico') { if (!isHistory) return false; }
-      else if (activeTab === 'nova') { return false; } // Nova aba não lista ordens
+      else if (activeTab === 'nova') { return false; }
       return matchesSearch;
     });
   }, [orders, searchTerm, activeTab, statusFilter]);
@@ -311,8 +309,8 @@ const Oficina: React.FC = () => {
              <h1 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">OFICINA <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">PRO+</span></h1>
           </div>
           <div className="flex items-center gap-3">
-             <button onClick={() => { setActiveTab('ativos'); setView('lista'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'ativos' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Operacional</button>
-             <button onClick={() => { setActiveTab('historico'); setView('lista'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'historico' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Histórico</button>
+             <button onClick={() => { setActiveTab('ativos'); setView('lista'); setSelectedOS(null); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'ativos' && !selectedOS ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Operacional</button>
+             <button onClick={() => { setActiveTab('historico'); setView('lista'); setSelectedOS(null); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'historico' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Histórico</button>
           </div>
         </div>
         <div className="flex items-center gap-4 relative z-10">
@@ -320,14 +318,14 @@ const Oficina: React.FC = () => {
              <Bell size={24} className={smartAlerts.length > 0 ? 'animate-bounce' : ''} />
              {smartAlerts.length > 0 && <span className="absolute -top-1 -right-1 min-w-[24px] h-6 bg-red-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-[#050505] shadow-lg px-1.5">{smartAlerts.length > 9 ? '9+' : smartAlerts.length}</span>}
           </button>
-          <button onClick={() => { setView('lista'); setActiveTab('nova'); }} className="px-10 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:brightness-125 hover:scale-105 transition-all flex items-center justify-center gap-3 shadow-xl">
+          <button onClick={() => { setView('lista'); setActiveTab('nova'); setSelectedOS(null); }} className="px-10 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:brightness-125 hover:scale-105 transition-all flex items-center justify-center gap-3 shadow-xl">
             <Plus size={18} strokeWidth={4} /> Nova O.S.
           </button>
         </div>
       </div>
 
       {/* Visualização de Lista / Dashboard */}
-      {view === 'lista' && activeTab !== 'nova' && (
+      {view === 'lista' && activeTab !== 'nova' && !selectedOS && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-500">
              <div onClick={() => setStatusFilter('Orçamento')} className={`p-6 rounded-3xl border transition-all cursor-pointer group flex flex-col justify-between h-32 ${statusFilter === 'Orçamento' ? 'bg-amber-500/20 border-amber-500/50' : 'bg-white/[0.02] border-white/5'}`}>
@@ -359,7 +357,7 @@ const Oficina: React.FC = () => {
         </>
       )}
 
-      {/* Formulário Nova O.S. (Garante exibição correta) */}
+      {/* Formulário Nova O.S. */}
       {activeTab === 'nova' && (
         <div className="max-w-4xl mx-auto bg-white/[0.02] border border-white/10 p-12 rounded-[3.5rem] backdrop-blur-3xl animate-in slide-in-from-bottom-10 shadow-3xl">
           <div className="flex items-center justify-between mb-12">
@@ -386,7 +384,7 @@ const Oficina: React.FC = () => {
       {view === 'detalhes' && selectedOS && (
         <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in zoom-in-95 duration-500">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-             <button onClick={() => setView('lista')} className="flex items-center gap-3 text-slate-500 hover:text-white transition-all text-[11px] font-black uppercase tracking-[0.2em] group"><ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Controle</button>
+             <button onClick={() => { setView('lista'); setSelectedOS(null); }} className="flex items-center gap-3 text-slate-500 hover:text-white transition-all text-[11px] font-black uppercase tracking-[0.2em] group"><ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Controle</button>
              <div className="flex items-center gap-4"><button onClick={() => copyLink(selectedOS)} className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-cyan-400 hover:border-cyan-500/30 transition-all shadow-xl">{copyFeedback ? <Check size={18} className="text-emerald-500" /> : <Share2 size={18}/>} {copyFeedback ? 'Link Copiado!' : 'Link do Cliente'}</button></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">

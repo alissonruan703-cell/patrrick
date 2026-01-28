@@ -14,7 +14,7 @@ import AdminMaster from './pages/AdminMaster';
 import ActivityLog from './pages/ActivityLog';
 import SubscriptionManagement from './pages/SubscriptionManagement';
 import Notifications from './pages/Notifications';
-import { SystemConfig, UserProfile } from './types';
+import { SystemConfig, UserProfile, LogEntry, ServiceOrder } from './types';
 
 const ProtectedModule: React.FC<{ children: React.ReactNode, permission: string }> = ({ children, permission }) => {
   const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
@@ -65,23 +65,37 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
 
   const updateNotifCount = () => {
     const ordersRaw = localStorage.getItem('crmplus_oficina_orders');
+    const logsRaw = localStorage.getItem('crmplus_logs');
+    const now = Date.now();
+    
+    let count = 0;
+
+    // 1. Alertas operacionais (tempo de espera)
     if (ordersRaw) {
-      const orders = JSON.parse(ordersRaw);
-      const now = Date.now();
-      const pendingAlerts = orders.filter((o: any) => {
+      const orders: ServiceOrder[] = JSON.parse(ordersRaw);
+      const pendingAlerts = orders.filter(o => {
         const createdAt = parseInt(o.id) || now;
         const hoursDiff = (now - createdAt) / 36e5;
-        
-        // Regra de Notificações Pendentes (Alertas Reais)
         const isStagnantOpen = o.status === 'Aberto' && hoursDiff > 2;
         const isPendingQuote = o.status === 'Orçamento' && hoursDiff > 4;
-        const isReadyForDelivery = o.status === 'Pronto';
-        
-        // Apenas itens dos últimos 7 dias para não poluir
-        return (isStagnantOpen || isPendingQuote || isReadyForDelivery) && hoursDiff < 168;
-      }).length;
-      setNotifCount(pendingAlerts);
+        return (isStagnantOpen || isPendingQuote) && hoursDiff < 168;
+      });
+      count += pendingAlerts.length;
     }
+
+    // 2. Alertas de aprovação/reprovação (logs das últimas 24h)
+    if (logsRaw) {
+      const logs: LogEntry[] = JSON.parse(logsRaw);
+      const recentApprovalLogs = logs.filter(l => {
+        const logTime = new Date(l.timestamp).getTime() || now;
+        const isRecent = (now - logTime) < (24 * 36e5);
+        const isClientAction = l.userId === 'CLIENTE';
+        return isRecent && isClientAction;
+      });
+      count += recentApprovalLogs.length;
+    }
+
+    setNotifCount(count);
   };
 
   useEffect(() => {
