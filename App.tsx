@@ -69,11 +69,15 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
       const saved = localStorage.getItem('crmplus_system_config');
       if (saved) setConfig(JSON.parse(saved));
       
-      // Contar notificações rápidas para o badge
       const ordersRaw = localStorage.getItem('crmplus_oficina_orders');
       if (ordersRaw) {
         const orders = JSON.parse(ordersRaw);
-        const alerts = orders.filter((o: any) => o.status === 'Aberto' || o.status === 'Pronto').length;
+        // Contagem alinhada com os Smart Alerts da Oficina (Abertos e Prontos de até 7 dias)
+        const alerts = orders.filter((o: any) => {
+          const createdAt = new Date(parseInt(o.id) || Date.now());
+          const hoursDiff = Math.abs(Date.now() - createdAt.getTime()) / 36e5;
+          return (o.status === 'Aberto' || o.status === 'Pronto') && hoursDiff < 168;
+        }).length;
         setNotifCount(alerts);
       }
     };
@@ -120,32 +124,16 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
 
           {isAccountLoggedIn && !isMaster && (
             <div className="relative">
-               <button 
-                onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all group"
-               >
-                 <LayoutGrid size={16} />
-                 <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Módulos</span>
+               <button onClick={() => setIsSwitcherOpen(!isSwitcherOpen)} className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all group">
+                 <LayoutGrid size={16} /><span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Módulos</span>
                </button>
-
                {isSwitcherOpen && (
                  <div className="absolute top-full left-0 mt-3 w-64 bg-[#0a0a0a] border border-white/10 rounded-2xl p-4 shadow-2xl animate-in fade-in slide-in-from-top-2">
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-4 px-2">Trocar de Sistema</p>
                     <div className="space-y-1">
                       {systems.map(s => (
-                        <button 
-                          key={s.id}
-                          onClick={() => {
-                            setIsSwitcherOpen(false);
-                            if (s.active) navigate(s.path);
-                            else setShowDevModal(true);
-                          }}
-                          className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${location.pathname.startsWith(s.path) ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            {s.icon}
-                            <span className="text-[10px] font-black uppercase tracking-tight">{s.name}</span>
-                          </div>
+                        <button key={s.id} onClick={() => { setIsSwitcherOpen(false); if (s.active) navigate(s.path); else setShowDevModal(true); }} className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${location.pathname.startsWith(s.path) ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                          <div className="flex items-center gap-3">{s.icon}<span className="text-[10px] font-black uppercase tracking-tight">{s.name}</span></div>
                           {!s.active && <Lock size={12} className="opacity-40" />}
                         </button>
                       ))}
@@ -159,33 +147,22 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
         <div className="flex items-center gap-4 sm:gap-6">
           {isAccountLoggedIn ? (
             <>
-              {/* Ícone de Notificações Estilo YouTube */}
-              <button 
-                onClick={() => navigate('/notificacoes')}
-                className="relative p-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all group"
-              >
+              <button onClick={() => navigate('/notificacoes')} className="relative p-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all group">
                 <Bell size={18} />
                 {notifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[#050505] animate-pulse">
-                    {notifCount}
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-600 text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[#050505] animate-pulse px-1">
+                    {notifCount > 9 ? '9+' : notifCount}
                   </span>
                 )}
               </button>
 
               {!isMaster && (
-                <button 
-                  onClick={handleSwitchProfile}
-                  className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all"
-                >
-                  <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20">
-                    <img src={activeProfile?.avatar || ''} className="w-full h-full" alt="Perfil" />
-                  </div>
+                <button onClick={handleSwitchProfile} className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all">
+                  <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20"><img src={activeProfile?.avatar || ''} className="w-full h-full" alt="Perfil" /></div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-white">{activeProfile?.name}</span>
                 </button>
               )}
-              <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all shadow-lg" title="Sair">
-                <LogOut size={16} />
-              </button>
+              <button onClick={onLogout} className="p-2.5 bg-red-600/10 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-600 hover:text-white transition-all shadow-lg" title="Sair"><LogOut size={16} /></button>
             </>
           ) : (
             <div className="flex gap-4">
@@ -196,14 +173,12 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
         </div>
       </nav>
 
-      {/* Modal Em Desenvolvimento */}
+      {/* Footer and other components omit for brevity */}
       {showDevModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in">
            <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 p-10 rounded-[3rem] text-center space-y-8 shadow-2xl relative overflow-hidden">
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/10 blur-[60px] rounded-full"></div>
-              <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-lg">
-                <AlertTriangle size={40} />
-              </div>
+              <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-lg"><AlertTriangle size={40} /></div>
               <div className="space-y-4">
                 <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Em Desenvolvimento</h3>
                 <p className="text-slate-400 text-sm leading-relaxed">Estamos trabalhando duro para liberar este módulo. Fique ligado, novidades em breve!</p>
@@ -216,7 +191,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   );
 };
 
-// Fix: Define the Footer component to resolve the "Cannot find name 'Footer'" error.
+// Footer implementation...
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   return (
@@ -224,27 +199,17 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="flex flex-col items-center md:items-start gap-2">
           <div className="flex items-center gap-3">
-            <div className="bg-cyan-500 p-1.5 rounded-lg">
-              <Rocket size={12} className="text-black" />
-            </div>
-            <span className="text-sm font-black tracking-tighter text-white uppercase">
-              CRM<span className="text-cyan-400">Plus+</span>
-            </span>
+            <div className="bg-cyan-500 p-1.5 rounded-lg"><Rocket size={12} className="text-black" /></div>
+            <span className="text-sm font-black tracking-tighter text-white uppercase">CRM<span className="text-cyan-400">Plus+</span></span>
           </div>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-            Ecossistema de Gestão Corporativa
-          </p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ecossistema de Gestão Corporativa</p>
         </div>
-        
         <div className="flex gap-8">
           <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Termos</a>
           <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Privacidade</a>
           <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Suporte</a>
         </div>
-
-        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
-          &copy; {currentYear} CRMPLUS. Todos os direitos reservados.
-        </p>
+        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">&copy; {currentYear} CRMPLUS. Todos os direitos reservados.</p>
       </div>
     </footer>
   );
@@ -273,11 +238,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-slate-200 flex flex-col">
-      <Navbar 
-        activeProfile={activeProfile} 
-        onLogout={handleLogout} 
-        onProfileReset={() => setActiveProfile(null)} 
-      />
+      <Navbar activeProfile={activeProfile} onLogout={handleLogout} onProfileReset={() => setActiveProfile(null)} />
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Catalog />} />
