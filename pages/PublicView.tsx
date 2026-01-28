@@ -51,28 +51,29 @@ const PublicView: React.FC = () => {
   const handleClientAction = (newStatus: 'Execução' | 'Reprovado') => {
     if (!osDataFromUrl) return;
     
-    setCurrentStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
-    
+    // Atualiza localmente a ordem de serviço para o sistema operacional ver
     const saved = localStorage.getItem('crmplus_oficina_orders');
     if (saved) {
       const orders = JSON.parse(saved);
       const updated = orders.map((o: any) => String(o.id) === String(osDataFromUrl.id) ? { ...o, status: newStatus } : o);
       localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
 
-      // Registro de Log para Auditoria
+      // Registro de Log Master para o Administrador
       const logs = JSON.parse(localStorage.getItem('crmplus_logs') || '[]');
       const newLog = {
         id: Date.now().toString(),
         timestamp: new Date().toLocaleString(),
         userId: 'CLIENTE',
-        userName: `Cliente: ${osDataFromUrl.client}`,
+        userName: `CLIENTE: ${osDataFromUrl.client}`,
         action: newStatus === 'Execução' ? 'APROVADO' : 'REPROVADO',
-        details: `Orçamento #${osDataFromUrl.id} finalizado pelo cliente via Link Público.`,
+        details: `O cliente ${newStatus === 'Execução' ? 'AUTORIZOU' : 'NEGOU'} o orçamento #${osDataFromUrl.id} via link público.`,
         system: 'OFICINA'
       };
       localStorage.setItem('crmplus_logs', JSON.stringify([newLog, ...logs].slice(0, 1000)));
 
+      // Sincroniza abas abertas
       window.dispatchEvent(new Event('storage'));
+      setCurrentStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
     }
   };
 
@@ -120,7 +121,7 @@ const PublicView: React.FC = () => {
             <div className="flex items-center justify-center gap-4 text-white">
                {currentStatus === 'approved' ? <ThumbsUp size={24} className="animate-bounce" /> : <ThumbsDown size={24} />}
                <p className="text-xs font-black uppercase tracking-[0.3em]">
-                 {currentStatus === 'approved' ? 'Orçamento Aprovado! Nossa equipe iniciará o serviço em breve.' : 'Orçamento Reprovado. Entraremos em contato.'}
+                 {currentStatus === 'approved' ? 'Orçamento Aprovado! Nossa equipe iniciará o serviço em breve.' : 'Orçamento Reprovado. Entraremos em contato para mais detalhes.'}
                </p>
             </div>
           </div>

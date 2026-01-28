@@ -67,13 +67,18 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
     const ordersRaw = localStorage.getItem('crmplus_oficina_orders');
     if (ordersRaw) {
       const orders = JSON.parse(ordersRaw);
+      const now = Date.now();
       const pendingAlerts = orders.filter((o: any) => {
-        const createdAt = new Date(parseInt(o.id) || Date.now());
-        const hoursDiff = Math.abs(Date.now() - createdAt.getTime()) / 36e5;
-        // PENDENTE: Aberto > 2h ou Orçamento > 4h
-        const isPendingOpen = o.status === 'Aberto' && hoursDiff > 2;
+        const createdAt = parseInt(o.id) || now;
+        const hoursDiff = (now - createdAt) / 36e5;
+        
+        // Regra de Notificações Pendentes (Alertas Reais)
+        const isStagnantOpen = o.status === 'Aberto' && hoursDiff > 2;
         const isPendingQuote = o.status === 'Orçamento' && hoursDiff > 4;
-        return (isPendingOpen || isPendingQuote) && hoursDiff < 168;
+        const isReadyForDelivery = o.status === 'Pronto';
+        
+        // Apenas itens dos últimos 7 dias para não poluir
+        return (isStagnantOpen || isPendingQuote || isReadyForDelivery) && hoursDiff < 168;
       }).length;
       setNotifCount(pendingAlerts);
     }
@@ -205,9 +210,9 @@ const Footer = () => {
 
   const showInfo = (type: 'termos' | 'privacidade' | 'suporte') => {
     const data = {
-      termos: { title: 'Termos de Uso', msg: 'Ao utilizar o CRMPlus+, você concorda com nossos termos de licença SaaS. Seus dados são processados de forma segura e exclusiva para sua conta.' },
-      privacidade: { title: 'Privacidade de Dados', msg: 'Respeitamos a LGPD. Não compartilhamos informações de ordens de serviço ou faturamento com terceiros. Seus dados são criptografados em repouso.' },
-      suporte: { title: 'Central de Suporte', msg: 'Precisa de ajuda? Nosso time técnico está disponível via chat ou e-mail para assinantes Pro+. Horário: Seg a Sex, 09h às 18h.' }
+      termos: { title: 'Termos de Uso', msg: 'Ao utilizar o CRMPlus+, você concorda com nossos termos de licença SaaS. Seus dados são processados de forma segura e exclusiva para sua conta empresarial.' },
+      privacidade: { title: 'Privacidade de Dados', msg: 'Respeitamos a LGPD. Não compartilhamos informações de ordens de serviço ou faturamento com terceiros. Todos os dados são criptografados em repouso e em trânsito.' },
+      suporte: { title: 'Central de Suporte', msg: 'Precisa de ajuda? Nosso time técnico está disponível via chat interno para assinantes Pro+ ou pelo e-mail suporte@crmplus.com.' }
     };
     setModalContent(data[type]);
   };

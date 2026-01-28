@@ -176,12 +176,13 @@ const Oficina: React.FC = () => {
       const createdAt = new Date(parseInt(os.id) || now.getTime());
       const hoursDiff = Math.abs(now.getTime() - createdAt.getTime()) / 36e5;
 
+      // Mantém histórico apenas de 7 dias para não sobrecarregar
       if (hoursDiff > 168) return; 
 
       if (os.status === 'Aberto' && hoursDiff > 2 && hoursDiff < 24) {
         alerts.push({
           id: `alert-a-${os.id}`, osId: os.id, type: 'urgent', title: 'Serviço Estagnado',
-          message: `Veículo ${os.plate} parado há ${Math.floor(hoursDiff)}h.`,
+          message: `Veículo ${os.plate} parado há ${Math.floor(hoursDiff)}h. Necessário iniciar diagnóstico.`,
           icon: <AlertCircle className="text-red-500" />
         });
       }
@@ -189,7 +190,7 @@ const Oficina: React.FC = () => {
       if (os.status === 'Orçamento' && hoursDiff > 4 && hoursDiff < 48) {
         alerts.push({
           id: `alert-o-${os.id}`, osId: os.id, type: 'warning', title: 'Aguardando Aprovação',
-          message: `Orçamento de ${os.clientName} pendente.`,
+          message: `Orçamento de ${os.clientName} pendente há ${Math.floor(hoursDiff)}h.`,
           icon: <Clock className="text-amber-500" />
         });
       }
@@ -197,7 +198,7 @@ const Oficina: React.FC = () => {
       if (os.status === 'Pronto') {
         alerts.push({
           id: `alert-p-${os.id}`, osId: os.id, type: 'success', title: 'Retirada Disponível',
-          message: `${os.vehicle} pronto para entrega.`,
+          message: `${os.vehicle} [${os.plate}] pronto para entrega ao cliente.`,
           icon: <Zap className="text-emerald-500" />
         });
       }
@@ -221,7 +222,8 @@ const Oficina: React.FC = () => {
       const isHistory = o.status === 'Entregue' || o.status === 'Reprovado';
       if (statusFilter !== 'Todos' && o.status !== statusFilter) return false;
       if (activeTab === 'ativos') { if (isHistory) return false; } 
-      else { if (!isHistory) return false; }
+      else if (activeTab === 'historico') { if (!isHistory) return false; }
+      else if (activeTab === 'nova') { return false; } // Nova aba não lista ordens
       return matchesSearch;
     });
   }, [orders, searchTerm, activeTab, statusFilter]);
@@ -309,7 +311,6 @@ const Oficina: React.FC = () => {
              <h1 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">OFICINA <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">PRO+</span></h1>
           </div>
           <div className="flex items-center gap-3">
-             {/* Fix: Removed redundant comparison activeTab !== 'nova' which caused a TypeScript error */}
              <button onClick={() => { setActiveTab('ativos'); setView('lista'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'ativos' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Operacional</button>
              <button onClick={() => { setActiveTab('historico'); setView('lista'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'historico' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Histórico</button>
           </div>
@@ -358,8 +359,8 @@ const Oficina: React.FC = () => {
         </>
       )}
 
-      {/* Formulário Nova O.S. */}
-      {activeTab === 'nova' && view === 'lista' && (
+      {/* Formulário Nova O.S. (Garante exibição correta) */}
+      {activeTab === 'nova' && (
         <div className="max-w-4xl mx-auto bg-white/[0.02] border border-white/10 p-12 rounded-[3.5rem] backdrop-blur-3xl animate-in slide-in-from-bottom-10 shadow-3xl">
           <div className="flex items-center justify-between mb-12">
              <h2 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-4"><Zap className="text-cyan-400" /> Ativar <span className="text-cyan-400">Novo Protocolo</span></h2>
