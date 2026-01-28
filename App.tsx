@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
+// Fix: Added missing Clock and Zap icons to lucide-react imports.
 import { 
-  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity, LayoutGrid, Rocket, FileText, Utensils, Settings as SettingsIcon, AlertTriangle, Shield, Info, MessageSquare, Send, CheckCircle2, CreditCard, Bell
+  Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity, LayoutGrid, Rocket, FileText, Utensils, Settings as SettingsIcon, AlertTriangle, Shield, Info, MessageSquare, Send, CheckCircle2, CreditCard, Bell, ChevronDown, ChevronRight, HelpCircle, ShieldAlert, Clock, Zap
 } from 'lucide-react';
 import Catalog from './pages/Catalog';
 import Oficina from './pages/Oficina';
@@ -72,13 +73,16 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
       const ordersRaw = localStorage.getItem('crmplus_oficina_orders');
       if (ordersRaw) {
         const orders = JSON.parse(ordersRaw);
-        // Contagem alinhada com os Smart Alerts da Oficina (Abertos e Prontos de até 7 dias)
-        const alerts = orders.filter((o: any) => {
+        // Contagem apenas de notificações "pendentes" (Aberto ou Orçamento)
+        const pendingAlerts = orders.filter((o: any) => {
           const createdAt = new Date(parseInt(o.id) || Date.now());
           const hoursDiff = Math.abs(Date.now() - createdAt.getTime()) / 36e5;
-          return (o.status === 'Aberto' || o.status === 'Pronto') && hoursDiff < 168;
+          // Regra: Aberto > 2h ou Orçamento > 4h
+          const isPendingOpen = o.status === 'Aberto' && hoursDiff > 2;
+          const isPendingQuote = o.status === 'Orçamento' && hoursDiff > 4;
+          return (isPendingOpen || isPendingQuote) && hoursDiff < 168; // Limite de 7 dias
         }).length;
-        setNotifCount(alerts);
+        setNotifCount(pendingAlerts);
       }
     };
     loadConfig();
@@ -173,7 +177,6 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
         </div>
       </nav>
 
-      {/* Footer and other components omit for brevity */}
       {showDevModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in">
            <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 p-10 rounded-[3rem] text-center space-y-8 shadow-2xl relative overflow-hidden">
@@ -191,26 +194,70 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   );
 };
 
-// Footer implementation...
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+
+  const submenus = {
+    termos: [
+      { name: 'Termos de Uso', icon: <FileText size={12}/> },
+      { name: 'Contrato SaaS', icon: <ShieldCheck size={12}/> },
+      { name: 'SLA de Serviço', icon: <Clock size={12}/> }
+    ],
+    privacidade: [
+      { name: 'Política LGPD', icon: <Shield size={12}/> },
+      { name: 'Gestão de Cookies', icon: <Zap size={12}/> },
+      { name: 'Segurança de Dados', icon: <Lock size={12}/> }
+    ],
+    suporte: [
+      { name: 'Central de Ajuda', icon: <HelpCircle size={12}/> },
+      { name: 'WhatsApp Direto', icon: <MessageSquare size={12}/> },
+      { name: 'Abrir Ticket', icon: <Send size={12}/> }
+    ]
+  };
+
   return (
-    <footer className="py-12 px-6 lg:px-12 border-t border-white/5 bg-[#050505]">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-        <div className="flex flex-col items-center md:items-start gap-2">
+    <footer className="py-20 px-6 lg:px-12 border-t border-white/5 bg-[#050505] relative overflow-hidden">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12 relative z-10">
+        <div className="flex flex-col items-center md:items-start gap-4">
           <div className="flex items-center gap-3">
-            <div className="bg-cyan-500 p-1.5 rounded-lg"><Rocket size={12} className="text-black" /></div>
-            <span className="text-sm font-black tracking-tighter text-white uppercase">CRM<span className="text-cyan-400">Plus+</span></span>
+            <div className="bg-cyan-500 p-2 rounded-xl"><Rocket size={16} className="text-black" /></div>
+            <span className="text-2xl font-black tracking-tighter text-white uppercase italic">CRM<span className="text-cyan-400">Plus+</span></span>
           </div>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ecossistema de Gestão Corporativa</p>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] max-w-[200px] leading-relaxed">Ecossistema de Gestão Corporativa Inteligente</p>
         </div>
-        <div className="flex gap-8">
-          <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Termos</a>
-          <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Privacidade</a>
-          <a href="#" className="text-[10px] font-black text-slate-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">Suporte</a>
+
+        <div className="flex flex-wrap gap-12 sm:gap-20">
+          {(['termos', 'privacidade', 'suporte'] as const).map((key) => (
+            <div key={key} className="space-y-6 relative">
+              <button 
+                onClick={() => setActiveSubmenu(activeSubmenu === key ? null : key)}
+                className="text-[10px] font-black text-white hover:text-cyan-400 uppercase tracking-widest transition-all flex items-center gap-2 group"
+              >
+                {key === 'termos' ? 'Termos' : key === 'privacidade' ? 'Privacidade' : 'Suporte'}
+                <ChevronDown size={14} className={`transition-transform duration-300 ${activeSubmenu === key ? 'rotate-180' : ''}`} />
+              </button>
+              
+              <div className={`flex flex-col gap-4 overflow-hidden transition-all duration-500 ${activeSubmenu === key ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                {submenus[key].map((sub, idx) => (
+                  <button key={idx} className="flex items-center gap-3 text-slate-500 hover:text-cyan-400 transition-colors group">
+                    <span className="p-1.5 bg-white/5 rounded-lg group-hover:bg-cyan-500/10">{sub.icon}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest whitespace-nowrap">{sub.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">&copy; {currentYear} CRMPLUS. Todos os direitos reservados.</p>
+
+        <div className="flex flex-col items-end gap-4">
+           <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">&copy; {currentYear} CRMPLUS. Todos os direitos reservados.</p>
+           <div className="flex items-center gap-2 text-[9px] font-black text-slate-800 uppercase tracking-widest">
+              Status do Sistema <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+           </div>
+        </div>
       </div>
+      <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-cyan-500/5 blur-[120px] rounded-full"></div>
     </footer>
   );
 };
