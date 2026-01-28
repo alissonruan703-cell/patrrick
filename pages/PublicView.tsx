@@ -20,7 +20,6 @@ const PublicView: React.FC = () => {
     const savedConfig = localStorage.getItem('crmplus_system_config');
     if (savedConfig) setLogo(JSON.parse(savedConfig).companyLogo || '');
 
-    // Verifica se já existe um status atualizado no localStorage para esta OS
     if (osDataFromUrl) {
       const savedOrders = localStorage.getItem('crmplus_oficina_orders');
       if (savedOrders) {
@@ -52,16 +51,27 @@ const PublicView: React.FC = () => {
   const handleClientAction = (newStatus: 'Execução' | 'Reprovado') => {
     if (!osDataFromUrl) return;
     
-    // Atualiza estado local para feedback imediato
     setCurrentStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
     
-    // Salva no localStorage para a Oficina captar
     const saved = localStorage.getItem('crmplus_oficina_orders');
     if (saved) {
       const orders = JSON.parse(saved);
       const updated = orders.map((o: any) => String(o.id) === String(osDataFromUrl.id) ? { ...o, status: newStatus } : o);
       localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
-      // Dispara evento para outras abas (Oficina)
+
+      // Registro de Log para Auditoria
+      const logs = JSON.parse(localStorage.getItem('crmplus_logs') || '[]');
+      const newLog = {
+        id: Date.now().toString(),
+        timestamp: new Date().toLocaleString(),
+        userId: 'CLIENTE',
+        userName: `Cliente: ${osDataFromUrl.client}`,
+        action: newStatus === 'Execução' ? 'APROVADO' : 'REPROVADO',
+        details: `Orçamento #${osDataFromUrl.id} finalizado pelo cliente via Link Público.`,
+        system: 'OFICINA'
+      };
+      localStorage.setItem('crmplus_logs', JSON.stringify([newLog, ...logs].slice(0, 1000)));
+
       window.dispatchEvent(new Event('storage'));
     }
   };
@@ -105,7 +115,6 @@ const PublicView: React.FC = () => {
     <div className="min-h-screen bg-[#050505] p-4 lg:p-12 text-slate-200 print:bg-white print:p-0">
       <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-1000">
         
-        {/* Banner de Feedback de Aprovação */}
         {currentStatus !== 'pending' && (
           <div className={`p-6 rounded-3xl text-center shadow-2xl animate-in slide-in-from-top-10 duration-500 ${currentStatus === 'approved' ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-red-600 shadow-red-600/20'}`}>
             <div className="flex items-center justify-center gap-4 text-white">
@@ -118,7 +127,6 @@ const PublicView: React.FC = () => {
         )}
 
         <div className="bg-[#0a0a0a] rounded-[4rem] border border-white/10 shadow-[0_0_80px_rgba(139,92,246,0.1)] overflow-hidden print:shadow-none print:border-none print:bg-white print:text-black">
-          {/* Header */}
           <div className="p-10 lg:p-14 border-b border-white/5 bg-gradient-to-br from-white/[0.02] to-transparent print:bg-none print:border-slate-200">
             <div className="flex flex-col md:flex-row justify-between items-start gap-10">
               <div className="space-y-6">
@@ -145,8 +153,6 @@ const PublicView: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Dados do Cliente / Veículo */}
           <div className="p-10 lg:p-14 grid grid-cols-1 md:grid-cols-2 gap-10 print:gap-6 print:text-black">
             <div className="p-8 bg-black/40 rounded-[2.5rem] border border-white/5 space-y-6 shadow-xl print:bg-slate-50 print:border-slate-200">
                <div className="space-y-1"><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><User size={12}/> Proprietário</p><p className="text-xl font-black text-white print:text-black uppercase">{osDataFromUrl.client}</p></div>
@@ -157,42 +163,20 @@ const PublicView: React.FC = () => {
               <p className="text-slate-300 font-medium italic text-sm leading-relaxed print:text-slate-600">"{osDataFromUrl.description}"</p>
             </div>
           </div>
-
-          {/* Tabelas de Itens */}
           <div className="px-10 lg:px-14 pb-14 space-y-12">
             <TableSection title="Peças e Produtos" icon={<Package size={18}/>} items={items.filter((i: any) => i.type === 'PEÇA')} />
             <TableSection title="Mão de Obra e Serviços" icon={<Wrench size={18}/>} items={items.filter((i: any) => i.type === 'MÃO DE OBRA')} />
             
-            {osDataFromUrl.observation && (
-              <div className="p-8 bg-black/40 rounded-[2rem] border border-white/5 space-y-4 shadow-xl">
-                 <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2"><FileText size={16}/> Observações Adicionais</p>
-                 <p className="text-slate-400 text-xs leading-relaxed whitespace-pre-wrap uppercase font-bold tracking-tight">{osDataFromUrl.observation}</p>
-              </div>
-            )}
-
-            {/* Ações de Aprovação */}
             <div className="pt-10 flex flex-col sm:flex-row gap-6 print:hidden">
               {currentStatus === 'pending' ? (
                 <>
-                  <button onClick={() => handleClientAction('Reprovado')} className="flex-1 py-6 bg-red-600/10 border border-red-500/20 text-red-500 font-black rounded-[2rem] uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-red-600 hover:text-white transition-all shadow-2xl active:scale-95">
-                    <ThumbsDown size={18} /> Reprovar Orçamento
-                  </button>
-                  <button onClick={() => handleClientAction('Execução')} className="flex-1 py-6 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black rounded-[2rem] uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-4 hover:brightness-125 transition-all shadow-[0_15px_40px_rgba(16,185,129,0.3)] active:scale-95">
-                    <ThumbsUp size={18} /> Aprovar e Iniciar Serviço
-                  </button>
+                  <button onClick={() => handleClientAction('Reprovado')} className="flex-1 py-6 bg-red-600/10 border border-red-500/20 text-red-500 font-black rounded-[2rem] uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-red-600 hover:text-white transition-all shadow-2xl active:scale-95"><ThumbsDown size={18} /> Reprovar Orçamento</button>
+                  <button onClick={() => handleClientAction('Execução')} className="flex-1 py-6 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black rounded-[2rem] uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-4 hover:brightness-125 transition-all shadow-[0_15px_40px_rgba(16,185,129,0.3)] active:scale-95"><ThumbsUp size={18} /> Aprovar e Iniciar Serviço</button>
                 </>
               ) : (
-                <button onClick={() => window.print()} className="w-full py-6 bg-white/5 border border-white/10 text-white font-black rounded-[2rem] uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-white/10 transition-all">
-                  <Printer size={18} /> Imprimir Comprovante de {currentStatus === 'approved' ? 'Aprovação' : 'Recusa'}
-                </button>
+                <button onClick={() => window.print()} className="w-full py-6 bg-white/5 border border-white/10 text-white font-black rounded-[2rem] uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-white/10 transition-all"><Printer size={18} /> Imprimir Comprovante de {currentStatus === 'approved' ? 'Aprovação' : 'Recusa'}</button>
               )}
             </div>
-          </div>
-        </div>
-
-        <div className="text-center space-y-6 py-10 print:hidden">
-          <div className="flex items-center justify-center gap-4 text-slate-700 font-black text-[9px] uppercase tracking-[0.5em]">
-             <ShieldCheck size={16} className="text-emerald-500" /> Plataforma Segura {osDataFromUrl.companyName}
           </div>
         </div>
       </div>

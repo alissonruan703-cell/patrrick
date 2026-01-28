@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
-// Fix: Added missing Clock and Zap icons to lucide-react imports.
 import { 
   Plus, Search, Lock, Menu, X, User, LogOut, ShieldCheck, Key, LogIn, Activity, LayoutGrid, Rocket, FileText, Utensils, Settings as SettingsIcon, AlertTriangle, Shield, Info, MessageSquare, Send, CheckCircle2, CreditCard, Bell, ChevronDown, ChevronRight, HelpCircle, ShieldAlert, Clock, Zap
 } from 'lucide-react';
@@ -64,30 +63,36 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
   const isMaster = sessionStorage.getItem('crmplus_is_master') === 'true';
 
+  const updateNotifCount = () => {
+    const ordersRaw = localStorage.getItem('crmplus_oficina_orders');
+    if (ordersRaw) {
+      const orders = JSON.parse(ordersRaw);
+      const pendingAlerts = orders.filter((o: any) => {
+        const createdAt = new Date(parseInt(o.id) || Date.now());
+        const hoursDiff = Math.abs(Date.now() - createdAt.getTime()) / 36e5;
+        // PENDENTE: Aberto > 2h ou Orçamento > 4h
+        const isPendingOpen = o.status === 'Aberto' && hoursDiff > 2;
+        const isPendingQuote = o.status === 'Orçamento' && hoursDiff > 4;
+        return (isPendingOpen || isPendingQuote) && hoursDiff < 168;
+      }).length;
+      setNotifCount(pendingAlerts);
+    }
+  };
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     const loadConfig = () => {
       const saved = localStorage.getItem('crmplus_system_config');
       if (saved) setConfig(JSON.parse(saved));
-      
-      const ordersRaw = localStorage.getItem('crmplus_oficina_orders');
-      if (ordersRaw) {
-        const orders = JSON.parse(ordersRaw);
-        // Contagem apenas de notificações "pendentes" (Aberto ou Orçamento)
-        const pendingAlerts = orders.filter((o: any) => {
-          const createdAt = new Date(parseInt(o.id) || Date.now());
-          const hoursDiff = Math.abs(Date.now() - createdAt.getTime()) / 36e5;
-          // Regra: Aberto > 2h ou Orçamento > 4h
-          const isPendingOpen = o.status === 'Aberto' && hoursDiff > 2;
-          const isPendingQuote = o.status === 'Orçamento' && hoursDiff > 4;
-          return (isPendingOpen || isPendingQuote) && hoursDiff < 168; // Limite de 7 dias
-        }).length;
-        setNotifCount(pendingAlerts);
-      }
+      updateNotifCount();
     };
     loadConfig();
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('storage', updateNotifCount);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('storage', updateNotifCount);
+    };
   }, [location.pathname]);
 
   if (location.pathname.startsWith('/v/') || 
@@ -196,24 +201,15 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+  const [modalContent, setModalContent] = useState<{title: string, msg: string} | null>(null);
 
-  const submenus = {
-    termos: [
-      { name: 'Termos de Uso', icon: <FileText size={12}/> },
-      { name: 'Contrato SaaS', icon: <ShieldCheck size={12}/> },
-      { name: 'SLA de Serviço', icon: <Clock size={12}/> }
-    ],
-    privacidade: [
-      { name: 'Política LGPD', icon: <Shield size={12}/> },
-      { name: 'Gestão de Cookies', icon: <Zap size={12}/> },
-      { name: 'Segurança de Dados', icon: <Lock size={12}/> }
-    ],
-    suporte: [
-      { name: 'Central de Ajuda', icon: <HelpCircle size={12}/> },
-      { name: 'WhatsApp Direto', icon: <MessageSquare size={12}/> },
-      { name: 'Abrir Ticket', icon: <Send size={12}/> }
-    ]
+  const showInfo = (type: 'termos' | 'privacidade' | 'suporte') => {
+    const data = {
+      termos: { title: 'Termos de Uso', msg: 'Ao utilizar o CRMPlus+, você concorda com nossos termos de licença SaaS. Seus dados são processados de forma segura e exclusiva para sua conta.' },
+      privacidade: { title: 'Privacidade de Dados', msg: 'Respeitamos a LGPD. Não compartilhamos informações de ordens de serviço ou faturamento com terceiros. Seus dados são criptografados em repouso.' },
+      suporte: { title: 'Central de Suporte', msg: 'Precisa de ajuda? Nosso time técnico está disponível via chat ou e-mail para assinantes Pro+. Horário: Seg a Sex, 09h às 18h.' }
+    };
+    setModalContent(data[type]);
   };
 
   return (
@@ -228,26 +224,9 @@ const Footer = () => {
         </div>
 
         <div className="flex flex-wrap gap-12 sm:gap-20">
-          {(['termos', 'privacidade', 'suporte'] as const).map((key) => (
-            <div key={key} className="space-y-6 relative">
-              <button 
-                onClick={() => setActiveSubmenu(activeSubmenu === key ? null : key)}
-                className="text-[10px] font-black text-white hover:text-cyan-400 uppercase tracking-widest transition-all flex items-center gap-2 group"
-              >
-                {key === 'termos' ? 'Termos' : key === 'privacidade' ? 'Privacidade' : 'Suporte'}
-                <ChevronDown size={14} className={`transition-transform duration-300 ${activeSubmenu === key ? 'rotate-180' : ''}`} />
-              </button>
-              
-              <div className={`flex flex-col gap-4 overflow-hidden transition-all duration-500 ${activeSubmenu === key ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
-                {submenus[key].map((sub, idx) => (
-                  <button key={idx} className="flex items-center gap-3 text-slate-500 hover:text-cyan-400 transition-colors group">
-                    <span className="p-1.5 bg-white/5 rounded-lg group-hover:bg-cyan-500/10">{sub.icon}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest whitespace-nowrap">{sub.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+          <button onClick={() => showInfo('termos')} className="text-[10px] font-black text-white hover:text-cyan-400 uppercase tracking-widest transition-all">Termos</button>
+          <button onClick={() => showInfo('privacidade')} className="text-[10px] font-black text-white hover:text-cyan-400 uppercase tracking-widest transition-all">Privacidade</button>
+          <button onClick={() => showInfo('suporte')} className="text-[10px] font-black text-white hover:text-cyan-400 uppercase tracking-widest transition-all">Suporte</button>
         </div>
 
         <div className="flex flex-col items-end gap-4">
@@ -257,7 +236,20 @@ const Footer = () => {
            </div>
         </div>
       </div>
-      <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-cyan-500/5 blur-[120px] rounded-full"></div>
+
+      {modalContent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in">
+           <div className="w-full max-w-md bg-[#0f0f0f] border border-white/10 p-10 rounded-[3rem] text-center space-y-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/5 blur-[60px] rounded-full"></div>
+              <div className="w-20 h-20 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-[2rem] flex items-center justify-center mx-auto shadow-lg"><Info size={32} /></div>
+              <div className="space-y-4">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{modalContent.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{modalContent.msg}</p>
+              </div>
+              <button onClick={() => setModalContent(null)} className="w-full py-5 bg-white text-black font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl">Entendido</button>
+           </div>
+        </div>
+      )}
     </footer>
   );
 };
