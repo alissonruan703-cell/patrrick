@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Printer, Check, Box, Wrench, ThumbsUp, ThumbsDown, Package, FileText, Calendar, Info, ShieldCheck, AlertCircle, User, Car } from 'lucide-react';
+import { Printer, Check, Box, Wrench, ThumbsUp, ThumbsDown, Package, FileText, Calendar, Info, ShieldCheck, AlertCircle, User, Car, Image as ImageIcon } from 'lucide-react';
 
 const PublicView: React.FC = () => {
   const { data } = useParams();
@@ -12,7 +12,18 @@ const PublicView: React.FC = () => {
     try {
       const decoded = decodeURIComponent(escape(atob(data || '')));
       const raw = JSON.parse(decoded);
-      return { id: raw.i, client: raw.n, vehicle: raw.v, plate: raw.p, description: raw.d, observation: raw.o, total: raw.t, date: raw.dt, companyName: raw.cn || 'CRMPLUS' };
+      return { 
+        id: raw.i, 
+        client: raw.n, 
+        vehicle: raw.v, 
+        plate: raw.p, 
+        description: raw.d, 
+        observation: raw.o, 
+        total: raw.t, 
+        date: raw.dt, 
+        companyName: raw.cn || 'CRMPLUS',
+        photos: raw.ph || []
+      };
     } catch (e) { return null; }
   }, [data]);
 
@@ -51,18 +62,16 @@ const PublicView: React.FC = () => {
   const handleClientAction = (newStatus: 'Execução' | 'Reprovado') => {
     if (!osDataFromUrl) return;
     
-    // Atualiza localmente a ordem de serviço para o sistema operacional ver
     const saved = localStorage.getItem('crmplus_oficina_orders');
     if (saved) {
       const orders = JSON.parse(saved);
       const updated = orders.map((o: any) => String(o.id) === String(osDataFromUrl.id) ? { ...o, status: newStatus } : o);
       localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
 
-      // Registro de Log Master para o Administrador (Este log servirá como notificação no sino)
       const logs = JSON.parse(localStorage.getItem('crmplus_logs') || '[]');
       const newLog = {
         id: Date.now().toString(),
-        timestamp: new Date().toISOString(), // Use ISO para facilitar filtros de tempo
+        timestamp: new Date().toISOString(),
         userId: 'CLIENTE',
         userName: `CLIENTE: ${osDataFromUrl.client}`,
         action: newStatus === 'Execução' ? 'APROVADO' : 'REPROVADO',
@@ -71,7 +80,6 @@ const PublicView: React.FC = () => {
       };
       localStorage.setItem('crmplus_logs', JSON.stringify([newLog, ...logs].slice(0, 1000)));
 
-      // Sincroniza abas abertas e aciona storage listeners no App.tsx e Oficina.tsx
       window.dispatchEvent(new Event('storage'));
       setCurrentStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
     }
@@ -91,7 +99,7 @@ const PublicView: React.FC = () => {
                  <tr>
                    <th className="px-8 py-5 text-left">Item / Descrição</th>
                    <th className="px-8 py-5 text-center">Qtd</th>
-                   <th className="px-8 py-5 text-right">Preço</th>
+                   <th className="px-8 py-5 text-right">Preço Un.</th>
                    <th className="px-8 py-5 text-right">Subtotal</th>
                  </tr>
                </thead>
@@ -140,7 +148,7 @@ const PublicView: React.FC = () => {
                     </div>
                   )}
                   <span className="text-2xl font-black text-white print:text-black uppercase tracking-tighter">
-                    {osDataFromUrl.companyName.split(' ')[0]} <span className="text-violet-500">{osDataFromUrl.companyName.split(' ').slice(1).join(' ')}</span>
+                    {osDataFromUrl.companyName}
                   </span>
                  </div>
                  <h1 className="text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter leading-none print:text-black">ORÇAMENTO <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-magenta-500">#{osDataFromUrl.id}</span></h1>
@@ -164,6 +172,21 @@ const PublicView: React.FC = () => {
               <p className="text-slate-300 font-medium italic text-sm leading-relaxed print:text-slate-600">"{osDataFromUrl.description}"</p>
             </div>
           </div>
+
+          {/* Galeria de Fotos no Link do Cliente */}
+          {osDataFromUrl.photos.length > 0 && (
+            <div className="px-10 lg:px-14 py-8 space-y-6">
+               <div className="flex items-center gap-3 px-2 border-l-4 border-cyan-500"><ImageIcon className="text-cyan-500" size={18}/><h3 className="text-[11px] font-black text-white uppercase tracking-widest">Registros de Imagem</h3></div>
+               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {osDataFromUrl.photos.map((ph: string, i: number) => (
+                    <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                       <img src={ph} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+               </div>
+            </div>
+          )}
+
           <div className="px-10 lg:px-14 pb-14 space-y-12">
             <TableSection title="Peças e Produtos" icon={<Package size={18}/>} items={items.filter((i: any) => i.type === 'PEÇA')} />
             <TableSection title="Mão de Obra e Serviços" icon={<Wrench size={18}/>} items={items.filter((i: any) => i.type === 'MÃO DE OBRA')} />
