@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Plus, Search, X, Send, Trash2,
-  Calendar, FileText, ArrowLeft, ChevronDown, Zap, User, Car, Phone, Hash, ClipboardList, Package, Wrench, DollarSign, Share2, Check, AlertCircle, Clock, ShieldAlert, ImagePlus, Camera, Eye
+  Calendar, FileText, ArrowLeft, ChevronDown, Zap, User, Car, Phone, Hash, ClipboardList, Package, Wrench, DollarSign, Share2, Check, AlertCircle, Clock, ShieldAlert, ImagePlus, Camera, Eye, Bell, ChevronRight, MoreHorizontal
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem, UserProfile, LogEntry } from '../types';
 
@@ -18,6 +18,7 @@ const Oficina: React.FC = () => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [quickStatusId, setQuickStatusId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasPermission = (permission: string) => {
@@ -36,7 +37,6 @@ const Oficina: React.FC = () => {
     const parsedOrders = savedOrders ? JSON.parse(savedOrders) : [];
     setOrders(parsedOrders);
     
-    // Se estiver visualizando uma OS, atualiza ela também se houver mudança externa
     if (selectedOS) {
       const updated = parsedOrders.find((o: any) => o.id === selectedOS.id);
       if (updated && updated.status !== selectedOS.status) {
@@ -50,7 +50,6 @@ const Oficina: React.FC = () => {
 
   useEffect(() => { 
     loadData(); 
-    // Listener para mudanças no localStorage vindas de outras abas (Ex: PublicView)
     window.addEventListener('storage', loadData);
     return () => window.removeEventListener('storage', loadData);
   }, [selectedOS?.id, selectedOS?.status]);
@@ -58,6 +57,7 @@ const Oficina: React.FC = () => {
   const saveOrders = (updated: ServiceOrder[]) => {
     setOrders(updated);
     localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
   };
 
   const handleCreateOS = (e: React.FormEvent) => {
@@ -84,21 +84,24 @@ const Oficina: React.FC = () => {
   };
 
   const handleUpdateStatus = (id: string, newStatus: ServiceOrder['status']) => {
-    if (!hasPermission('edit_os')) return;
     const updated = orders.map(o => o.id === id ? { ...o, status: newStatus } : o);
     saveOrders(updated);
     if (selectedOS?.id === id) setSelectedOS({ ...selectedOS, status: newStatus });
+    setQuickStatusId(null);
     addLog('UPDATE_STATUS', `O.S. #${id} -> ${newStatus}`);
   };
 
-  const handleDeleteOS = (id: string) => {
+  const handleDeleteOS = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     if (!hasPermission('delete_os')) return;
     if (!window.confirm('Excluir esta O.S. permanentemente?')) return;
     const updated = orders.filter(o => o.id !== id);
     saveOrders(updated);
     addLog('DELETE_OS', `O.S. #${id} removida`);
-    setView('lista');
-    setSelectedOS(null);
+    if (selectedOS?.id === id) {
+      setView('lista');
+      setSelectedOS(null);
+    }
   };
 
   const handleAddItem = () => {
@@ -144,18 +147,13 @@ const Oficina: React.FC = () => {
     saveOrders(updatedOrders);
   };
 
-  const generatePublicLink = () => {
-    if (!selectedOS) return "";
+  const copyLink = (os: ServiceOrder) => {
     const config = JSON.parse(localStorage.getItem('crmplus_system_config') || '{}');
     const payload = {
-      i: selectedOS.id, n: selectedOS.clientName, v: selectedOS.vehicle, p: selectedOS.plate, d: selectedOS.description, o: selectedOS.observation || "", t: selectedOS.total, dt: selectedOS.createdAt, cn: config.companyName || "CRMPLUS", it: (selectedOS.items || []).map(i => ({ t: i.type[0], d: i.description, b: i.brand, q: i.quantity, p: i.price }))
+      i: os.id, n: os.clientName, v: os.vehicle, p: os.plate, d: os.description, o: os.observation || "", t: os.total, dt: os.createdAt, cn: config.companyName || "CRMPLUS", it: (os.items || []).map(i => ({ t: i.type[0], d: i.description, b: i.brand, q: i.quantity, p: i.price }))
     };
     const base64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-    return `${window.location.origin}${window.location.pathname}#/v/${base64}`;
-  };
-
-  const copyLink = () => {
-    const link = generatePublicLink();
+    const link = `${window.location.origin}${window.location.pathname}#/v/${base64}`;
     navigator.clipboard.writeText(link);
     setCopyFeedback(true);
     setTimeout(() => setCopyFeedback(false), 2000);
@@ -175,6 +173,16 @@ const Oficina: React.FC = () => {
     });
   }, [orders, searchTerm, activeTab, statusFilter, activeProfile]);
 
+  const stats = useMemo(() => {
+    const counts = {
+      aberto: orders.filter(o => o.status === 'Aberto').length,
+      orcamento: orders.filter(o => o.status === 'Orçamento').length,
+      execucao: orders.filter(o => o.status === 'Execução').length,
+      pronto: orders.filter(o => o.status === 'Pronto').length
+    };
+    return counts;
+  }, [orders]);
+
   const getStatusClasses = (status: ServiceOrder['status']) => {
     switch(status) {
       case 'Orçamento': return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
@@ -186,7 +194,6 @@ const Oficina: React.FC = () => {
     }
   };
 
-  // Estados para Nova OS
   const [newOS, setNewOS] = useState<Partial<ServiceOrder>>({
     clientName: '', phone: '', vehicle: '', plate: '', description: '', items: [], status: 'Aberto'
   });
@@ -206,8 +213,8 @@ const Oficina: React.FC = () => {
              <h1 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">OFICINA <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">PRO+</span></h1>
           </div>
           <div className="flex items-center gap-3">
-             <button onClick={() => { setActiveTab('ativos'); setView('lista'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'ativos' && view === 'lista' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Operacional</button>
-             {hasPermission('view_history') && <button onClick={() => { setActiveTab('historico'); setView('lista'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'historico' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Histórico</button>}
+             <button onClick={() => { setActiveTab('ativos'); setView('lista'); setStatusFilter('Todos'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'ativos' && view === 'lista' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Operacional</button>
+             {hasPermission('view_history') && <button onClick={() => { setActiveTab('historico'); setView('lista'); setStatusFilter('Todos'); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest transition-all text-[10px] ${activeTab === 'historico' ? 'bg-cyan-500 text-black shadow-[0_0_30px_rgba(0,240,255,0.4)]' : 'text-slate-300 hover:bg-white/10'}`}>Histórico</button>}
           </div>
         </div>
         {hasPermission('create_os') && (
@@ -216,6 +223,43 @@ const Oficina: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* DASHBOARD DE NOTIFICAÇÕES / STATUS RÁPIDO */}
+      {view === 'lista' && activeTab === 'ativos' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-500">
+           <div onClick={() => setStatusFilter('Orçamento')} className={`p-6 rounded-3xl border transition-all cursor-pointer group flex flex-col justify-between h-32 ${statusFilter === 'Orçamento' ? 'bg-amber-500/20 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.2)]' : 'bg-white/[0.02] border-white/5 hover:border-amber-500/30'}`}>
+              <div className="flex justify-between items-start">
+                 <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500"><Clock size={20}/></div>
+                 <span className="text-3xl font-black text-white">{stats.orcamento}</span>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-amber-400">Aguardando Cliente</p>
+           </div>
+           
+           <div onClick={() => setStatusFilter('Execução')} className={`p-6 rounded-3xl border transition-all cursor-pointer group flex flex-col justify-between h-32 ${statusFilter === 'Execução' ? 'bg-cyan-500/20 border-cyan-500/50 shadow-[0_0_30px_rgba(0,240,255,0.2)]' : 'bg-white/[0.02] border-white/5 hover:border-cyan-500/30'}`}>
+              <div className="flex justify-between items-start">
+                 <div className="p-2 bg-cyan-500/10 rounded-xl text-cyan-500"><Zap size={20}/></div>
+                 <span className="text-3xl font-black text-white">{stats.execucao}</span>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-cyan-400">Em Manutenção</p>
+           </div>
+
+           <div onClick={() => setStatusFilter('Pronto')} className={`p-6 rounded-3xl border transition-all cursor-pointer group flex flex-col justify-between h-32 ${statusFilter === 'Pronto' ? 'bg-emerald-500/20 border-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.2)]' : 'bg-white/[0.02] border-white/5 hover:border-emerald-500/30'}`}>
+              <div className="flex justify-between items-start">
+                 <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-500"><Bell size={20}/></div>
+                 <span className="text-3xl font-black text-white">{stats.pronto}</span>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-emerald-400">Prontos para Entrega</p>
+           </div>
+
+           <div onClick={() => setStatusFilter('Todos')} className={`p-6 rounded-3xl border transition-all cursor-pointer group flex flex-col justify-between h-32 ${statusFilter === 'Todos' ? 'bg-white/10 border-white/20' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}>
+              <div className="flex justify-between items-start">
+                 <div className="p-2 bg-white/5 rounded-xl text-white"><FileText size={20}/></div>
+                 <span className="text-3xl font-black text-white">{orders.filter(o => o.status !== 'Entregue' && o.status !== 'Reprovado').length}</span>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ver Todas Ativas</p>
+           </div>
+        </div>
+      )}
 
       {/* Busca e Listagem */}
       {view === 'lista' && activeTab !== 'nova' && (
@@ -227,12 +271,47 @@ const Oficina: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 relative z-10">
             {filteredOrders.map(o => (
-              <div key={o.id} onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="p-8 rounded-[2.5rem] border border-white/10 bg-white/[0.02] backdrop-blur-md transition-all flex flex-col justify-between min-h-[260px] shadow-xl hover:border-cyan-500/40 group hover:shadow-[0_0_40px_rgba(0,240,255,0.1)] cursor-pointer">
+              <div key={o.id} onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="p-8 rounded-[2.5rem] border border-white/10 bg-white/[0.02] backdrop-blur-md transition-all flex flex-col justify-between min-h-[280px] shadow-xl hover:border-cyan-500/40 group hover:shadow-[0_0_40px_rgba(0,240,255,0.1)] cursor-pointer relative">
+                
+                {/* BOTÃO EXCLUIR RÁPIDO */}
+                {hasPermission('delete_os') && (
+                  <button 
+                    onClick={(e) => handleDeleteOS(e, o.id)}
+                    className="absolute top-6 right-6 p-2.5 bg-red-600/10 text-red-500 opacity-0 group-hover:opacity-100 rounded-xl hover:bg-red-600 hover:text-white transition-all z-20"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center pr-8">
                     <span className="text-[10px] font-black text-cyan-400 font-mono bg-cyan-400/10 px-3 py-1.5 rounded-xl border border-cyan-400/30">#{o.id}</span>
-                    <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusClasses(o.status)}`}>{o.status}</div>
+                    
+                    {/* STATUS INTERATIVO NA LISTA */}
+                    <div className="relative">
+                       <button 
+                        onClick={(e) => { e.stopPropagation(); setQuickStatusId(quickStatusId === o.id ? null : o.id); }}
+                        className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 hover:brightness-125 ${getStatusClasses(o.status)}`}
+                       >
+                         {o.status} <ChevronDown size={10} />
+                       </button>
+
+                       {quickStatusId === o.id && (
+                         <div className="absolute top-full right-0 mt-2 w-48 bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-3xl z-30 animate-in fade-in slide-in-from-top-2">
+                           {['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'].map(st => (
+                             <button 
+                              key={st}
+                              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(o.id, st as any); }}
+                              className={`w-full text-left px-4 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-all ${o.status === st ? 'text-cyan-400' : 'text-slate-500'}`}
+                             >
+                               {st}
+                             </button>
+                           ))}
+                         </div>
+                       )}
+                    </div>
                   </div>
+
                   <div className="space-y-3">
                     <h3 className="text-xl font-black text-white group-hover:text-cyan-400 transition-colors uppercase tracking-tight truncate">{o.clientName}</h3>
                     <div className="flex items-center gap-3">
@@ -241,7 +320,15 @@ const Oficina: React.FC = () => {
                       <span className="text-[11px] font-black text-cyan-400 font-mono tracking-widest bg-cyan-400/5 px-2 py-0.5 rounded border border-cyan-400/10">{o.plate}</span>
                     </div>
                   </div>
+                  
+                  {/* LEMBRETE DE ETAPA */}
+                  <div className="pt-2">
+                    {o.status === 'Orçamento' && <div className="flex items-center gap-2 text-[9px] font-bold text-amber-500 uppercase tracking-tighter"><AlertCircle size={10}/> Link enviado? Aguardando OK do cliente.</div>}
+                    {o.status === 'Pronto' && <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-500 uppercase tracking-tighter"><Check size={10}/> Veículo finalizado. Avisar para retirada.</div>}
+                    {o.status === 'Execução' && <div className="flex items-center gap-2 text-[9px] font-bold text-cyan-400 uppercase tracking-tighter"><Clock size={10}/> Operação em curso na oficina.</div>}
+                  </div>
                 </div>
+
                 <div className="pt-6 border-t border-white/10 flex items-center justify-between">
                   <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><Calendar size={12} className="text-cyan-400" /> {o.createdAt}</span>
                   <span className="text-white font-black text-base">R$ {o.total.toFixed(2)}</span>
@@ -274,7 +361,7 @@ const Oficina: React.FC = () => {
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="space-y-3"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Proprietário / Cliente</label><div className="relative"><User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600" size={18}/><input value={newOS.clientName} onChange={e => setNewOS({...newOS, clientName: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-white font-bold text-sm outline-none focus:ring-2 focus:ring-cyan-500/20" placeholder="Nome Completo" /></div></div>
+              <div className="space-y-3"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Proprietário / Cliente</label><div className="relative"><User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600" size={18}/><input value={newOS.clientName} onChange={e => setNewOS({...newOS, clientName: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-white font-bold text-sm outline-none focus:ring-2 focus:ring-cyan-500/20" placeholder="Nome" /></div></div>
               <div className="space-y-3"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp de Contato</label><div className="relative"><Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600" size={18}/><input value={newOS.phone} onChange={e => setNewOS({...newOS, phone: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-white font-bold text-sm outline-none focus:ring-2 focus:ring-cyan-500/20" placeholder="(00) 00000-0000" /></div></div>
             </div>
 
@@ -299,10 +386,13 @@ const Oficina: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                  <button onClick={() => setView('lista')} className="flex items-center gap-3 text-slate-500 hover:text-white transition-all text-[11px] font-black uppercase tracking-[0.2em] group"><ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Controle</button>
                  <div className="flex items-center gap-4">
-                    <button onClick={copyLink} className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-cyan-400 hover:border-cyan-500/30 transition-all shadow-xl">
+                    <button onClick={() => copyLink(selectedOS)} className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-cyan-400 hover:border-cyan-500/30 transition-all shadow-xl">
                       {copyFeedback ? <Check size={18} className="text-emerald-500" /> : <Share2 size={18}/>} 
                       {copyFeedback ? 'Link Copiado!' : 'Link do Cliente'}
                     </button>
+                    {hasPermission('delete_os') && (
+                       <button onClick={(e) => handleDeleteOS(e, selectedOS.id)} className="p-4 bg-red-600/10 text-red-500 border border-red-500/20 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl"><Trash2 size={20}/></button>
+                    )}
                  </div>
               </div>
 
