@@ -32,31 +32,31 @@ const Notifications: React.FC = () => {
     const now = new Date();
 
     orders.forEach(os => {
-      // Exemplo de lógica para "Logs Mascarados" baseados no status e tempo
-      // Aqui simulamos datas para demonstração baseadas no ID (que no nosso app é timestamp)
       const createdAt = new Date(parseInt(os.id) || now.getTime());
       const hoursDiff = Math.abs(now.getTime() - createdAt.getTime()) / 36e5;
 
-      if (os.status === 'Aberto') {
+      // Só alerta "Aberto" se tiver mais de 2 horas e menos de 24 horas (prioridade do dia)
+      if (os.status === 'Aberto' && hoursDiff > 2 && hoursDiff < 24) {
         notifications.push({
           id: `notif-aberto-${os.id}`,
           osId: os.id,
           type: 'urgent',
-          title: `Início de serviço pendente`,
-          message: `${os.clientName} aguarda início há mais de ${Math.floor(hoursDiff)} horas. O veículo ${os.plate} está parado no pátio.`,
+          title: `Diagnóstico em atraso`,
+          message: `${os.clientName} aguarda início há mais de ${Math.floor(hoursDiff)} horas.`,
           timeAgo: `há ${Math.floor(hoursDiff)} horas`,
           icon: <ShieldAlert className="text-red-500" size={20} />
         });
       }
 
-      if (os.status === 'Orçamento') {
+      // Alerta Orçamento entre 4h e 48h
+      if (os.status === 'Orçamento' && hoursDiff > 4 && hoursDiff < 48) {
         notifications.push({
           id: `notif-orc-${os.id}`,
           osId: os.id,
           type: 'warning',
-          title: `Aguardando decisão do cliente`,
-          message: `Orçamento enviado para ${os.clientName} no valor de R$ ${os.total.toFixed(2)}. Relembrar via WhatsApp?`,
-          timeAgo: `desde as ${createdAt.getHours()}:${createdAt.getMinutes()}`,
+          title: `Aprovação Pendente`,
+          message: `O orçamento de ${os.clientName} no valor de R$ ${os.total.toFixed(2)} aguarda retorno.`,
+          timeAgo: `há ${Math.floor(hoursDiff)} horas`,
           icon: <Clock className="text-amber-500" size={20} />
         });
       }
@@ -66,28 +66,24 @@ const Notifications: React.FC = () => {
           id: `notif-pronto-${os.id}`,
           osId: os.id,
           type: 'success',
-          title: `Veículo pronto para retirada`,
-          message: `O serviço de ${os.vehicle} foi finalizado com sucesso. Protocolo #${os.id} aguardando check-out.`,
-          timeAgo: `finalizado agora`,
+          title: `Veículo finalizado`,
+          message: `O ${os.vehicle} [${os.plate}] está pronto para retirada.`,
+          timeAgo: `agora`,
           icon: <CheckCircle2 className="text-emerald-500" size={20} />
-        });
-      }
-
-      if (os.status === 'Execução' && hoursDiff > 5) {
-        notifications.push({
-          id: `notif-exec-${os.id}`,
-          osId: os.id,
-          type: 'info',
-          title: `Manutenção de longa duração`,
-          message: `A O.S. #${os.id} está em execução prolongada. Verifique se há falta de peças ou interrupção técnica.`,
-          timeAgo: `há 5h+`,
-          icon: <Zap className="text-cyan-500" size={20} />
         });
       }
     });
 
-    return notifications.sort((a, b) => b.id.localeCompare(a.id));
+    // Ordenar e limitar aos 15 alertas mais relevantes/recentes
+    return notifications
+      .sort((a, b) => b.id.localeCompare(a.id))
+      .slice(0, 15);
   }, [orders]);
+
+  const handleNotifClick = (osId: string) => {
+    // Redireciona para oficina passando o ID para auto-abrir
+    navigate(`/oficina?id=${osId}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] pt-28 pb-20 px-4 md:px-0">
@@ -112,7 +108,7 @@ const Notifications: React.FC = () => {
             smartNotifications.map((n) => (
               <div 
                 key={n.id} 
-                onClick={() => navigate('/oficina')} // No fluxo real, levaria direto para a OS
+                onClick={() => handleNotifClick(n.osId)}
                 className="px-8 py-6 flex items-start gap-5 hover:bg-white/[0.03] transition-all cursor-pointer group"
               >
                 {/* Ícone Lateral / Avatar */}
@@ -149,7 +145,7 @@ const Notifications: React.FC = () => {
           ) : (
             <div className="py-32 text-center space-y-6 opacity-20">
                <Bell size={64} className="mx-auto" />
-               <p className="text-sm font-black uppercase tracking-[0.3em]">Nenhum alerta pendente no momento</p>
+               <p className="text-sm font-black uppercase tracking-[0.3em]">Nenhum alerta relevante no momento</p>
             </div>
           )}
         </div>
@@ -157,7 +153,7 @@ const Notifications: React.FC = () => {
         {/* Rodapé da lista */}
         <div className="p-6 bg-black/40 text-center">
            <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest flex items-center justify-center gap-2">
-              <History size={12}/> Histórico de monitoramento em tempo real
+              <History size={12}/> Histórico de monitoramento inteligente
            </p>
         </div>
       </div>
