@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Bell, Clock, AlertCircle, CheckCircle2, 
   Settings, MoreVertical, ArrowLeft, Zap, 
-  User, Car, ShieldAlert, History, ThumbsUp, ThumbsDown
+  User, Car, ShieldAlert, History, ThumbsUp, ThumbsDown, X
 } from 'lucide-react';
 import { ServiceOrder, LogEntry } from '../types';
 
@@ -22,20 +22,39 @@ const Notifications: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-  useEffect(() => {
+  const loadData = () => {
     const savedOrders = localStorage.getItem('crmplus_oficina_orders');
     const savedLogs = localStorage.getItem('crmplus_logs');
+    const dismissedRaw = localStorage.getItem('crmplus_dismissed_notifications');
     if (savedOrders) setOrders(JSON.parse(savedOrders));
     if (savedLogs) setLogs(JSON.parse(savedLogs));
+    if (dismissedRaw) setDismissedIds(JSON.parse(dismissedRaw));
+  };
+
+  useEffect(() => {
+    loadData();
+    window.addEventListener('storage', loadData);
+    return () => window.removeEventListener('storage', loadData);
   }, []);
+
+  const handleDismiss = (id: string) => {
+    const current = JSON.parse(localStorage.getItem('crmplus_dismissed_notifications') || '[]');
+    if (!current.includes(id)) {
+      const updated = [...current, id];
+      localStorage.setItem('crmplus_dismissed_notifications', JSON.stringify(updated));
+      setDismissedIds(updated);
+      window.dispatchEvent(new Event('storage'));
+    }
+  };
 
   const combinedNotifications = useMemo(() => {
     const notifications: SmartNotification[] = [];
     const now = new Date();
 
     // 1. Processar Ações de Clientes (Logs)
-    logs.filter(l => l.userId === 'CLIENTE').forEach(log => {
+    logs.filter(l => l.userId === 'CLIENTE' && !dismissedIds.includes(l.id)).forEach(log => {
       const logTime = new Date(log.timestamp);
       const diffMs = now.getTime() - logTime.getTime();
       const diffMins = Math.floor(diffMs / 60000);
@@ -59,9 +78,10 @@ const Notifications: React.FC = () => {
       const createdAt = new Date(parseInt(os.id) || now.getTime());
       const hoursDiff = Math.abs(now.getTime() - createdAt.getTime()) / 36e5;
 
-      if (os.status === 'Aberto' && hoursDiff > 2 && hoursDiff < 48) {
+      const stagnantId = `notif-aberto-${os.id}`;
+      if (os.status === 'Aberto' && hoursDiff > 2 && hoursDiff < 48 && !dismissedIds.includes(stagnantId)) {
         notifications.push({
-          id: `notif-aberto-${os.id}`,
+          id: stagnantId,
           osId: os.id,
           type: 'urgent',
           title: `O.S. Parada`,
@@ -71,9 +91,10 @@ const Notifications: React.FC = () => {
         });
       }
 
-      if (os.status === 'Pronto') {
+      const readyId = `notif-pronto-${os.id}`;
+      if (os.status === 'Pronto' && !dismissedIds.includes(readyId)) {
         notifications.push({
-          id: `notif-pronto-${os.id}`,
+          id: readyId,
           osId: os.id,
           type: 'success',
           title: `Veículo Pronto`,
@@ -85,9 +106,10 @@ const Notifications: React.FC = () => {
     });
 
     return notifications.sort((a, b) => b.id.localeCompare(a.id)).slice(0, 20);
-  }, [orders, logs]);
+  }, [orders, logs, dismissedIds]);
 
   const handleNotifClick = (n: SmartNotification) => {
+    handleDismiss(n.id);
     if (n.osId) {
       navigate(`/oficina?id=${n.osId}`);
     } else {
@@ -116,16 +138,15 @@ const Notifications: React.FC = () => {
             combinedNotifications.map((n) => (
               <div 
                 key={n.id} 
-                onClick={() => handleNotifClick(n)}
-                className="px-8 py-6 flex items-start gap-5 hover:bg-white/[0.03] transition-all cursor-pointer group"
+                className="px-8 py-6 flex items-start gap-5 hover:bg-white/[0.03] transition-all cursor-pointer group relative"
               >
-                <div className="shrink-0 pt-1">
+                <div onClick={() => handleNotifClick(n)} className="shrink-0 pt-1">
                    <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-black/40 border border-white/5 group-hover:scale-110 transition-transform`}>
                       {n.icon}
                    </div>
                 </div>
 
-                <div className="flex-1 space-y-1">
+                <div onClick={() => handleNotifClick(n)} className="flex-1 space-y-1">
                   <p className="text-sm font-black text-white uppercase tracking-tight group-hover:text-cyan-400 transition-colors">
                     {n.title}
                   </p>
@@ -137,9 +158,13 @@ const Notifications: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="shrink-0 flex flex-col items-end gap-2">
-                   <button className="p-1.5 text-slate-700 hover:text-white transition-colors">
-                      <MoreVertical size={18} />
+                <div className="shrink-0 flex items-center h-full pt-2">
+                   <button 
+                    onClick={(e) => { e.stopPropagation(); handleDismiss(n.id); }}
+                    className="p-2 text-slate-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Ocultar"
+                   >
+                      <X size={18} />
                    </button>
                 </div>
               </div>

@@ -66,6 +66,9 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   const updateNotifCount = () => {
     const ordersRaw = localStorage.getItem('crmplus_oficina_orders');
     const logsRaw = localStorage.getItem('crmplus_logs');
+    const dismissedRaw = localStorage.getItem('crmplus_dismissed_notifications');
+    const lastCheck = parseInt(localStorage.getItem('crmplus_last_notif_check') || '0');
+    const dismissedIds: string[] = dismissedRaw ? JSON.parse(dismissedRaw) : [];
     const now = Date.now();
     
     let count = 0;
@@ -74,8 +77,14 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
     if (ordersRaw) {
       const orders: ServiceOrder[] = JSON.parse(ordersRaw);
       const pendingAlerts = orders.filter(o => {
-        const createdAt = parseInt(o.id) || now;
+        const osId = o.id;
+        const createdAt = parseInt(osId) || now;
         const hoursDiff = (now - createdAt) / 36e5;
+        
+        // Se foi descartada ou o sino já foi aberto após a criação da notificação, não conta no badge
+        if (dismissedIds.includes(`notif-aberto-${osId}`) || dismissedIds.includes(`notif-pronto-${osId}`)) return false;
+        if (createdAt <= lastCheck) return false;
+
         const isStagnantOpen = o.status === 'Aberto' && hoursDiff > 2;
         const isPendingQuote = o.status === 'Orçamento' && hoursDiff > 4;
         return (isStagnantOpen || isPendingQuote) && hoursDiff < 168;
@@ -88,6 +97,9 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
       const logs: LogEntry[] = JSON.parse(logsRaw);
       const recentApprovalLogs = logs.filter(l => {
         const logTime = new Date(l.timestamp).getTime() || now;
+        if (dismissedIds.includes(l.id)) return false;
+        if (logTime <= lastCheck) return false;
+
         const isRecent = (now - logTime) < (24 * 36e5);
         const isClientAction = l.userId === 'CLIENTE';
         return isRecent && isClientAction;
@@ -112,6 +124,14 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('storage', updateNotifCount);
     };
+  }, [location.pathname]);
+
+  // Se o usuário entrar na página de notificações, reseta o badge
+  useEffect(() => {
+    if (location.pathname === '/notificacoes') {
+      localStorage.setItem('crmplus_last_notif_check', Date.now().toString());
+      updateNotifCount();
+    }
   }, [location.pathname]);
 
   if (location.pathname.startsWith('/v/') || 

@@ -23,6 +23,7 @@ const Oficina: React.FC = () => {
   const [quickStatusId, setQuickStatusId] = useState<string | null>(null);
   const [isNotifDrawerOpen, setIsNotifDrawerOpen] = useState(false);
   const [osToDelete, setOsToDelete] = useState<ServiceOrder | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   
   const [newOS, setNewOS] = useState<Partial<ServiceOrder>>({
     clientName: '', phone: '', vehicle: '', plate: '', description: '', items: [], status: 'Aberto'
@@ -45,7 +46,9 @@ const Oficina: React.FC = () => {
     const parsedOrders = savedOrders ? JSON.parse(savedOrders) : [];
     setOrders(parsedOrders);
     
-    // Sincroniza o selecionado caso ele tenha mudado externamente
+    const dismissedRaw = localStorage.getItem('crmplus_dismissed_notifications');
+    if (dismissedRaw) setDismissedIds(JSON.parse(dismissedRaw));
+    
     if (selectedOS) {
       const currentInStorage = parsedOrders.find((o: any) => String(o.id) === String(selectedOS.id));
       if (currentInStorage && JSON.stringify(currentInStorage) !== JSON.stringify(selectedOS)) {
@@ -60,6 +63,8 @@ const Oficina: React.FC = () => {
         setSelectedOS(found);
         setView('detalhes');
         setSearchParams({}, { replace: true });
+        handleDismiss(`notif-aberto-${found.id}`);
+        handleDismiss(`notif-pronto-${found.id}`);
       }
     }
 
@@ -76,6 +81,22 @@ const Oficina: React.FC = () => {
   const saveOrders = (updated: ServiceOrder[]) => {
     setOrders(updated);
     localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleDismiss = (id: string) => {
+    const current = JSON.parse(localStorage.getItem('crmplus_dismissed_notifications') || '[]');
+    if (!current.includes(id)) {
+      const updated = [...current, id];
+      localStorage.setItem('crmplus_dismissed_notifications', JSON.stringify(updated));
+      setDismissedIds(updated);
+      window.dispatchEvent(new Event('storage'));
+    }
+  };
+
+  const handleOpenNotifDrawer = () => {
+    setIsNotifDrawerOpen(true);
+    localStorage.setItem('crmplus_last_notif_check', Date.now().toString());
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -109,6 +130,10 @@ const Oficina: React.FC = () => {
     if (selectedOS?.id === id) setSelectedOS({ ...selectedOS, status: newStatus });
     setQuickStatusId(null);
     addLog('UPDATE_STATUS', `O.S. #${id} -> ${newStatus}`);
+    
+    if (newStatus === 'Execução' || newStatus === 'Pronto') {
+      handleDismiss(`notif-aberto-${id}`);
+    }
   };
 
   const handleDeleteOS = (e: React.MouseEvent, os: ServiceOrder) => {
@@ -178,39 +203,49 @@ const Oficina: React.FC = () => {
       if (hoursDiff > 168) return; 
 
       if (os.status === 'Aberto' && hoursDiff > 2 && hoursDiff < 24) {
-        alerts.push({
-          id: `alert-a-${os.id}`, osId: os.id, type: 'urgent', title: 'Serviço Estagnado',
-          message: `Veículo ${os.plate} parado há ${Math.floor(hoursDiff)}h. Necessário iniciar diagnóstico.`,
-          icon: <AlertCircle className="text-red-500" />
-        });
+        const alertId = `notif-aberto-${os.id}`;
+        if (!dismissedIds.includes(alertId)) {
+          alerts.push({
+            id: alertId, osId: os.id, type: 'urgent', title: 'Serviço Estagnado',
+            message: `Veículo ${os.plate} parado há ${Math.floor(hoursDiff)}h. Necessário iniciar diagnóstico.`,
+            icon: <AlertCircle className="text-red-500" />
+          });
+        }
       }
       
       if (os.status === 'Orçamento' && hoursDiff > 4 && hoursDiff < 48) {
-        alerts.push({
-          id: `alert-o-${os.id}`, osId: os.id, type: 'warning', title: 'Aguardando Aprovação',
-          message: `Orçamento de ${os.clientName} pendente há ${Math.floor(hoursDiff)}h.`,
-          icon: <Clock className="text-amber-500" />
-        });
+        const alertId = `notif-orcamento-${os.id}`;
+        if (!dismissedIds.includes(alertId)) {
+          alerts.push({
+            id: alertId, osId: os.id, type: 'warning', title: 'Aguardando Aprovação',
+            message: `Orçamento de ${os.clientName} pendente há ${Math.floor(hoursDiff)}h.`,
+            icon: <Clock className="text-amber-500" />
+          });
+        }
       }
 
       if (os.status === 'Pronto') {
-        alerts.push({
-          id: `alert-p-${os.id}`, osId: os.id, type: 'success', title: 'Retirada Disponível',
-          message: `${os.vehicle} [${os.plate}] pronto para entrega ao cliente.`,
-          icon: <Zap className="text-emerald-500" />
-        });
+        const alertId = `notif-pronto-${os.id}`;
+        if (!dismissedIds.includes(alertId)) {
+          alerts.push({
+            id: alertId, osId: os.id, type: 'success', title: 'Retirada Disponível',
+            message: `${os.vehicle} [${os.plate}] pronto para entrega ao cliente.`,
+            icon: <Zap className="text-emerald-500" />
+          });
+        }
       }
     });
 
     return alerts.slice(0, 15);
-  }, [orders]);
+  }, [orders, dismissedIds]);
 
-  const handleNotifClick = (osId: string) => {
+  const handleNotifClick = (osId: string, alertId: string) => {
     const found = orders.find(o => String(o.id) === String(osId));
     if (found) {
       setSelectedOS(found);
       setView('detalhes');
       setIsNotifDrawerOpen(false);
+      handleDismiss(alertId);
     }
   };
 
@@ -249,7 +284,6 @@ const Oficina: React.FC = () => {
   return (
     <div className="pt-24 px-6 lg:px-12 max-w-screen-2xl mx-auto space-y-10 animate-in fade-in duration-700 pb-20 bg-[#050505] min-h-screen text-slate-200">
       
-      {/* Modal de Confirmação Crítico */}
       {osToDelete && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
            <div className="w-full max-w-md bg-[#0f0f0f] border border-red-500/20 rounded-[3rem] p-10 space-y-8 shadow-[0_0_80px_rgba(239,68,68,0.15)] relative overflow-hidden text-center">
@@ -266,7 +300,6 @@ const Oficina: React.FC = () => {
         </div>
       )}
 
-      {/* Drawer de Alertas */}
       {isNotifDrawerOpen && (
         <div className="fixed inset-0 z-[100] flex justify-end animate-in fade-in duration-300">
            <div onClick={() => setIsNotifDrawerOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
@@ -281,12 +314,17 @@ const Oficina: React.FC = () => {
               <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                  {smartAlerts.length > 0 ? (
                    smartAlerts.map(alert => (
-                     <div key={alert.id} onClick={() => handleNotifClick(alert.osId)} className="p-6 rounded-[2rem] border border-white/5 bg-white/[0.02] space-y-3 group hover:border-white/10 transition-all cursor-pointer">
-                        <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-3">{alert.icon}<span className="text-[10px] font-black uppercase tracking-widest text-white">{alert.title}</span></div>
-                           <ChevronRight size={14} className="text-slate-800 group-hover:text-white transition-colors" />
+                     <div key={alert.id} className="relative group/notif">
+                        <div onClick={() => handleNotifClick(alert.osId, alert.id)} className="p-6 rounded-[2rem] border border-white/5 bg-white/[0.02] space-y-3 group hover:border-white/10 transition-all cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">{alert.icon}<span className="text-[10px] font-black uppercase tracking-widest text-white">{alert.title}</span></div>
+                              <ChevronRight size={14} className="text-slate-800 group-hover:text-white transition-colors" />
+                            </div>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed uppercase tracking-tight">{alert.message}</p>
                         </div>
-                        <p className="text-xs text-slate-400 font-medium leading-relaxed uppercase tracking-tight">{alert.message}</p>
+                        <button onClick={(e) => { e.stopPropagation(); handleDismiss(alert.id); }} className="absolute -top-2 -right-2 w-8 h-8 bg-black border border-white/10 rounded-full flex items-center justify-center text-slate-500 hover:text-white opacity-0 group-hover/notif:opacity-100 transition-opacity z-20 shadow-xl" title="Ocultar Notificação">
+                           <X size={14} />
+                        </button>
                      </div>
                    ))
                  ) : (
@@ -300,7 +338,6 @@ const Oficina: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-8 bg-white/[0.02] backdrop-blur-md p-10 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/5 blur-[120px] rounded-full group-hover:bg-cyan-500/10 transition-all duration-1000"></div>
         <div className="space-y-6 relative z-10">
@@ -314,7 +351,7 @@ const Oficina: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-4 relative z-10">
-          <button onClick={() => setIsNotifDrawerOpen(true)} className={`relative p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group ${smartAlerts.length > 0 ? 'text-amber-500' : 'text-slate-500'}`}>
+          <button onClick={handleOpenNotifDrawer} className={`relative p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group ${smartAlerts.length > 0 ? 'text-amber-500' : 'text-slate-500'}`}>
              <Bell size={24} className={smartAlerts.length > 0 ? 'animate-bounce' : ''} />
              {smartAlerts.length > 0 && <span className="absolute -top-1 -right-1 min-w-[24px] h-6 bg-red-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-[#050505] shadow-lg px-1.5">{smartAlerts.length > 9 ? '9+' : smartAlerts.length}</span>}
           </button>
@@ -324,7 +361,6 @@ const Oficina: React.FC = () => {
         </div>
       </div>
 
-      {/* Visualização de Lista / Dashboard */}
       {view === 'lista' && activeTab !== 'nova' && !selectedOS && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-500">
@@ -357,7 +393,6 @@ const Oficina: React.FC = () => {
         </>
       )}
 
-      {/* Formulário Nova O.S. */}
       {activeTab === 'nova' && (
         <div className="max-w-4xl mx-auto bg-white/[0.02] border border-white/10 p-12 rounded-[3.5rem] backdrop-blur-3xl animate-in slide-in-from-bottom-10 shadow-3xl">
           <div className="flex items-center justify-between mb-12">
@@ -380,7 +415,6 @@ const Oficina: React.FC = () => {
         </div>
       )}
 
-      {/* Detalhes da O.S. */}
       {view === 'detalhes' && selectedOS && (
         <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in zoom-in-95 duration-500">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
