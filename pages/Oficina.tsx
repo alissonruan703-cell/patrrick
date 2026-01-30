@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Plus, Search, X, Trash2,
-  Calendar, ArrowLeft, Zap, User, Car, Phone, Hash, ClipboardList, Package, Wrench, DollarSign, Share2, Check, AlertCircle, Clock, Bell, ChevronRight, CheckCircle2, Image as ImageIcon, Camera, AlertTriangle
+  Calendar, ArrowLeft, Zap, User, Car, Phone, Hash, ClipboardList, Package, Wrench, DollarSign, Share2, Check, AlertCircle, Clock, Bell, ChevronRight, CheckCircle2, Image as ImageIcon, Camera, AlertTriangle, UserPlus, FileText
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem, UserProfile, LogEntry, SystemConfig } from '../types';
 
@@ -125,7 +125,7 @@ const Oficina: React.FC = () => {
   const handleCreateOS = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasPermission('create_os')) { setFormError("Sem permissão."); return; }
-    if (!newOS.clientName || !newOS.vehicle || !newOS.plate) { setFormError("Campos obrigatórios."); return; }
+    if (!newOS.clientName || !newOS.vehicle || !newOS.plate) { setFormError("Campos obrigatórios: Cliente, Veículo e Placa."); return; }
     
     const os: ServiceOrder = {
       ...newOS as ServiceOrder,
@@ -142,6 +142,7 @@ const Oficina: React.FC = () => {
     setNewOS({ clientName: '', phone: '', vehicle: '', plate: '', description: '', items: [], status: 'Aberto' });
     setActiveTab('ativos');
     setView('lista');
+    setFormError(null);
   };
 
   const handleUpdateStatus = (id: string, newStatus: ServiceOrder['status']) => {
@@ -225,7 +226,6 @@ const Oficina: React.FC = () => {
       {/* Modal de Confirmação de Exclusão */}
       {osToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-           {/* Fix: Removed escaped quotes and backslashes in JSX */}
            <div className="w-full max-w-md bg-[#0f0f0f] border border-white/10 rounded-[2.5rem] p-10 space-y-8 shadow-2xl text-center relative overflow-hidden">
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-red-600/5 blur-[60px] rounded-full"></div>
               <div className="w-20 h-20 bg-red-600/10 border border-red-500/20 text-red-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
@@ -260,14 +260,107 @@ const Oficina: React.FC = () => {
              </div>
           </div>
           <div className="flex items-center gap-3">
-             <button onClick={() => { setActiveTab('ativos'); setView('lista'); setSelectedOS(null); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all ${activeTab === 'ativos' && !selectedOS ? 'bg-cyan-500 text-black' : 'text-slate-300 hover:bg-white/10'}`}>Operacional</button>
-             <button onClick={() => { setActiveTab('historico'); setView('lista'); setSelectedOS(null); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all ${activeTab === 'historico' ? 'bg-cyan-500 text-black' : 'text-slate-300 hover:bg-white/10'}`}>Histórico</button>
+             <button onClick={() => { setActiveTab('ativos'); setView('lista'); setSelectedOS(null); setFormError(null); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all ${activeTab === 'ativos' && !selectedOS ? 'bg-cyan-500 text-black' : 'text-slate-300 hover:bg-white/10'}`}>Operacional</button>
+             <button onClick={() => { setActiveTab('historico'); setView('lista'); setSelectedOS(null); setFormError(null); }} className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all ${activeTab === 'historico' ? 'bg-cyan-500 text-black' : 'text-slate-300 hover:bg-white/10'}`}>Histórico</button>
           </div>
         </div>
-        <button onClick={() => { setView('lista'); setActiveTab('nova'); setSelectedOS(null); }} className="px-10 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-3">
+        <button onClick={() => { setView('lista'); setActiveTab('nova'); setSelectedOS(null); setFormError(null); }} className="px-10 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-3">
           <Plus size={18} strokeWidth={4} /> Nova O.S.
         </button>
       </div>
+
+      {/* Formulário de Nova O.S. */}
+      {activeTab === 'nova' && (
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
+          <div className="flex items-center justify-between">
+            <button onClick={() => setActiveTab('ativos')} className="flex items-center gap-3 text-slate-500 hover:text-white text-[11px] font-black uppercase tracking-widest transition-all">
+              <ArrowLeft size={18} /> Cancelar e Voltar
+            </button>
+            <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-4">
+              <UserPlus className="text-cyan-400" size={24}/> Nova Entrada de Veículo
+            </h2>
+          </div>
+
+          <form onSubmit={handleCreateOS} className="bg-white/[0.02] border border-white/10 p-10 lg:p-14 rounded-[3.5rem] space-y-10 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full"></div>
+            
+            {formError && (
+              <div className="p-4 bg-red-600/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase text-center rounded-2xl animate-bounce">
+                {formError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Cliente</label>
+                  <input 
+                    required
+                    value={newOS.clientName} 
+                    onChange={e => setNewOS({...newOS, clientName: e.target.value})}
+                    placeholder="Ex: João da Silva"
+                    className="w-full bg-black/40 border border-white/10 px-6 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Telefone</label>
+                  <input 
+                    value={newOS.phone} 
+                    onChange={e => setNewOS({...newOS, phone: e.target.value})}
+                    placeholder="(00) 00000-0000"
+                    className="w-full bg-black/40 border border-white/10 px-6 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Veículo / Modelo</label>
+                  <input 
+                    required
+                    value={newOS.vehicle} 
+                    onChange={e => setNewOS({...newOS, vehicle: e.target.value})}
+                    placeholder="Ex: Toyota Corolla 2022"
+                    className="w-full bg-black/40 border border-white/10 px-6 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-bold uppercase"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Placa</label>
+                  <input 
+                    required
+                    value={newOS.plate} 
+                    onChange={e => setNewOS({...newOS, plate: e.target.value})}
+                    placeholder="ABC-1234"
+                    className="w-full bg-black/40 border border-white/10 px-6 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-black uppercase tracking-widest text-lg font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 relative z-10">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                <FileText size={14}/> Reclamações / Sintomas Iniciais
+              </label>
+              <textarea 
+                value={newOS.description} 
+                onChange={e => setNewOS({...newOS, description: e.target.value})}
+                placeholder="Descreva o que o cliente relatou ou o serviço solicitado..."
+                rows={4}
+                className="w-full bg-black/40 border border-white/10 px-6 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium resize-none"
+              />
+            </div>
+
+            <div className="pt-6 border-t border-white/5 relative z-10">
+              <button 
+                type="submit" 
+                className="w-full py-6 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-[2rem] uppercase text-[12px] tracking-[0.2em] shadow-[0_15px_40px_rgba(0,240,255,0.2)] hover:scale-[1.02] hover:brightness-110 active:scale-95 transition-all"
+              >
+                Gerar Protocolo de Entrada
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Barra de Status por cima da lista */}
       {view === 'lista' && activeTab !== 'nova' && !selectedOS && (
