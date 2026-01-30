@@ -69,7 +69,7 @@ const Login = () => {
       <div className="w-full max-w-md space-y-8 animate-in fade-in duration-700 relative z-10">
         <div className="text-center space-y-4">
           <div className="bg-gradient-to-br from-cyan-400 to-violet-600 p-4 rounded-[2rem] w-fit mx-auto shadow-[0_0_40px_rgba(0,240,255,0.4)]"><ShieldCheck className="text-white" size={32}/></div>
-          <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Login <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">Plus+</span></h1>
+          <h1 className="text-4xl font-black text-white uppercase tracking-tighter">CRM<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">Plus+</span></h1>
           <p className="text-cyan-400 font-black uppercase tracking-[0.4em] text-[10px] neon-text-cyan">Acesso Corporativo</p>
         </div>
         <div className="bg-white/[0.03] border border-white/10 p-10 rounded-[3rem] backdrop-blur-3xl shadow-2xl">
@@ -83,10 +83,10 @@ const Login = () => {
               <label className="text-[10px] font-black text-slate-200 uppercase ml-1 tracking-widest">Senha</label>
               <input type="password" value={pass} onChange={e => setPass(e.target.value)} className="w-full bg-black/40 border border-white/10 px-6 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-cyan-500/30 text-sm font-bold" />
             </div>
-            <button type="submit" className="w-full py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-xl hover:brightness-125 transition-all mt-4">Validar Acesso</button>
+            <button type="submit" className="w-full py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-xl hover:brightness-125 transition-all mt-4">Entrar</button>
           </form>
           <div className="mt-10 pt-8 border-t border-white/10 text-center">
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Nova licença? <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 transition-all underline-offset-4">Criar agora</Link></p>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Novo usuário? <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 transition-all underline-offset-4">Criar agora</Link></p>
           </div>
         </div>
       </div>
