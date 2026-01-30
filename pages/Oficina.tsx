@@ -37,6 +37,24 @@ const Oficina: React.FC = () => {
     return activeProfile?.actions?.includes(permission) || false;
   };
 
+  const getStatusColorClasses = (status: string) => {
+    switch (status) {
+      case 'Orçamento':
+        return 'bg-yellow-500/5 border-yellow-500/20 text-yellow-200/70';
+      case 'Execução':
+        return 'bg-emerald-500/5 border-emerald-500/20 text-emerald-200/70';
+      case 'Reprovado':
+        return 'bg-red-500/5 border-red-500/20 text-red-200/70';
+      case 'Pronto':
+        return 'bg-cyan-500/5 border-cyan-500/20 text-cyan-200/70';
+      case 'Entregue':
+        return 'bg-blue-500/5 border-blue-500/20 text-blue-200/70';
+      case 'Aberto':
+      default:
+        return 'bg-white/[0.02] border-white/10 text-slate-300';
+    }
+  };
+
   const addLog = (action: string, details: string) => {
     if (!activeProfile) return;
     const logs = JSON.parse(localStorage.getItem('crmplus_logs') || '[]');
@@ -385,16 +403,16 @@ const Oficina: React.FC = () => {
           <div className="relative group max-w-2xl"><Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600" size={20} /><input placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white/[0.03] border border-white/10 rounded-3xl py-5 pl-16 pr-6 text-white font-bold outline-none focus:ring-2 focus:ring-cyan-500/20" /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {filteredOrders.map(o => (
-              <div key={o.id} onClick={() => { setSelectedOS(o); setView('detalhes'); }} className="p-8 rounded-[2.5rem] border border-white/10 bg-white/[0.02] flex flex-col justify-between min-h-[250px] shadow-xl hover:border-cyan-500/40 cursor-pointer relative group/card">
+              <div key={o.id} onClick={() => { setSelectedOS(o); setView('detalhes'); }} className={`p-8 rounded-[2.5rem] border flex flex-col justify-between min-h-[250px] shadow-xl hover:border-cyan-500/40 cursor-pointer relative group/card transition-all duration-500 ${getStatusColorClasses(o.status)}`}>
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-cyan-400 font-mono">#{o.id.slice(-4)}</span>
-                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border border-white/10`}>{o.status}</span>
+                    <span className="text-[10px] font-black font-mono">#{o.id.slice(-4)}</span>
+                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border border-white/5 bg-black/20`}>{o.status}</span>
                   </div>
-                  <h3 className="text-xl font-black text-white uppercase truncate">{o.clientName}</h3>
-                  <p className="text-[11px] font-bold text-slate-300 uppercase">{o.vehicle} | {o.plate}</p>
+                  <h3 className="text-xl font-black uppercase truncate">{o.clientName}</h3>
+                  <p className="text-[11px] font-bold uppercase">{o.vehicle} | {o.plate}</p>
                 </div>
-                <div className="pt-6 border-t border-white/10 flex items-center justify-between text-white font-black">
+                <div className="pt-6 border-t border-white/10 flex items-center justify-between font-black">
                    <span>R$ {o.total.toFixed(2)}</span>
                    {hasPermission('delete_os') && (
                      <button 
@@ -438,14 +456,14 @@ const Oficina: React.FC = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div className="lg:col-span-4 space-y-8">
-              <div className="bg-white/[0.02] border border-white/10 p-10 rounded-[3.5rem] space-y-8 shadow-2xl">
+              <div className={`border p-10 rounded-[3.5rem] space-y-8 shadow-2xl transition-all duration-500 ${getStatusColorClasses(selectedOS.status)}`}>
                  <div className="flex justify-between items-start">
-                    <h2 className="text-4xl font-black text-white uppercase tracking-tighter">#{selectedOS.id.slice(-4)}</h2>
-                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border border-white/10 bg-white/5`}>{selectedOS.status}</span>
+                    <h2 className="text-4xl font-black uppercase tracking-tighter">#{selectedOS.id.slice(-4)}</h2>
+                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border border-white/10 bg-black/20`}>{selectedOS.status}</span>
                  </div>
                  <div className="space-y-4">
-                    <div><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cliente</p><p className="text-xl font-black text-white">{selectedOS.clientName}</p></div>
-                    <div><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Veículo</p><p className="text-xl font-black text-white uppercase">{selectedOS.vehicle}</p><p className="text-cyan-400 font-black tracking-widest text-lg font-mono">{selectedOS.plate}</p></div>
+                    <div><p className="text-[10px] font-black opacity-50 uppercase tracking-widest">Cliente</p><p className="text-xl font-black">{selectedOS.clientName}</p></div>
+                    <div><p className="text-[10px] font-black opacity-50 uppercase tracking-widest">Veículo</p><p className="text-xl font-black uppercase">{selectedOS.vehicle}</p><p className="font-black tracking-widest text-lg font-mono opacity-80">{selectedOS.plate}</p></div>
                  </div>
               </div>
 
