@@ -80,10 +80,13 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
         const createdAt = parseInt(osId) || now;
         const hoursDiff = (now - createdAt) / 36e5;
         if (dismissedIds.includes(`notif-aberto-${osId}`) || dismissedIds.includes(`notif-pronto-${osId}`)) return false;
-        if (createdAt <= lastCheck) return false;
+        
+        // Alerta para ordens paradas (Aberto > 2h ou Orçamento > 4h)
         const isStagnantOpen = o.status === 'Aberto' && hoursDiff > 2;
         const isPendingQuote = o.status === 'Orçamento' && hoursDiff > 4;
-        return (isStagnantOpen || isPendingQuote) && hoursDiff < 168;
+        const isReadyForPickup = o.status === 'Pronto';
+        
+        return (isStagnantOpen || isPendingQuote || isReadyForPickup) && hoursDiff < 168; // no máximo 1 semana de alerta
       });
       count += pendingAlerts.length;
     }
@@ -94,7 +97,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
         const logTime = new Date(l.timestamp).getTime() || now;
         if (dismissedIds.includes(l.id)) return false;
         if (logTime <= lastCheck) return false;
-        const isRecent = (now - logTime) < (24 * 36e5);
+        const isRecent = (now - logTime) < (24 * 36e5); // logs das últimas 24h
         const isClientAction = l.userId === 'CLIENTE';
         return isRecent && isClientAction;
       });
@@ -148,13 +151,13 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
 
   return (
     <>
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#08080a]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#08080a]/95 backdrop-blur-xl border-b border-white/5 py-3 shadow-2xl' : 'bg-transparent'}`}>
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-4 group">
             {config.companyLogo ? (
               <img src={config.companyLogo} className="h-8 w-auto object-contain" alt="Logo" />
             ) : (
-              <div className="bg-cyan-500 p-2 rounded-xl shadow-xl shadow-cyan-500/30">
+              <div className="bg-gradient-to-br from-cyan-400 to-cyan-600 p-2 rounded-xl shadow-xl shadow-cyan-500/20">
                 <Rocket size={16} className="text-black" />
               </div>
             )}
@@ -191,7 +194,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
               <button onClick={() => navigate('/notificacoes')} className="relative p-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all group">
                 <Bell size={18} />
                 {notifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-600 text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[#050505] animate-pulse px-1">
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-600 text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[#08080a] animate-pulse px-1">
                     {notifCount > 9 ? '9+' : notifCount}
                   </span>
                 )}
@@ -199,7 +202,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
 
               {!isMaster && (
                 <button onClick={handleSwitchProfile} className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all">
-                  <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20"><img src={activeProfile?.avatar || ''} className="w-full h-full" alt="Perfil" /></div>
+                  <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20 shadow-inner"><img src={activeProfile?.avatar || ''} className="w-full h-full object-cover" alt="Perfil" /></div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-white">{activeProfile?.name}</span>
                 </button>
               )}
@@ -207,8 +210,8 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
             </>
           ) : (
             <div className="flex gap-4">
-               <button onClick={() => navigate('/login')} className="px-6 py-2.5 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10">Entrar</button>
-               <button onClick={() => navigate('/signup')} className="px-6 py-2.5 bg-cyan-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-cyan-500/30">Criar Conta</button>
+               <button onClick={() => navigate('/login')} className="px-6 py-2.5 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 hover:bg-white/10">Entrar</button>
+               <button onClick={() => navigate('/signup')} className="px-6 py-2.5 bg-cyan-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-cyan-500/30 hover:brightness-110">Criar Conta</button>
             </div>
           )}
         </div>
@@ -231,64 +234,9 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   );
 };
 
-const Footer = () => {
-  const currentYear = new Date().getFullYear();
-  const [modalContent, setModalContent] = useState<{title: string, msg: string} | null>(null);
-
-  const showInfo = (type: 'termos' | 'privacidade' | 'suporte') => {
-    const data = {
-      termos: { title: 'Termos de Uso', msg: 'Ao utilizar o CRMPlus+, você concorda com nossos termos de licença SaaS. Seus dados são processados de forma segura e exclusiva para sua conta empresarial.' },
-      privacidade: { title: 'Privacidade de Dados', msg: 'Respeitamos a LGPD. Não compartilhamos informações de ordens de serviço ou faturamento com terceiros. Todos os dados são criptografados em repouso e em trânsito.' },
-      suporte: { title: 'Central de Suporte', msg: 'Precisa de ajuda? Nosso time técnico está disponível via chat interno para assinantes Pro+ ou pelo e-mail suporte@crmplus.com.' }
-    };
-    setModalContent(data[type]);
-  };
-
-  return (
-    <footer className="py-20 px-6 lg:px-12 border-t border-white/5 bg-transparent relative overflow-hidden">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12 relative z-10">
-        <div className="flex flex-col items-center md:items-start gap-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-cyan-500 p-2 rounded-xl"><Rocket size={16} className="text-black" /></div>
-            <span className="text-2xl font-black tracking-tighter text-white uppercase italic">CRM<span className="text-cyan-400">Plus+</span></span>
-          </div>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] max-w-[200px] leading-relaxed">Ecossistema de Gestão Corporativa Inteligente</p>
-        </div>
-
-        <div className="flex flex-wrap gap-12 sm:gap-20">
-          <button onClick={() => showInfo('termos')} className="text-[10px] font-black text-white hover:text-cyan-400 uppercase tracking-widest transition-all">Termos</button>
-          <button onClick={() => showInfo('privacidade')} className="text-[10px] font-black text-white hover:text-cyan-400 uppercase tracking-widest transition-all">Privacidade</button>
-          <button onClick={() => showInfo('suporte')} className="text-[10px] font-black text-white hover:text-cyan-400 uppercase tracking-widest transition-all">Suporte</button>
-        </div>
-
-        <div className="flex flex-col items-end gap-4">
-           <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">&copy; {currentYear} CRMPLUS. Todos os direitos reservados.</p>
-           <div className="flex items-center gap-2 text-[9px] font-black text-slate-800 uppercase tracking-widest">
-              Status do Sistema <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-           </div>
-        </div>
-      </div>
-
-      {modalContent && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in">
-           <div className="w-full max-w-md bg-[#0f0f0f] border border-white/10 p-10 rounded-[3rem] text-center space-y-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/5 blur-[60px] rounded-full"></div>
-              <div className="w-20 h-20 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-[2rem] flex items-center justify-center mx-auto shadow-lg"><Info size={32} /></div>
-              <div className="space-y-4">
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{modalContent.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{modalContent.msg}</p>
-              </div>
-              <button onClick={() => setModalContent(null)} className="w-full py-5 bg-white text-black font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl">Entendido</button>
-           </div>
-        </div>
-      )}
-    </footer>
-  );
-};
-
-const App: React.FC = () => {
+// --- FIX: Implementation of the main App component and its default export ---
+const App = () => {
   const [activeProfile, setActiveProfile] = useState<UserProfile | null>(null);
-  const location = useLocation();
 
   useEffect(() => {
     const saved = sessionStorage.getItem('crmplus_active_profile');
@@ -298,37 +246,80 @@ const App: React.FC = () => {
   const handleLogout = () => {
     sessionStorage.clear();
     setActiveProfile(null);
-    window.location.hash = '#/';
-    window.location.reload();
+    window.location.href = '#/';
   };
 
-  const isAuthPage = location.pathname === '/login' || 
-                     location.pathname === '/signup' || 
-                     location.pathname === '/profiles' || 
-                     location.pathname === '/pin';
-
   return (
-    <div className="min-h-screen text-slate-200 flex flex-col">
-      <Navbar activeProfile={activeProfile} onLogout={handleLogout} onProfileReset={() => setActiveProfile(null)} />
-      <main className="flex-grow">
-        <Routes>
-          <Route path="/" element={<Catalog />} />
-          <Route path="/login" element={<AuthPages.Login />} />
-          <Route path="/signup" element={<AuthPages.Signup />} />
-          <Route path="/profiles" element={<AuthPages.ProfileSelector onProfileSelect={setActiveProfile} />} />
-          <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
-          <Route path="/v/:data" element={<PublicView />} />
-          <Route path="/admin-panel" element={<MasterRoute><AdminMaster /></MasterRoute>} />
-          <Route path="/notificacoes" element={<ProtectedModule permission="any"><Notifications /></ProtectedModule>} />
-          <Route path="/assinatura" element={<ProtectedModule permission="config"><SubscriptionManagement /></ProtectedModule>} />
-          <Route path="/oficina/*" element={<ProtectedModule permission="oficina"><Oficina /></ProtectedModule>} />
-          <Route path="/config" element={<ProtectedModule permission="config"><Settings /></ProtectedModule>} />
-          <Route path="/logs" element={<ProtectedModule permission="config"><ActivityLog /></ProtectedModule>} />
-          <Route path="/orcamento" element={<ProtectedModule permission="orcamento"><LockedModule name="Vendas" /></ProtectedModule>} />
-          <Route path="/restaurante" element={<ProtectedModule permission="restaurante"><LockedModule name="Gastro Hub" /></ProtectedModule>} />
-        </Routes>
-      </main>
-      {!isAuthPage && !location.pathname.startsWith('/v/') && <Footer />}
+    <div className="min-h-screen bg-[#050505] text-white">
+      <Navbar 
+        activeProfile={activeProfile} 
+        onLogout={handleLogout} 
+        onProfileReset={() => setActiveProfile(null)} 
+      />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Catalog />} />
+        <Route path="/login" element={<AuthPages.Login />} />
+        <Route path="/signup" element={<AuthPages.Signup />} />
+        <Route path="/v/:data" element={<PublicView />} />
+
+        {/* Auth Routes */}
+        <Route path="/profiles" element={<AuthPages.ProfileSelector onProfileSelect={setActiveProfile} />} />
+        <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
+
+        {/* Protected Routes */}
+        <Route path="/oficina" element={
+          <ProtectedModule permission="oficina">
+            <Oficina />
+          </ProtectedModule>
+        } />
+        
+        <Route path="/orcamento" element={
+          <ProtectedModule permission="orcamento">
+            <LockedModule name="Orçamentos" />
+          </ProtectedModule>
+        } />
+
+        <Route path="/restaurante" element={
+          <ProtectedModule permission="restaurante">
+            <LockedModule name="Restaurante" />
+          </ProtectedModule>
+        } />
+
+        <Route path="/config" element={
+          <ProtectedModule permission="config">
+            <Settings />
+          </ProtectedModule>
+        } />
+
+        <Route path="/assinatura" element={
+          <ProtectedModule permission="any">
+            <SubscriptionManagement />
+          </ProtectedModule>
+        } />
+
+        <Route path="/notificacoes" element={
+          <ProtectedModule permission="any">
+            <Notifications />
+          </ProtectedModule>
+        } />
+
+        <Route path="/logs" element={
+          <ProtectedModule permission="view_logs">
+            <ActivityLog />
+          </ProtectedModule>
+        } />
+
+        {/* Master Routes */}
+        <Route path="/admin-panel" element={
+          <MasterRoute>
+            <AdminMaster />
+          </MasterRoute>
+        } />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 };

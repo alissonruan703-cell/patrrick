@@ -96,7 +96,7 @@ const Oficina: React.FC = () => {
       status: 'Aberto' 
     };
     saveOrders([os, ...orders]);
-    addLog('CREATE_OS', `Nova O.S. #${os.id} para ${os.clientName}`);
+    addLog('CREATE_OS', `Nova O.S. #${os.id.slice(-4)} aberta para ${os.clientName}`);
     setNewOS({ clientName: '', phone: '', vehicle: '', plate: '', description: '', items: [], status: 'Aberto' });
     setActiveTab('ativos'); setView('lista');
   };
@@ -104,8 +104,18 @@ const Oficina: React.FC = () => {
   const handleUpdateStatus = (id: string, newStatus: ServiceOrder['status']) => {
     const updated = orders.map(o => o.id === id ? { ...o, status: newStatus } : o);
     saveOrders(updated);
-    addLog('UPDATE_STATUS', `O.S. #${id} alterada para ${newStatus}`);
+    addLog('UPDATE_STATUS', `O.S. #${id.slice(-4)} alterada para ${newStatus}`);
     if (selectedOS?.id === id) setSelectedOS({ ...selectedOS, status: newStatus });
+  };
+
+  const handleDeleteOS = (id: string) => {
+    if (!hasPermission('delete_os')) return;
+    const updated = orders.filter(o => o.id !== id);
+    saveOrders(updated);
+    addLog('DELETE_OS', `O.S. #${id.slice(-4)} excluída permanentemente`);
+    setOsToDelete(null);
+    setSelectedOS(null);
+    setView('lista');
   };
 
   const handleAddItem = () => {
@@ -124,7 +134,7 @@ const Oficina: React.FC = () => {
     const updatedOS = { ...selectedOS, items: updatedItems, total: newTotal };
     saveOrders(orders.map(o => o.id === selectedOS.id ? updatedOS : o));
     setSelectedOS(updatedOS);
-    addLog('ADD_ITEM', `Adicionado ${item.type}: ${item.description} na O.S. #${selectedOS.id}`);
+    addLog('ADD_ITEM', `Adicionado ${item.type}: ${item.description} na O.S. #${selectedOS.id.slice(-4)}`);
     
     setNewItem({ type: newItem.type, description: '', quantity: 1, price: 0 });
   };
@@ -159,6 +169,29 @@ const Oficina: React.FC = () => {
 
   return (
     <div className="pt-24 px-6 lg:px-12 max-w-screen-2xl mx-auto space-y-10 pb-20">
+      
+      {/* Modal de Confirmação de Exclusão */}
+      {osToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="w-full max-w-md bg-[#0a0a0b] border border-red-500/20 rounded-[3rem] p-10 space-y-8 shadow-2xl text-center relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-red-600/10 blur-[60px] rounded-full"></div>
+              <div className="w-20 h-20 bg-red-600/10 border border-red-500/20 text-red-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
+                <AlertTriangle size={40} />
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Apagar Registro?</h3>
+                <p className="text-slate-400 text-sm leading-relaxed uppercase font-bold tracking-tight px-4">
+                  Esta ação é irreversível. Todos os dados desta Ordem de Serviço serão deletados permanentemente.
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <button onClick={() => setOsToDelete(null)} className="flex-1 py-5 bg-white/5 text-slate-400 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all">Cancelar</button>
+                <button onClick={() => handleDeleteOS(osToDelete)} className="flex-1 py-5 bg-red-600 text-white font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl shadow-red-600/20 hover:bg-red-500 transition-all">Sim, Deletar</button>
+              </div>
+           </div>
+        </div>
+      )}
+
       {/* Header Oficina */}
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-8 bg-white/[0.03] backdrop-blur-3xl p-10 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden group">
         <div className="space-y-6 relative z-10">
@@ -222,7 +255,20 @@ const Oficina: React.FC = () => {
             {filteredOrders.map(o => (
               <div key={o.id} onClick={() => { setSelectedOS(o); setView('detalhes'); }} className={`p-8 rounded-[2.5rem] border backdrop-blur-2xl flex flex-col justify-between min-h-[250px] shadow-xl hover:border-cyan-500/40 cursor-pointer relative group/card transition-all duration-500 ${getStatusColorClasses(o.status)}`}>
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center"><span className="text-[10px] font-black font-mono tracking-tighter opacity-40">#{o.id.slice(-4)}</span><span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase bg-black/20 border border-white/5">{o.status}</span></div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black font-mono tracking-tighter opacity-40">#{o.id.slice(-4)}</span>
+                    <div className="flex gap-2">
+                       <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase bg-black/20 border border-white/5">{o.status}</span>
+                       {hasPermission('delete_os') && (
+                         <button 
+                            onClick={(e) => { e.stopPropagation(); setOsToDelete(o.id); }}
+                            className="p-1.5 bg-red-600/10 text-red-500 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity hover:bg-red-600 hover:text-white"
+                         >
+                            <Trash2 size={14}/>
+                         </button>
+                       )}
+                    </div>
+                  </div>
                   <h3 className="text-xl font-black uppercase truncate tracking-tight">{o.clientName}</h3>
                   <div className="flex items-center gap-2 text-white/40"><Car size={14}/><p className="text-[11px] font-black uppercase tracking-tight">{o.vehicle} <span className="text-white">| {o.plate}</span></p></div>
                 </div>
@@ -250,6 +296,11 @@ const Oficina: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
              <button onClick={() => { setView('lista'); setSelectedOS(null); }} className="flex items-center gap-3 text-slate-500 hover:text-white text-[11px] font-black uppercase tracking-widest group transition-all"><ArrowLeft size={18} className="group-hover:-translate-x-1" /> Lista de Atendimentos</button>
              <div className="flex items-center gap-3">
+               {hasPermission('delete_os') && (
+                 <button onClick={() => setOsToDelete(selectedOS.id)} className="p-4 bg-red-600/10 text-red-500 border border-red-500/20 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl" title="Deletar OS">
+                    <Trash2 size={20}/>
+                 </button>
+               )}
                <button onClick={() => copyLink(selectedOS)} className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-cyan-400 transition-all shadow-xl">{copyFeedback ? <CheckCircle2 size={18} className="text-emerald-500" /> : <Share2 size={18}/>} Compartilhar Orçamento</button>
              </div>
           </div>
