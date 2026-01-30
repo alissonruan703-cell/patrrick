@@ -57,7 +57,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [showDevModal, setShowDevModal] = useState(false);
-  const [config, setConfig] = useState<SystemConfig>({ companyName: 'CRMPLUS', companyLogo: '' });
+  const [config, setConfig] = useState<SystemConfig>({ companyName: 'Minha Empresa', companyLogo: '' });
   const [notifCount, setNotifCount] = useState(0);
 
   const isAccountLoggedIn = sessionStorage.getItem('crmplus_account_auth') === 'true';
@@ -80,13 +80,10 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
         const createdAt = parseInt(osId) || now;
         const hoursDiff = (now - createdAt) / 36e5;
         if (dismissedIds.includes(`notif-aberto-${osId}`) || dismissedIds.includes(`notif-pronto-${osId}`)) return false;
-        
-        // Alerta para ordens paradas (Aberto > 2h ou Orçamento > 4h)
         const isStagnantOpen = o.status === 'Aberto' && hoursDiff > 2;
         const isPendingQuote = o.status === 'Orçamento' && hoursDiff > 4;
         const isReadyForPickup = o.status === 'Pronto';
-        
-        return (isStagnantOpen || isPendingQuote || isReadyForPickup) && hoursDiff < 168; // no máximo 1 semana de alerta
+        return (isStagnantOpen || isPendingQuote || isReadyForPickup) && hoursDiff < 168;
       });
       count += pendingAlerts.length;
     }
@@ -97,7 +94,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
         const logTime = new Date(l.timestamp).getTime() || now;
         if (dismissedIds.includes(l.id)) return false;
         if (logTime <= lastCheck) return false;
-        const isRecent = (now - logTime) < (24 * 36e5); // logs das últimas 24h
+        const isRecent = (now - logTime) < (24 * 36e5);
         const isClientAction = l.userId === 'CLIENTE';
         return isRecent && isClientAction;
       });
@@ -116,10 +113,10 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
     };
     loadConfig();
     window.addEventListener('scroll', handleScroll);
-    window.addEventListener('storage', updateNotifCount);
+    window.addEventListener('storage', loadConfig);
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('storage', updateNotifCount);
+      window.removeEventListener('storage', loadConfig);
     };
   }, [location.pathname]);
 
@@ -144,9 +141,9 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   };
 
   const systems = [
-    { id: 'oficina', name: 'Oficina Pro+', icon: <Rocket size={16}/>, path: '/oficina', active: true },
-    { id: 'orcamento', name: 'Vendas Plus', icon: <FileText size={16}/>, path: '/orcamento', active: false },
-    { id: 'restaurante', name: 'Gastro Hub', icon: <Utensils size={16}/>, path: '/restaurante', active: false },
+    { id: 'oficina', name: 'Oficina', icon: <Rocket size={16}/>, path: '/oficina', active: true },
+    { id: 'orcamento', name: 'Orçamento', icon: <FileText size={16}/>, path: '/orcamento', active: false },
+    { id: 'restaurante', name: 'Restaurante', icon: <Utensils size={16}/>, path: '/restaurante', active: false },
   ];
 
   return (
@@ -162,7 +159,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
               </div>
             )}
             <span className="text-xl font-black tracking-tighter text-white uppercase group-hover:text-cyan-400 transition-colors">
-              {config.companyName.split(' ')[0]}
+              {config.companyName.split(' ')[0]}<span className="text-cyan-500">PRO</span>
             </span>
           </Link>
 
@@ -173,7 +170,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
                </button>
                {isSwitcherOpen && (
                  <div className="absolute top-full left-0 mt-3 w-64 bg-[#0a0a0a] border border-white/10 rounded-2xl p-4 shadow-2xl animate-in fade-in slide-in-from-top-2">
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-4 px-2">Trocar de Sistema</p>
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-4 px-2">Sistemas Disponíveis</p>
                     <div className="space-y-1">
                       {systems.map(s => (
                         <button key={s.id} onClick={() => { setIsSwitcherOpen(false); if (s.active) navigate(s.path); else setShowDevModal(true); }} className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${location.pathname.startsWith(s.path) ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
@@ -211,7 +208,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
           ) : (
             <div className="flex gap-4">
                <button onClick={() => navigate('/login')} className="px-6 py-2.5 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 hover:bg-white/10">Entrar</button>
-               <button onClick={() => navigate('/signup')} className="px-6 py-2.5 bg-cyan-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-cyan-500/30 hover:brightness-110">Criar Conta</button>
+               <button onClick={() => navigate('/signup')} className="px-6 py-2.5 bg-cyan-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-cyan-500/30 hover:brightness-110">Começar</button>
             </div>
           )}
         </div>
@@ -223,8 +220,8 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/10 blur-[60px] rounded-full"></div>
               <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-lg"><AlertTriangle size={40} /></div>
               <div className="space-y-4">
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Em Desenvolvimento</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">Estamos trabalhando duro para liberar este módulo. Fique ligado, novidades em breve!</p>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Módulo em Expansão</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">Estamos preparando as ferramentas de Orçamentos e Restaurante para lançamento em breve.</p>
               </div>
               <button onClick={() => setShowDevModal(false)} className="w-full py-5 bg-white text-black font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl">Entendido</button>
            </div>
@@ -234,7 +231,6 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
   );
 };
 
-// --- FIX: Implementation of the main App component and its default export ---
 const App = () => {
   const [activeProfile, setActiveProfile] = useState<UserProfile | null>(null);
 
@@ -250,74 +246,27 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <div className="min-h-screen bg-transparent text-white">
       <Navbar 
         activeProfile={activeProfile} 
         onLogout={handleLogout} 
         onProfileReset={() => setActiveProfile(null)} 
       />
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<Catalog />} />
         <Route path="/login" element={<AuthPages.Login />} />
         <Route path="/signup" element={<AuthPages.Signup />} />
         <Route path="/v/:data" element={<PublicView />} />
-
-        {/* Auth Routes */}
         <Route path="/profiles" element={<AuthPages.ProfileSelector onProfileSelect={setActiveProfile} />} />
         <Route path="/pin" element={<AuthPages.PinEntry profile={activeProfile} />} />
-
-        {/* Protected Routes */}
-        <Route path="/oficina" element={
-          <ProtectedModule permission="oficina">
-            <Oficina />
-          </ProtectedModule>
-        } />
-        
-        <Route path="/orcamento" element={
-          <ProtectedModule permission="orcamento">
-            <LockedModule name="Orçamentos" />
-          </ProtectedModule>
-        } />
-
-        <Route path="/restaurante" element={
-          <ProtectedModule permission="restaurante">
-            <LockedModule name="Restaurante" />
-          </ProtectedModule>
-        } />
-
-        <Route path="/config" element={
-          <ProtectedModule permission="config">
-            <Settings />
-          </ProtectedModule>
-        } />
-
-        <Route path="/assinatura" element={
-          <ProtectedModule permission="any">
-            <SubscriptionManagement />
-          </ProtectedModule>
-        } />
-
-        <Route path="/notificacoes" element={
-          <ProtectedModule permission="any">
-            <Notifications />
-          </ProtectedModule>
-        } />
-
-        <Route path="/logs" element={
-          <ProtectedModule permission="view_logs">
-            <ActivityLog />
-          </ProtectedModule>
-        } />
-
-        {/* Master Routes */}
-        <Route path="/admin-panel" element={
-          <MasterRoute>
-            <AdminMaster />
-          </MasterRoute>
-        } />
-
-        {/* Fallback */}
+        <Route path="/oficina" element={<ProtectedModule permission="oficina"><Oficina /></ProtectedModule>} />
+        <Route path="/orcamento" element={<ProtectedModule permission="orcamento"><LockedModule name="Orçamentos" /></ProtectedModule>} />
+        <Route path="/restaurante" element={<ProtectedModule permission="restaurante"><LockedModule name="Restaurante" /></ProtectedModule>} />
+        <Route path="/config" element={<ProtectedModule permission="config"><Settings /></ProtectedModule>} />
+        <Route path="/assinatura" element={<ProtectedModule permission="any"><SubscriptionManagement /></ProtectedModule>} />
+        <Route path="/notificacoes" element={<ProtectedModule permission="any"><Notifications /></ProtectedModule>} />
+        <Route path="/logs" element={<ProtectedModule permission="view_logs"><ActivityLog /></ProtectedModule>} />
+        <Route path="/admin-panel" element={<MasterRoute><AdminMaster /></MasterRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
