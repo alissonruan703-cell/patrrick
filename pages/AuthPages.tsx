@@ -58,8 +58,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] p-6 relative">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,240,255,0.08),transparent_70%)]"></div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-transparent p-6 relative">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,240,255,0.06),transparent_70%)]"></div>
       
       <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all group z-20">
         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
@@ -139,7 +139,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] p-6 lg:p-12 relative flex flex-col items-center">
+    <div className="min-h-screen bg-transparent p-6 lg:p-12 relative flex flex-col items-center">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(217,70,239,0.06),transparent_70%)]"></div>
       <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all z-20">
         <ArrowLeft size={16} />
@@ -260,7 +260,7 @@ const ProfileSelector = ({ onProfileSelect }: { onProfileSelect: (p: UserProfile
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-6 relative">
        <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all z-20"><ArrowLeft size={16}/><span className="text-[10px] font-black uppercase tracking-widest">Catálogo</span></Link>
       <div className="text-center mb-16 space-y-4 animate-in fade-in duration-700">
         <h1 className="text-5xl font-black text-white uppercase tracking-tighter">Quem está <span className="text-cyan-400">Operando?</span></h1>
@@ -358,7 +358,7 @@ const PinEntry = ({ profile }: { profile: UserProfile | null }) => {
   if (!activeProfile) return <Navigate to="/profiles" replace />;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#050505] relative">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-transparent relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,240,255,0.05),transparent_70%)]"></div>
       <div className="mb-16 text-center space-y-8 flex flex-col items-center relative z-10 animate-in fade-in duration-1000">
         <div className="w-52 h-52 rounded-[4.5rem] border-4 border-cyan-500 overflow-hidden shadow-2xl bg-[#0a0a0a]"><img src={activeProfile.avatar} className="w-full h-full object-cover" /></div>

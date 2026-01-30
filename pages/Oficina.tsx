@@ -160,7 +160,7 @@ const Oficina: React.FC = () => {
   return (
     <div className="pt-24 px-6 lg:px-12 max-w-screen-2xl mx-auto space-y-10 pb-20">
       {/* Header Oficina */}
-      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-8 bg-white/[0.02] p-10 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden group">
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-8 bg-white/[0.03] backdrop-blur-3xl p-10 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden group">
         <div className="space-y-6 relative z-10">
           <div className="flex items-center gap-5">
              <div className="p-3 bg-cyan-500/20 rounded-2xl border border-cyan-500/30 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]"><Wrench size={24} /></div>
@@ -177,7 +177,7 @@ const Oficina: React.FC = () => {
       {activeTab === 'nova' && (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-5">
           <button onClick={() => setActiveTab('ativos')} className="flex items-center gap-3 text-slate-500 hover:text-white text-[11px] font-black uppercase tracking-widest transition-all"><ArrowLeft size={18} /> Cancelar</button>
-          <form onSubmit={handleCreateOS} className="bg-white/[0.02] border border-white/10 p-10 lg:p-14 rounded-[3.5rem] space-y-10 shadow-2xl relative overflow-hidden">
+          <form onSubmit={handleCreateOS} className="bg-white/[0.03] border border-white/10 p-10 lg:p-14 rounded-[3.5rem] space-y-10 shadow-2xl relative overflow-hidden backdrop-blur-3xl">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/5 blur-[80px] rounded-full"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
@@ -211,16 +211,16 @@ const Oficina: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-6">
             <div className="flex-1 relative group">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-cyan-400 transition-colors" size={20} />
-              <input placeholder="Filtrar por placa ou cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white/[0.03] border border-white/10 rounded-3xl py-5 pl-16 pr-6 text-white font-bold outline-none focus:ring-2 focus:ring-cyan-500/20 shadow-lg" />
+              <input placeholder="Filtrar por placa ou cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl py-5 pl-16 pr-6 text-white font-bold outline-none focus:ring-2 focus:ring-cyan-500/20 shadow-lg" />
             </div>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-white/[0.03] border border-white/10 rounded-3xl px-8 py-5 text-white font-black uppercase text-[10px] tracking-widest outline-none shadow-lg">
-               {['Todos', 'Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'].map(s => <option key={s} value={s} className="bg-[#050505]">{s}</option>)}
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl px-8 py-5 text-white font-black uppercase text-[10px] tracking-widest outline-none shadow-lg">
+               {['Todos', 'Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'].map(s => <option key={s} value={s} className="bg-[#0a0a0b]">{s}</option>)}
             </select>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {filteredOrders.map(o => (
-              <div key={o.id} onClick={() => { setSelectedOS(o); setView('detalhes'); }} className={`p-8 rounded-[2.5rem] border flex flex-col justify-between min-h-[250px] shadow-xl hover:border-cyan-500/40 cursor-pointer relative group/card transition-all duration-500 ${getStatusColorClasses(o.status)}`}>
+              <div key={o.id} onClick={() => { setSelectedOS(o); setView('detalhes'); }} className={`p-8 rounded-[2.5rem] border backdrop-blur-2xl flex flex-col justify-between min-h-[250px] shadow-xl hover:border-cyan-500/40 cursor-pointer relative group/card transition-all duration-500 ${getStatusColorClasses(o.status)}`}>
                 <div className="space-y-6">
                   <div className="flex justify-between items-center"><span className="text-[10px] font-black font-mono tracking-tighter opacity-40">#{o.id.slice(-4)}</span><span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase bg-black/20 border border-white/5">{o.status}</span></div>
                   <h3 className="text-xl font-black uppercase truncate tracking-tight">{o.clientName}</h3>
@@ -257,7 +257,7 @@ const Oficina: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             {/* Sidebar Detalhes */}
             <div className="lg:col-span-4 space-y-8">
-              <div className={`border p-10 rounded-[3.5rem] space-y-8 shadow-2xl transition-all duration-500 relative overflow-hidden ${getStatusColorClasses(selectedOS.status)}`}>
+              <div className={`border p-10 rounded-[3.5rem] backdrop-blur-3xl space-y-8 shadow-2xl transition-all duration-500 relative overflow-hidden ${getStatusColorClasses(selectedOS.status)}`}>
                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-[50px] rounded-full"></div>
                  <div className="flex justify-between items-start relative z-10">
                     <h2 className="text-4xl font-black uppercase tracking-tighter">#{selectedOS.id.slice(-4)}</h2>
@@ -271,7 +271,7 @@ const Oficina: React.FC = () => {
               </div>
 
               {/* Seletor de Status */}
-              <div className="bg-white/[0.02] border border-white/10 p-10 rounded-[3.5rem] space-y-6 shadow-xl">
+              <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 p-10 rounded-[3.5rem] space-y-6 shadow-xl">
                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3"><Receipt size={16} className="text-cyan-400"/> Atualizar Status</h4>
                  <div className="grid grid-cols-2 gap-3">
                    {['Aberto', 'Orçamento', 'Execução', 'Pronto', 'Entregue', 'Reprovado'].map(st => (
@@ -283,7 +283,7 @@ const Oficina: React.FC = () => {
 
             {/* Main Lançamentos */}
             <div className="lg:col-span-8 space-y-8">
-              <div className="bg-[#0a0a0a] border border-white/10 p-10 lg:p-14 rounded-[4rem] space-y-12 shadow-2xl relative overflow-hidden">
+              <div className="bg-white/[0.02] border border-white/10 p-10 lg:p-14 rounded-[4rem] space-y-12 shadow-2xl relative overflow-hidden backdrop-blur-3xl">
                 <div className="absolute -top-20 -right-20 w-80 h-80 bg-violet-600/5 blur-[120px] rounded-full"></div>
                 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">

@@ -148,7 +148,7 @@ const Navbar = ({ activeProfile, onLogout, onProfileReset }: {
 
   return (
     <>
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#050505]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-700 flex items-center justify-between px-6 lg:px-12 py-5 ${isScrolled ? 'bg-[#08080a]/90 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent'}`}>
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-4 group">
             {config.companyLogo ? (
@@ -245,7 +245,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="py-20 px-6 lg:px-12 border-t border-white/5 bg-[#050505] relative overflow-hidden">
+    <footer className="py-20 px-6 lg:px-12 border-t border-white/5 bg-transparent relative overflow-hidden">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12 relative z-10">
         <div className="flex flex-col items-center md:items-start gap-4">
           <div className="flex items-center gap-3">
@@ -308,7 +308,7 @@ const App: React.FC = () => {
                      location.pathname === '/pin';
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-200 flex flex-col">
+    <div className="min-h-screen text-slate-200 flex flex-col">
       <Navbar activeProfile={activeProfile} onLogout={handleLogout} onProfileReset={() => setActiveProfile(null)} />
       <main className="flex-grow">
         <Routes>

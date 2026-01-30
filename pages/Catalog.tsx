@@ -8,7 +8,7 @@ const ModuleCard: React.FC<{ mod: any, onNavigate: (id: string) => void, isAvail
   return (
     <div 
       onClick={() => isAvailable && onNavigate(mod.id)}
-      className={`relative group overflow-hidden rounded-[2.5rem] bg-[#0a0a0a] border transition-all duration-700 ${isAvailable ? 'border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_60px_rgba(0,240,255,0.2)] cursor-pointer' : 'border-white/5 opacity-60 cursor-not-allowed'}`}
+      className={`relative group overflow-hidden rounded-[2.5rem] bg-white/[0.03] backdrop-blur-xl border transition-all duration-700 ${isAvailable ? 'border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_60px_rgba(0,240,255,0.2)] cursor-pointer' : 'border-white/5 opacity-60 cursor-not-allowed'}`}
     >
       <div className="aspect-[16/10] overflow-hidden">
         <img 
@@ -18,7 +18,7 @@ const ModuleCard: React.FC<{ mod: any, onNavigate: (id: string) => void, isAvail
         />
       </div>
       
-      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-90 transition-opacity"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-[#08080a] via-transparent to-transparent opacity-90 transition-opacity"></div>
       
       <div className="absolute bottom-0 left-0 w-full p-8 space-y-3">
         <div className="flex items-center gap-3">
@@ -97,11 +97,11 @@ const Catalog: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] overflow-x-hidden">
+    <div className="min-h-screen bg-transparent overflow-x-hidden">
       <section className="relative min-h-screen flex items-center justify-center px-6 lg:px-20 py-24">
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,240,255,0.12),transparent_70%)]"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(139,92,246,0.05),transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,240,255,0.08),transparent_70%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(139,92,246,0.03),transparent_50%)]"></div>
         </div>
         <div className="relative z-10 text-center space-y-12 max-w-6xl animate-in fade-in zoom-in duration-1000">
           <div className="inline-flex items-center gap-3 bg-white/[0.03] backdrop-blur-2xl px-6 py-2.5 rounded-full border border-white/10 mb-4 shadow-[0_0_20px_rgba(0,240,255,0.1)]">
