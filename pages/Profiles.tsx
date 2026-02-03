@@ -100,7 +100,8 @@ const Profiles: React.FC<{ onSelect?: (p: any) => void, mode?: 'select' | 'manag
         )}
       </div>
 
-      {mode === 'select' && (
+      {/* Corrected ternary operator syntax: replaced && with ? */}
+      {mode === 'select' ? (
         <button 
           onClick={() => navigate('/account/profiles')}
           className="mt-20 flex items-center gap-3 text-zinc-500 hover:text-red-600 transition-all font-black uppercase text-[10px] tracking-widest"

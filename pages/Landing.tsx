@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// Added CreditCard to the import list
 import { Wrench, Utensils, FileText, LayoutGrid, Heart, ClipboardCheck, ArrowRight, CheckCircle, X, Copy, Mail, ExternalLink, CreditCard, CheckCircle2 } from 'lucide-react';
 
 const Landing: React.FC = () => {
