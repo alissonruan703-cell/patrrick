@@ -53,7 +53,8 @@ const App: React.FC = () => {
       
       const allNotifs = JSON.parse(localStorage.getItem('crmplus_notifications') || '[]');
       if (activeProfile) {
-        setNotifications(allNotifs.filter((n: any) => n.profileId === activeProfile.id || n.profileId === 'admin'));
+        const profileId = activeProfile.id;
+        setNotifications(allNotifs.filter((n: any) => n.profileId === profileId || n.profileId === 'admin'));
       }
     };
     sync();
@@ -93,7 +94,7 @@ const App: React.FC = () => {
     setShowSearchResults(true);
   };
 
-  const isPublic = ['/', '/login', '/signup', '/terms', '/privacy', '/support'].includes(location.pathname);
+  const isPublic = ['/', '/login', '/signup'].includes(location.pathname);
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -131,7 +132,6 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Notification Bell */}
             <div className="relative">
               <button 
                 onClick={() => setShowNotifPanel(!showNotifPanel)}
@@ -148,7 +148,7 @@ const App: React.FC = () => {
               {showNotifPanel && (
                 <div className="absolute top-full right-0 mt-4 w-96 bg-zinc-900 border border-zinc-800 rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
                   <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
-                    <h3 className="font-black uppercase tracking-widest text-xs">Avisos</h3>
+                    <h3 className="font-black uppercase tracking-widest text-xs">Notificações</h3>
                     <button onClick={markAllRead} className="text-[10px] font-black uppercase text-red-600">Lido Tudo</button>
                   </div>
                   <div className="max-h-[400px] overflow-y-auto no-scrollbar">
@@ -170,7 +170,7 @@ const App: React.FC = () => {
                     ) : (
                       <div className="p-12 text-center text-zinc-600">
                         <Bell size={32} className="mx-auto mb-4 opacity-20" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Nenhum aviso</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest">Tudo em dia</p>
                       </div>
                     )}
                   </div>
@@ -245,6 +245,7 @@ const App: React.FC = () => {
           <Route path="/notifications" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><NotificationsPage profile={activeProfile!} /></ProfileRoute>} />
           <Route path="/billing" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><Billing user={currentUser} /></ProfileRoute>} />
           <Route path="/account/settings" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><AccountSettings user={currentUser} /></ProfileRoute>} />
+          <Route path="/account/profiles" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><Profiles mode="manage" /></ProfileRoute>} />
           <Route path="/account/my-history" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><MyHistory profile={activeProfile} /></ProfileRoute>} />
           
           <Route path="/module/oficina" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><Oficina /></ProfileRoute>} />
