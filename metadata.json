@@ -1,7 +1,8 @@
 {
-  "name": "Oficina Pro SaaS",
-  "description": "Plataforma simplificada de gestão para oficinas mecânicas com compartilhamento de link público.",
+  "name": "CRMPLUS+ Ecosystem",
+  "description": "Plataforma SaaS modular de alta performance para gestão de oficinas, orçamentos e relacionamento com o cliente.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "geolocation"
   ]
 }

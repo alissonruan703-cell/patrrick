@@ -156,7 +156,17 @@ const AdminMaster: React.FC = () => {
                    <div className="flex justify-end gap-2">
                       <button onClick={() => {
                         setEditingId(l.id);
-                        setFormData({ ...l });
+                        // Fix: Assign required fields individually to match formData state type and ensure password is a string
+                        setFormData({
+                          fullName: l.fullName,
+                          companyName: l.companyName,
+                          username: l.username,
+                          password: l.password || '',
+                          email: l.email,
+                          status: l.status,
+                          expirationDate: l.expirationDate,
+                          allowedModules: l.allowedModules
+                        });
                         setShowModal(true);
                       }} className="p-2 text-slate-500 hover:text-white"><Edit3 size={18}/></button>
                       <button onClick={() => deleteLicense(l.id)} className="p-2 text-slate-500 hover:text-red-500"><Trash2 size={18}/></button>

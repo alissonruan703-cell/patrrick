@@ -58,7 +58,26 @@ const AdminMaster: React.FC = () => {
                 <td className="px-8 py-6"><div className="flex flex-col gap-2"><span className="text-white font-black uppercase text-sm">{l.companyName}</span><div className="flex gap-1">{l.allowedModules?.map(m => (<span key={m} className="bg-violet-600/10 text-violet-500 text-[8px] font-black px-2 py-0.5 rounded uppercase">{m}</span>))}</div></div></td>
                 <td className="px-8 py-6"><div className="flex flex-col text-xs"><span className="text-emerald-400 font-bold">{l.username}</span><span className="text-slate-500 font-mono">{l.password}</span></div></td>
                 <td className="px-8 py-6"><span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${l.status === 'Ativo' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>{l.status}</span></td>
-                <td className="px-8 py-6 text-right"><div className="flex justify-end gap-2"><button onClick={() => { setEditingId(l.id); setFormData({ ...l }); setShowModal(true); }} className="p-2 text-slate-500 hover:text-white"><Edit3 size={18}/></button><button onClick={() => deleteLicense(l.id)} className="p-2 text-slate-500 hover:text-red-500"><Trash2 size={18}/></button></div></td>
+                <td className="px-8 py-6 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => { 
+                      setEditingId(l.id); 
+                      // Fix: Assign required fields individually to match formData state type and ensure password is a string
+                      setFormData({ 
+                        fullName: l.fullName,
+                        companyName: l.companyName,
+                        username: l.username,
+                        password: l.password || '',
+                        email: l.email,
+                        status: l.status,
+                        expirationDate: l.expirationDate,
+                        allowedModules: l.allowedModules
+                      }); 
+                      setShowModal(true); 
+                    }} className="p-2 text-slate-500 hover:text-white"><Edit3 size={18}/></button>
+                    <button onClick={() => deleteLicense(l.id)} className="p-2 text-slate-500 hover:text-red-500"><Trash2 size={18}/></button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
