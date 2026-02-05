@@ -14,7 +14,9 @@ const PublicView: React.FC = () => {
       const decoded = decodeURIComponent(escape(atob(data || '')));
       const raw = JSON.parse(decoded);
       return { 
-        id: raw.i, client: raw.n, vehicle: raw.v, plate: raw.p, description: raw.d, 
+        id: raw.i, 
+        tenantId: raw.tid, // ID do dono da conta SaaS
+        client: raw.n, vehicle: raw.v, plate: raw.p, description: raw.d, 
         total: raw.t, date: raw.dt, companyName: raw.cn || 'Oficina Automotiva',
         photos: raw.ph || [],
         items: (raw.it || []).map((item: any) => ({
@@ -30,30 +32,32 @@ const PublicView: React.FC = () => {
     if (savedConfig) setLogo(JSON.parse(savedConfig).companyLogo || '');
   }, []);
 
-  const addClientLog = (action: 'APROVADO' | 'REPROVADO', details: string) => {
-    const logs = JSON.parse(localStorage.getItem('crmplus_logs') || '[]');
-    const newLog: LogEntry = {
-      id: Date.now().toString(),
-      timestamp: new Date().toLocaleString('pt-BR'),
-      userId: 'CLIENTE',
-      userName: 'CLIENTE EXTERNO',
-      action,
-      details,
-      system: 'OFICINA'
-    };
-    localStorage.setItem('crmplus_logs', JSON.stringify([newLog, ...logs].slice(0, 1000)));
-  };
-
   const handleClientAction = (newStatus: 'Execução' | 'Reprovado') => {
-    if (!osDataFromUrl) return;
-    const saved = localStorage.getItem('crmplus_oficina_orders');
+    if (!osDataFromUrl || !osDataFromUrl.tenantId) return;
+
+    // Atualiza a base de dados correta usando o Tenant ID isolado
+    const storageKey = `crmplus_oficina_orders_${osDataFromUrl.tenantId}`;
+    const saved = localStorage.getItem(storageKey);
+    
     if (saved) {
       const orders = JSON.parse(saved);
       const updatedOrders = orders.map((o: any) => o.id === osDataFromUrl.id ? { ...o, status: newStatus } : o);
-      localStorage.setItem('crmplus_oficina_orders', JSON.stringify(updatedOrders));
+      localStorage.setItem(storageKey, JSON.stringify(updatedOrders));
       
+      // Também isolamos os logs
+      const logsKey = `crmplus_logs_${osDataFromUrl.tenantId}`;
+      const logs = JSON.parse(localStorage.getItem(logsKey) || '[]');
       const action = newStatus === 'Execução' ? 'APROVADO' : 'REPROVADO';
-      addClientLog(action, `O cliente ${action.toLowerCase()} o orçamento da OS #${osDataFromUrl.id.slice(-4)} (${osDataFromUrl.vehicle})`);
+      const newLog: LogEntry = {
+        id: Date.now().toString(),
+        timestamp: new Date().toLocaleString('pt-BR'),
+        userId: 'CLIENTE',
+        userName: 'CLIENTE EXTERNO',
+        action,
+        details: `O cliente ${action.toLowerCase()} o orçamento da OS #${osDataFromUrl.id.slice(-4)} via link público.`,
+        system: 'OFICINA'
+      };
+      localStorage.setItem(logsKey, JSON.stringify([newLog, ...logs].slice(0, 1000)));
       
       setCurrentStatus(newStatus === 'Execução' ? 'approved' : 'rejected');
       window.dispatchEvent(new Event('storage'));
@@ -99,18 +103,6 @@ const PublicView: React.FC = () => {
               <p className="text-slate-300 italic text-sm leading-relaxed">"{osDataFromUrl.description}"</p>
             </div>
           </div>
-          {osDataFromUrl.photos.length > 0 && (
-            <div className="px-10 lg:px-14 py-8 space-y-6">
-               <div className="flex items-center gap-3 px-2 border-l-4 border-cyan-500"><ImageIcon className="text-cyan-500" size={18}/><h3 className="text-[11px] font-black text-white uppercase tracking-widest">Galeria de Fotos</h3></div>
-               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {osDataFromUrl.photos.map((ph: string, i: number) => (
-                    <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-lg group">
-                       <img src={ph} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={`Serviço ${i}`} />
-                    </div>
-                  ))}
-               </div>
-            </div>
-          )}
           <div className="px-10 lg:px-14 pb-14 space-y-8">
             <div className="bg-black/40 rounded-[2.5rem] border border-white/5 overflow-hidden">
                <table className="w-full">
@@ -149,16 +141,12 @@ const PublicView: React.FC = () => {
                     <>
                       <AlertCircle size={48} />
                       Orçamento Recusado.
-                      <p className="text-[10px] opacity-60 normal-case font-medium">Entre em contato conosco para renegociar os itens ou retirar o veículo.</p>
                     </>
                   )}
                 </div>
               )}
             </div>
           </div>
-        </div>
-        <div className="text-center pb-10">
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Gerado por {osDataFromUrl.companyName}</p>
         </div>
       </div>
     </div>

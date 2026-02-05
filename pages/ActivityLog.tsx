@@ -10,13 +10,24 @@ const ActivityLog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSystem, setFilterSystem] = useState('TODOS');
   const [filterDate, setFilterDate] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const profileRaw = sessionStorage.getItem('crmplus_active_profile');
+    const savedUser = JSON.parse(sessionStorage.getItem('crmplus_user') || 'null');
+    const profileRaw = sessionStorage.getItem('crmplus_profile');
     const profile = profileRaw ? JSON.parse(profileRaw) : {};
-    if (!profile.actions?.includes('view_logs')) { navigate('/'); return; }
-    const saved = localStorage.getItem('crmplus_logs');
-    if (saved) setLogs(JSON.parse(saved));
+    
+    setCurrentUser(savedUser);
+
+    if (!profile.functions?.includes('gestao') && profile.role !== 'Administrador Master') { 
+       navigate('/'); 
+       return; 
+    }
+
+    if (savedUser) {
+      const key = `crmplus_logs_${savedUser.id}`;
+      setLogs(JSON.parse(localStorage.getItem(key) || '[]'));
+    }
   }, []);
 
   const filteredLogs = useMemo(() => {
@@ -40,7 +51,7 @@ const ActivityLog: React.FC = () => {
     const blob = new Blob(["\ufeff" + header + body], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `auditoria_sistema_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `auditoria_${currentUser?.companyName}_${new Date().toISOString().slice(0,10)}.csv`);
     link.click();
   };
 
@@ -51,8 +62,8 @@ const ActivityLog: React.FC = () => {
            <button onClick={() => navigate('/')} className="flex items-center gap-2 text-slate-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest group">
              <ArrowLeft size={16} className="group-hover:-translate-x-1" /> Painel Principal
            </button>
-           <h1 className="text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-4">Auditoria <span className="text-violet-500">Master</span> <History className="text-violet-500" size={32} /></h1>
-           <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[9px] bg-white/5 px-3 py-1 rounded w-fit">Rastreabilidade Total do Ecossistema</p>
+           <h1 className="text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-4">Auditoria <span className="text-violet-500">Privada</span> <History className="text-violet-500" size={32} /></h1>
+           <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[9px] bg-white/5 px-3 py-1 rounded w-fit">Base de Dados: {currentUser?.companyName}</p>
         </div>
         <button onClick={exportCSV} className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center gap-3 hover:bg-emerald-500 transition-all shadow-xl">
           <Download size={18} /> Extrair Relatório CSV
@@ -81,6 +92,11 @@ const ActivityLog: React.FC = () => {
                       <td className="px-8 py-5"><span className="text-slate-400 font-medium">{l.details}</span></td>
                    </tr>
                  ))}
+                 {filteredLogs.length === 0 && (
+                    <tr>
+                       <td colSpan={5} className="py-20 text-center opacity-30 uppercase font-black tracking-widest text-[10px]">Sem atividades para mostrar nesta conta</td>
+                    </tr>
+                 )}
               </tbody>
            </table>
         </div>
