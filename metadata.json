@@ -1,6 +1,6 @@
 {
-  "name": "CRMPLUS+ Ecosystem",
-  "description": "Plataforma SaaS modular de alta performance para gestão de oficinas, orçamentos e relacionamento com o cliente.",
+  "name": "CRMPLUS+ | Sistemas por Assinatura",
+  "description": "Serviço de gestão modular por assinatura de alta performance para oficinas, restaurantes e comercial.",
   "requestFramePermissions": [
     "camera",
     "geolocation"

@@ -147,15 +147,15 @@ const Landing: React.FC = () => {
         <div className="max-w-5xl mx-auto text-center space-y-12 animate-in fade-in">
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] tracking-tighter uppercase flex flex-col items-center">
             <span className="text-white">GESTÃO DO SEU NEGÓCIO</span>
-            <span className="text-red-600">NA PALMA DA SUA MÃO</span>
+            <span className="text-red-600">SERVIÇO POR ASSINATURA</span>
           </h1>
           
           <div className="space-y-6 max-w-3xl mx-auto">
             <p className="text-xl md:text-2xl text-zinc-200 font-bold leading-relaxed">
-              Sistemas inteligentes para quem busca eficiência real.
+              Sistemas inteligentes para quem busca eficiência real sem complicação.
             </p>
             <p className="text-lg text-zinc-400 font-medium leading-relaxed">
-              Soluções modulares para oficina, restaurante, vendas e auditoria. Transforme a sua operação com dados claros e processos padronizados.
+              Módulos individuais para oficina, restaurante, vendas e auditoria. Ative apenas o que você precisa e pague por sistema.
             </p>
           </div>
 
@@ -169,8 +169,8 @@ const Landing: React.FC = () => {
       <section id="modulos" className="py-24 px-6 bg-zinc-950 border-y border-zinc-900">
         <div className="max-w-7xl mx-auto">
           <div className="mb-16 text-center">
-            <h2 className="text-4xl font-black uppercase mb-4 tracking-tighter">O Ecossistema CRMPLUS+</h2>
-            <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest">Escolha os módulos ideais para o seu segmento</p>
+            <h2 className="text-4xl font-black uppercase mb-4 tracking-tighter">Nossos Sistemas de Gestão</h2>
+            <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest">Escolha os serviços ideais para o seu segmento</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {modules.map((m) => (
@@ -200,7 +200,7 @@ const Landing: React.FC = () => {
                   <p className="text-zinc-400 font-medium text-sm mb-10 flex-1 leading-relaxed">{m.desc}</p>
                   
                   <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Ver detalhes do sistema</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Ver detalhes do serviço</span>
                     <ArrowUpRight size={20} className="text-zinc-700 group-hover:text-red-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                   </div>
                 </div>
@@ -216,7 +216,7 @@ const Landing: React.FC = () => {
           <h2 className="text-4xl font-black uppercase tracking-tighter text-white">Transparência Total</h2>
           <div className="flex items-center justify-center gap-4">
             <span className="text-6xl font-black text-white">R$ 50</span>
-            <div className="text-left"><p className="font-black uppercase text-red-600 leading-none">/mês</p><p className="text-zinc-500 font-bold text-[10px] uppercase">por módulo assinado</p></div>
+            <div className="text-left"><p className="font-black uppercase text-red-600 leading-none">/mês</p><p className="text-zinc-500 font-bold text-[10px] uppercase">por sistema assinado</p></div>
           </div>
           <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Sem fidelidade • Sem taxas ocultas • Suporte técnico incluso</p>
           <button onClick={() => navigate('/signup')} className="w-full bg-red-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all">Começar Agora</button>
@@ -227,10 +227,10 @@ const Landing: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-16">
           <div className="col-span-1 md:col-span-2 space-y-8">
             <span className="text-3xl font-black text-red-600 italic tracking-tighter block">CRMPLUS+</span>
-            <p className="text-sm font-medium max-w-sm uppercase leading-relaxed">A tecnologia que o seu negócio precisa, com a simplicidade que você deseja.</p>
+            <p className="text-sm font-medium max-w-sm uppercase leading-relaxed">A tecnologia que o seu negócio precisa com foco em sistemas modulares.</p>
           </div>
           <div className="space-y-6">
-            <p className="text-white font-black text-[10px] uppercase tracking-[0.3em]">Ecossistema</p>
+            <p className="text-white font-black text-[10px] uppercase tracking-[0.3em]">Serviços</p>
             <nav className="flex flex-col gap-4 text-xs font-black uppercase tracking-widest">
               <button onClick={() => scrollTo('modulos')} className="text-left hover:text-red-500 transition-colors">Sistemas</button>
               <button onClick={() => scrollTo('precos')} className="text-left hover:text-red-500 transition-colors">Preços</button>
@@ -308,7 +308,7 @@ const Landing: React.FC = () => {
             </div>
 
             <div className="p-8 border-t border-white/5 bg-zinc-900/50 backdrop-blur-xl">
-              <button onClick={() => { navigate('/signup'); setActiveModuleDetail(null); }} className="w-full bg-red-600 text-white py-6 rounded-3xl font-black uppercase text-xs tracking-[0.3em] shadow-2xl shadow-red-600/20 hover:scale-[1.01] active:scale-95 transition-all">Ativar Módulo Agora</button>
+              <button onClick={() => { navigate('/signup'); setActiveModuleDetail(null); }} className="w-full bg-red-600 text-white py-6 rounded-3xl font-black uppercase text-xs tracking-[0.3em] shadow-2xl shadow-red-600/20 hover:scale-[1.01] active:scale-95 transition-all">Ativar Acesso Agora</button>
             </div>
           </div>
         </div>
@@ -348,8 +348,8 @@ const Landing: React.FC = () => {
               </h2>
             </div>
             <div className="flex-1 overflow-y-auto pr-4 text-zinc-400 text-sm font-medium leading-relaxed space-y-6 no-scrollbar">
-              <p>O Ecossistema CRMPLUS+ é uma plataforma modular de gestão empresarial.</p>
-              <p>1. LICENCIAMENTO: O acesso é concedido por módulo, com renovação mensal recorrente.</p>
+              <p>O Serviço CRMPLUS+ é uma plataforma modular de gestão empresarial.</p>
+              <p>1. LICENCIAMENTO: O acesso é concedido por sistema assinado, com renovação mensal recorrente.</p>
               <p>2. DADOS: A CRMPLUS+ garante a criptografia e sigilo dos dados inseridos, não compartilhando informações com terceiros.</p>
               <p>3. RESPONSABILIDADE: O usuário é responsável pela veracidade dos dados e pela gestão dos acessos internos.</p>
               <p>4. SUPORTE: Atendimento especializado via e-mail e WhatsApp em horário comercial.</p>
