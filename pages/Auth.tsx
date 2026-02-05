@@ -36,7 +36,7 @@ const Auth: React.FC<{ type: 'login' | 'signup', onAuth?: (user: any) => void }>
 
   const handleSignup = () => {
     if (selectedModules.length === 0) {
-      setError('Selecione pelo menos um módulo.');
+      setError('Selecione pelo menos um sistema.');
       return;
     }
     
@@ -45,9 +45,9 @@ const Auth: React.FC<{ type: 'login' | 'signup', onAuth?: (user: any) => void }>
       id: Date.now().toString(),
       subscriptions: selectedModules.map(m => ({
         id: m,
-        status: 'trial_ativo',
-        trialEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        trialUsed: true
+        status: 'teste_ativo',
+        testeFim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        testeUsado: true
       })),
       settings: {
         customClientFields: [],
@@ -215,8 +215,8 @@ const Auth: React.FC<{ type: 'login' | 'signup', onAuth?: (user: any) => void }>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <h1 className="text-3xl font-black uppercase mb-2 tracking-tighter">Escolha seus <span className="text-red-600">Módulos</span></h1>
-            <p className="text-zinc-500 font-bold uppercase text-[10px] mb-8">Cada sistema custa R$ 50/mês. Ative o Trial agora.</p>
+            <h1 className="text-3xl font-black uppercase mb-2 tracking-tighter">Escolha seus <span className="text-red-600">Sistemas</span></h1>
+            <p className="text-zinc-500 font-bold uppercase text-[10px] mb-8">Cada sistema custa R$ 50/mês. Ative o Teste agora.</p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {modules.map(mod => (
@@ -239,7 +239,7 @@ const Auth: React.FC<{ type: 'login' | 'signup', onAuth?: (user: any) => void }>
 
             <div className="mt-8 p-6 bg-black border border-zinc-800 rounded-3xl space-y-3">
               <div className="flex justify-between text-xs font-black uppercase">
-                <span className="text-zinc-500">Módulos selecionados:</span>
+                <span className="text-zinc-500">Acessos selecionados:</span>
                 <span>{selectedModules.length}</span>
               </div>
               <div className="flex justify-between text-xs font-black uppercase">
@@ -248,7 +248,7 @@ const Auth: React.FC<{ type: 'login' | 'signup', onAuth?: (user: any) => void }>
               </div>
               <div className="flex justify-between text-xs font-black uppercase pt-3 border-t border-zinc-900">
                 <span className="text-zinc-500">Hoje você paga:</span>
-                <span className="text-emerald-500">R$ 0,00 (TRIAL)</span>
+                <span className="text-emerald-500">R$ 0,00 (TESTE)</span>
               </div>
             </div>
 

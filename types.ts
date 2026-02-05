@@ -3,9 +3,9 @@ export type ModuleId = 'oficina' | 'restaurante' | 'orcamento' | 'funil' | 'nps'
 
 export interface ModuleSubscription {
   id: ModuleId;
-  status: 'nao_assinado' | 'trial_ativo' | 'assinatura_ativa' | 'bloqueado';
-  trialEnd?: string;
-  trialUsed: boolean;
+  status: 'nao_assinado' | 'teste_ativo' | 'assinatura_ativa' | 'bloqueado';
+  testeFim?: string;
+  testeUsado: boolean;
 }
 
 export interface Profile {

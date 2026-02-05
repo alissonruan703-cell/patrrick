@@ -15,7 +15,7 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
     { id: 'inspeção', title: 'Inspeção', icon: <ClipboardCheck size={24} />, desc: 'Checklists' },
   ];
 
-  const activeSubs = user.subscriptions.filter((s:any) => s.status.includes('ativa') || s.status === 'trial_ativo');
+  const activeSubs = user.subscriptions.filter((s:any) => s.status.includes('ativa') || s.status === 'teste_ativo');
   const availableSubs = moduleInfo.filter(m => !activeSubs.find((s:any) => s.id === m.id));
 
   return (
@@ -26,14 +26,14 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
           <p className="text-zinc-500 font-bold uppercase text-xs tracking-widest mt-2">Gestão integrada: {user.companyName}</p>
         </div>
         <button onClick={() => navigate('/billing')} className="bg-zinc-900 border border-zinc-800 px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-800 transition-all flex items-center gap-2">
-          Ativar Novos Módulos <ArrowRight size={14} />
+          Ativar Novos Sistemas <ArrowRight size={14} />
         </button>
       </div>
 
       {/* Active Modules */}
       <section className="mb-16">
         <h2 className="text-xs font-black uppercase text-zinc-600 tracking-[0.3em] mb-6 flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Módulos Ativos
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Sistemas Ativos
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activeSubs.map((sub:any) => {
@@ -41,9 +41,9 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
             return (
               <div key={sub.id} className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 group hover:border-red-600/30 transition-all relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-6">
-                  {sub.status === 'trial_ativo' && (
+                  {sub.status === 'teste_ativo' && (
                     <div className="bg-red-600 text-[8px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-red-600/20">
-                      <Clock size={10} /> Trial
+                      <Clock size={10} /> Teste
                     </div>
                   )}
                 </div>

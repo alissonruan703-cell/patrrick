@@ -20,14 +20,11 @@ import NotificationsPage from './pages/Notifications';
 import LockedModule from './pages/LockedModule';
 import { Notification, UserProfile, ServiceOrder, Client } from './types';
 
-// Auth Guard Components
-// Fix: Mark children as optional to prevent TypeScript errors in some environments when using as nested elements
 const PrivateRoute = ({ children, currentUser }: { children?: React.ReactNode, currentUser: any }) => {
   if (!currentUser) return <Navigate to="/login" />;
   return <>{children}</>;
 };
 
-// Fix: Mark children as optional to prevent TypeScript errors in some environments when using as nested elements
 const ProfileRoute = ({ children, currentUser, activeProfile }: { children?: React.ReactNode, currentUser: any, activeProfile: any }) => {
   if (!currentUser) return <Navigate to="/login" />;
   if (!activeProfile) return <Navigate to="/profiles" />;
@@ -42,8 +39,6 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     const sync = () => {
@@ -131,7 +126,7 @@ const App: React.FC = () => {
               <Users size={18} /> Clientes
             </Link>
             <div className="pt-6 pb-2 text-[9px] font-black text-zinc-700 uppercase tracking-[0.3em] px-4">Operacional</div>
-            {currentUser?.subscriptions?.filter((s:any) => s.status.includes('ativa') || s.status === 'trial_ativo').map((sub:any) => (
+            {currentUser?.subscriptions?.filter((s:any) => s.status.includes('ativa') || s.status === 'teste_ativo').map((sub:any) => (
               <Link key={sub.id} to={`/module/${sub.id}`} className={`flex items-center gap-3 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${location.pathname.startsWith(`/module/${sub.id}`) ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
                 {sub.id === 'oficina' && <Wrench size={18} />}
                 {sub.id === 'restaurante' && <Utensils size={18} />}

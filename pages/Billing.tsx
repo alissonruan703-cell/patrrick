@@ -16,16 +16,19 @@ const Billing: React.FC<{ user: any }> = ({ user }) => {
     { id: 'inspeção', title: 'Inspeção', desc: 'Vistorias com evidências fotográficas' },
   ];
 
-  const updateSub = (moduleId: string, type: 'activate' | 'trial' | 'deactivate') => {
+  const updateSub = (moduleId: string, type: 'activate' | 'teste' | 'deactivate') => {
     const updated = {...dbUser};
-    if (type === 'trial') {
+    if (type === 'teste') {
       updated.subscriptions.push({
-        id: moduleId, status: 'trial_ativo', trialEnd: new Date(Date.now() + 7*24*60*60*1000).toISOString(), trialUsed: true
+        id: moduleId, 
+        status: 'teste_ativo', 
+        testeFim: new Date(Date.now() + 7*24*60*60*1000).toISOString(), 
+        testeUsado: true
       });
     } else if (type === 'activate') {
       const idx = updated.subscriptions.findIndex((s:any) => s.id === moduleId);
       if (idx > -1) updated.subscriptions[idx].status = 'assinatura_ativa';
-      else updated.subscriptions.push({ id: moduleId, status: 'assinatura_ativa', trialUsed: true });
+      else updated.subscriptions.push({ id: moduleId, status: 'assinatura_ativa', testeUsado: true });
     } else {
       updated.subscriptions = updated.subscriptions.filter((s:any) => s.id !== moduleId);
     }
@@ -36,7 +39,7 @@ const Billing: React.FC<{ user: any }> = ({ user }) => {
   };
 
   const activeCount = dbUser.subscriptions.filter((s:any) => s.status === 'assinatura_ativa').length;
-  const trialCount = dbUser.subscriptions.filter((s:any) => s.status === 'trial_ativo').length;
+  const testeCount = dbUser.subscriptions.filter((s:any) => s.status === 'teste_ativo').length;
 
   return (
     <div className="p-8 max-w-4xl mx-auto pb-32">
@@ -46,7 +49,7 @@ const Billing: React.FC<{ user: any }> = ({ user }) => {
         </button>
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tighter">Planos e <span className="text-red-600">Assinatura</span></h1>
-          <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest mt-1">Gerencie seus módulos ativos</p>
+          <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest mt-1">Gerencie seus acessos ativos</p>
         </div>
       </div>
 
@@ -56,7 +59,7 @@ const Billing: React.FC<{ user: any }> = ({ user }) => {
             Resumo Mensal
           </div>
           <p className="text-6xl font-black tracking-tight">R$ {activeCount * 50},00</p>
-          <p className="text-zinc-500 font-bold text-xs uppercase">{activeCount} módulos pagos + {trialCount} em trial</p>
+          <p className="text-zinc-500 font-bold text-xs uppercase">{activeCount} acessos pagos + {testeCount} em teste</p>
         </div>
         <button className="bg-red-600 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-red-600/20 hover:scale-[1.02] transition-all flex items-center gap-3">
           <CreditCard size={20} /> Pagar Fatura
@@ -83,12 +86,12 @@ const Billing: React.FC<{ user: any }> = ({ user }) => {
               <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
                 {status === 'nao_assinado' && (
                   <div className="flex gap-2 w-full">
-                    <button onClick={() => updateSub(mod.id, 'trial')} className="flex-1 bg-zinc-800 text-white px-4 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-700 transition-all">Ativar Trial</button>
+                    <button onClick={() => updateSub(mod.id, 'teste')} className="flex-1 bg-zinc-800 text-white px-4 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-700 transition-all">Ativar Teste</button>
                     <button onClick={() => updateSub(mod.id, 'activate')} className="flex-1 bg-red-600 text-white px-4 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-red-700 transition-all">Assinar</button>
                   </div>
                 )}
 
-                {status === 'trial_ativo' && (
+                {status === 'teste_ativo' && (
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="text-[10px] font-black uppercase text-emerald-500">Teste Grátis Ativo</p>

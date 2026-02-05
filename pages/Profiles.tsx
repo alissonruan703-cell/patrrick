@@ -49,7 +49,7 @@ const Profiles: React.FC<{ onSelect?: (p: any) => void, mode?: 'select' | 'manag
           ...newProfile, 
           id: Date.now().toString(), 
           lastAccess: new Date().toISOString(),
-          role: newProfile.functions.join(', ') || 'Operador'
+          role: newProfile.functions.length > 0 ? newProfile.functions.join(', ') : 'Operador'
         }]};
         updateUser(updated);
         setShowAddModal(false);
@@ -191,7 +191,6 @@ const Profiles: React.FC<{ onSelect?: (p: any) => void, mode?: 'select' | 'manag
                       onClick={() => toggleFunction(f.id)}
                       className={`p-4 rounded-2xl flex items-center gap-3 border text-[10px] font-black uppercase transition-all ${newProfile.functions.includes(f.id) ? 'bg-red-600/10 border-red-600 text-red-600' : 'bg-black border-zinc-800 text-zinc-600'}`}
                     >
-                      {/* Fix: Check is now correctly imported from lucide-react */}
                       <div className={`w-4 h-4 rounded border flex items-center justify-center ${newProfile.functions.includes(f.id) ? 'bg-red-600 border-red-600 text-white' : 'border-zinc-800'}`}>
                         {newProfile.functions.includes(f.id) && <Check size={10} />}
                       </div>
