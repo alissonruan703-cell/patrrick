@@ -1,33 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
-  ShieldCheck, Rocket, Eye, EyeOff, CheckCircle2, Shield, Plus, Edit3, User, 
-  LayoutGrid, Settings, Trash2, FileText, Activity, Key, Lock, AlertCircle, 
-  Mail, ArrowLeft, X, Clock, Check, ListChecks, Utensils, Zap 
+  Rocket, Lock, Mail, ArrowLeft, Zap, ShieldCheck, User, Building2, Key, Check, Eye, EyeOff
 } from 'lucide-react';
-import { UserProfile, AccountLicense, ModuleId } from '../types';
+import { UserProfile, AccountLicense } from '../types';
 
 const AVATAR_OPTIONS = [
   'https://api.dicebear.com/9.x/personas/svg?seed=1',
   'https://api.dicebear.com/9.x/personas/svg?seed=2',
   'https://api.dicebear.com/9.x/personas/svg?seed=3',
-  'https://api.dicebear.com/9.x/personas/svg?seed=4',
-  'https://api.dicebear.com/9.x/personas/svg?seed=5',
-];
-
-const PERMISSION_OPTIONS = [
-  { id: 'create_os', name: 'Criar O.S.', desc: 'Abertura de protocolos' },
-  { id: 'edit_os', name: 'Editar/Lançar', desc: 'Mudar status e itens' },
-  { id: 'delete_os', name: 'Apagar O.S.', desc: 'Excluir ordens' },
-  { id: 'view_history', name: 'Ver Histórico', desc: 'Consultar ordens antigas' },
-  { id: 'manage_profiles', name: 'Gerir Perfis', desc: 'Controlar operadores' },
-];
-
-const AVAILABLE_MODULES: { id: ModuleId; name: string; icon: React.ReactNode; desc: string }[] = [
-  { id: 'oficina', name: 'Sistema de oficina', icon: <Rocket size={18}/>, desc: 'Gestão de Mecânica e O.S.' },
-  { id: 'orcamento', name: 'Orçamento', icon: <FileText size={18}/>, desc: 'Faturamento Rápido e Link' },
-  { id: 'restaurante', name: 'Restaurante', icon: <Utensils size={18}/>, desc: 'Mesas e Pedidos' }
 ];
 
 export const Login = () => {
@@ -38,40 +20,55 @@ export const Login = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user === 'HzHj2g' && pass === 'Ma4tgz') {
-      sessionStorage.setItem('crmplus_is_master', 'true');
-      sessionStorage.setItem('crmplus_account_auth', 'true');
-      navigate('/admin-panel');
-      return;
-    }
     const saved = localStorage.getItem('crmplus_accounts');
     const accounts: AccountLicense[] = saved ? JSON.parse(saved) : [];
     const account = accounts.find(a => a.username === user && a.password === pass);
+    
     if (account) {
-      if (account.status === 'Bloqueado') { setError('Licença bloqueada.'); return; }
+      if (account.status === 'Bloqueado') {
+        setError('Acesso suspenso administrativamente.');
+        return;
+      }
       sessionStorage.setItem('crmplus_account_auth', 'true');
       sessionStorage.setItem('crmplus_account_id', account.id);
       sessionStorage.setItem('crmplus_user', JSON.stringify({ company: account.companyName, id: account.id }));
       navigate('/profiles');
-    } else { setError('Credenciais inválidas.'); }
+    } else {
+      setError('Usuário ou senha incorretos.');
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black p-6 relative">
-      <div className="w-full max-w-md space-y-8 animate-in fade-in duration-700 relative z-10">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black p-6 relative overflow-hidden">
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-600/10 blur-[120px] rounded-full"></div>
+      
+      <div className="w-full max-w-md space-y-8 relative z-10 animate-in fade-in">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-black text-white uppercase tracking-tighter">CRM<span className="text-red-600">Plus+</span></h1>
-          <p className="text-zinc-500 font-black uppercase tracking-[0.4em] text-[10px]">Acesso ao Ecossistema</p>
+          <h1 className="text-5xl font-black text-white uppercase tracking-tighter italic">CRM<span className="text-red-600 text-6xl">Plus+</span></h1>
+          <p className="text-zinc-600 font-black uppercase tracking-[0.4em] text-[10px]">Acesso ao Ecossistema</p>
         </div>
+
         <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] shadow-2xl">
-          {error && <div className="p-3 bg-red-600/15 border border-red-500/30 text-red-400 text-[10px] font-black uppercase text-center rounded-xl mb-6">{error}</div>}
+          <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-8 font-black uppercase text-[10px] tracking-widest">
+            <ArrowLeft size={16} /> Voltar ao Início
+          </button>
+
+          {error && <div className="p-4 bg-red-600/15 border border-red-500/30 text-red-500 text-[10px] font-black uppercase text-center rounded-2xl mb-6 animate-pulse">{error}</div>}
+          
           <form onSubmit={handleLogin} className="space-y-6">
-            <input value={user} onChange={e => setUser(e.target.value)} placeholder="Usuário" className="w-full bg-black border border-zinc-800 px-6 py-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold" />
-            <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="Senha" className="w-full bg-black border border-zinc-800 px-6 py-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold" />
-            <button type="submit" className="w-full py-5 bg-red-600 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-xl hover:bg-red-700 transition-all">Entrar</button>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Usuário de Acesso</label>
+              <input required value={user} onChange={e => setUser(e.target.value)} className="w-full bg-black border border-zinc-800 px-6 py-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold shadow-inner" placeholder="Digite seu usuário" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Senha Privada</label>
+              <input required type="password" value={pass} onChange={e => setPass(e.target.value)} className="w-full bg-black border border-zinc-800 px-6 py-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold shadow-inner" placeholder="••••••••" />
+            </div>
+            <button type="submit" className="w-full py-5 bg-red-600 text-white font-black rounded-2xl uppercase tracking-widest text-xs shadow-xl hover:bg-red-700 transition-all shadow-red-600/20 active:scale-95">Entrar no Sistema</button>
           </form>
-          <div className="mt-8 text-center">
-            <Link to="/signup" className="text-zinc-500 text-[10px] font-black uppercase tracking-widest hover:text-red-600">Criar Nova Licença</Link>
+
+          <div className="mt-8 pt-8 border-t border-zinc-800 text-center">
+            <Link to="/signup" className="text-zinc-500 text-[10px] font-black uppercase tracking-widest hover:text-red-600 transition-colors">Ativar Nova Licença</Link>
           </div>
         </div>
       </div>
@@ -81,17 +78,32 @@ export const Login = () => {
 
 export const Signup = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ fullName: '', email: '', companyName: '', username: '', password: '', pin: '', avatar: AVATAR_OPTIONS[0] });
-  const [selectedModules, setSelectedModules] = useState<ModuleId[]>(['oficina']);
+  const [formData, setFormData] = useState({ 
+    fullName: '', 
+    email: '', 
+    companyName: '', 
+    username: '', 
+    password: '', 
+    confirmPassword: '', 
+    pin: '' 
+  });
   const [error, setError] = useState('');
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.companyName || formData.pin.length !== 4) {
-      setError('Preencha os campos obrigatórios. PIN deve ter 4 dígitos.'); return;
+    if (formData.password !== formData.confirmPassword) {
+      setError('As senhas digitadas não coincidem.');
+      return;
     }
-    
+    if (formData.pin.length !== 4) {
+      setError('O PIN de segurança deve ter 4 dígitos.');
+      return;
+    }
+
     const accountId = Date.now().toString();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
     const newAccount: AccountLicense = {
       id: accountId, 
       fullName: formData.fullName, 
@@ -101,17 +113,17 @@ export const Signup = () => {
       password: formData.password, 
       status: 'Ativo', 
       createdAt: new Date().toISOString(), 
-      expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 dias de teste
-      allowedModules: [...selectedModules, 'config'] as ModuleId[]
+      expirationDate: yesterday.toISOString(), // NASCE EXPIRADO PARA FORÇAR PAGAMENTO
+      allowedModules: ['oficina', 'orcamento', 'restaurante', 'config']
     };
 
     const masterProfile: UserProfile = {
       id: 'admin', 
       name: formData.fullName.split(' ')[0], 
-      avatar: formData.avatar, 
+      avatar: AVATAR_OPTIONS[0], 
       pin: formData.pin, 
-      modules: [...selectedModules, 'config'], 
-      actions: PERMISSION_OPTIONS.map(p => p.id)
+      modules: ['oficina', 'orcamento', 'restaurante', 'config'], 
+      actions: ['create_os', 'edit_os', 'delete_os', 'view_history', 'manage_profiles']
     };
 
     const accounts = JSON.parse(localStorage.getItem('crmplus_accounts') || '[]');
@@ -121,27 +133,71 @@ export const Signup = () => {
     sessionStorage.setItem('crmplus_account_auth', 'true');
     sessionStorage.setItem('crmplus_account_id', accountId);
     sessionStorage.setItem('crmplus_user', JSON.stringify({ company: formData.companyName, id: accountId }));
-    navigate('/profiles');
+    
+    navigate('/billing');
   };
 
   return (
-    <div className="min-h-screen bg-black p-6 flex items-center justify-center">
-      <div className="w-full max-w-xl bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] shadow-2xl">
-        <h2 className="text-2xl font-black text-white uppercase mb-8 text-center">Nova <span className="text-red-600">Licença</span></h2>
-        {error && <div className="mb-6 p-3 bg-red-600/10 text-red-500 text-[10px] font-black uppercase text-center rounded-xl">{error}</div>}
-        <form onSubmit={handleSignup} className="space-y-4">
-          <input required value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="Nome Responsável" className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none" />
-          <input required value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} placeholder="Nome da Empresa" className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none uppercase" />
-          <div className="grid grid-cols-2 gap-4">
-            <input required value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} placeholder="Usuário" className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none" />
-            <input required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Senha" className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none" />
+    <div className="min-h-screen bg-black p-6 flex items-center justify-center relative overflow-hidden">
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/10 blur-[120px] rounded-full"></div>
+      
+      <div className="w-full max-w-3xl bg-zinc-900 border border-zinc-800 p-10 md:p-14 rounded-[4rem] shadow-2xl relative z-10 animate-in fade-in">
+        <button onClick={() => navigate('/login')} className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-10 font-black uppercase text-[10px] tracking-widest">
+          <ArrowLeft size={16} /> Voltar ao Login
+        </button>
+
+        <div className="text-center mb-12">
+           <Zap className="text-red-600 mx-auto mb-4" size={48} />
+           <h2 className="text-4xl font-black text-white uppercase tracking-tighter italic">Ativar <span className="text-red-600">Ecossistema</span></h2>
+           <p className="text-zinc-500 font-bold uppercase text-[9px] tracking-[0.3em] mt-2">Crie sua licença mestre e acesse os módulos</p>
+        </div>
+        
+        {error && <div className="mb-8 p-4 bg-red-600/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase text-center rounded-2xl animate-bounce">{error}</div>}
+        
+        <form onSubmit={handleSignup} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Nome Completo</label>
+              <input required value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold" placeholder="Responsável Legal" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Nome da Empresa</label>
+              <input required value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-red-600 font-black uppercase" placeholder="Oficina / Restaurante" />
+            </div>
           </div>
-          <input maxLength={4} type="password" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value.replace(/\D/g, '')})} placeholder="PIN MESTRE (4 DÍGITOS)" className="w-full bg-black border border-red-600/30 p-4 rounded-xl text-white font-black text-center text-xl tracking-[0.5em]" />
-          <button type="submit" className="w-full py-5 bg-red-600 text-white font-black rounded-xl uppercase text-[10px] tracking-widest mt-4">Ativar Ecossistema</button>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">E-mail para Faturamento e Avisos</label>
+            <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold" placeholder="seu@email.com" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Usuário de Acesso</label>
+              <input required value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold" placeholder="Ex: master.acesso" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1 flex items-center gap-2"><ShieldCheck size={12}/> PIN Mestre (4 Dígitos)</label>
+              <input required maxLength={4} type="password" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value.replace(/\D/g, '')})} className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-red-600 font-black text-center text-3xl tracking-widest" placeholder="0000" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Senha de Acesso</label>
+              <input required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold" placeholder="••••••••" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Confirmar Senha</label>
+              <input required type="password" value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-red-600 font-bold" placeholder="••••••••" />
+            </div>
+          </div>
+
+          <button type="submit" className="w-full py-6 bg-red-600 text-white font-black rounded-[2rem] uppercase text-sm tracking-[0.2em] mt-8 shadow-2xl shadow-red-600/30 hover:scale-[1.02] active:scale-95 transition-all">
+            Criar Licença e Ver Planos
+          </button>
         </form>
       </div>
     </div>
   );
 };
-
-export default { Login, Signup };
