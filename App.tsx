@@ -44,9 +44,9 @@ const App: React.FC = () => {
       if (savedUserStr) {
         const user = JSON.parse(savedUserStr);
         setCurrentUser(user);
-
-        // Notificações isoladas por usuário (Tenant)
-        const allNotifs = JSON.parse(localStorage.getItem(`crmplus_notifications_${user.id}`) || '[]');
+        // Chave de notificação isolada por usuário
+        const notifKey = `crmplus_notifications_${user.id}`;
+        const allNotifs = JSON.parse(localStorage.getItem(notifKey) || '[]');
         setNotifications(allNotifs);
       }
       
@@ -70,12 +70,6 @@ const App: React.FC = () => {
     navigate('/login');
   };
 
-  const handleSwitchProfile = () => {
-    sessionStorage.removeItem('crmplus_profile');
-    setActiveProfile(null);
-    navigate('/profiles');
-  };
-
   const isPublic = ['/', '/login', '/signup'].includes(location.pathname) || location.pathname.startsWith('/v/');
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -84,43 +78,23 @@ const App: React.FC = () => {
       {!isPublic && activeProfile && (
         <header className="fixed top-0 left-0 lg:left-56 right-0 h-16 border-b border-zinc-800 bg-black/80 backdrop-blur-md z-40 px-4 md:px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-zinc-400 hover:text-white"
-            >
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 text-zinc-400 hover:text-white">
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-            <div className="relative hidden md:block w-64 lg:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
-              <input 
-                type="text" 
-                placeholder="Busca rápida..." 
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2 pl-9 pr-4 text-[11px] focus:border-red-600 outline-none"
-              />
-            </div>
+            <span className="text-sm font-black uppercase tracking-tighter text-zinc-500 lg:hidden">CRMPLUS+</span>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
-            <button 
-              onClick={() => navigate('/notifications')}
-              className="relative p-2 text-zinc-400 hover:text-white transition-colors"
-            >
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate('/notifications')} className="relative p-2 text-zinc-400 hover:text-white transition-colors">
               <Bell size={20} />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 rounded-full border-2 border-black flex items-center justify-center text-[8px] font-black">
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 rounded-full border-2 border-black flex items-center justify-center text-[8px] font-black animate-pulse">
                   {unreadCount}
                 </span>
               )}
             </button>
             
-            <button 
-              onClick={handleSwitchProfile}
-              className="flex items-center gap-3 hover:opacity-80 transition-all p-1 rounded-xl bg-zinc-900/50 border border-zinc-800/50"
-            >
-              <div className="text-right hidden sm:block">
-                <p className="text-[9px] font-black uppercase text-white leading-none">{activeProfile?.name}</p>
-                <p className="text-[7px] font-bold text-zinc-500 uppercase mt-1">Alternar</p>
-              </div>
+            <button onClick={() => navigate('/profiles')} className="flex items-center gap-3 hover:opacity-80 transition-all p-1 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
               <div className="w-8 h-8 rounded-lg border border-red-600/30 bg-black flex items-center justify-center text-red-600">
                 <UsersRound size={16} />
               </div>
@@ -131,25 +105,15 @@ const App: React.FC = () => {
 
       {activeProfile && !isPublic && (
         <>
-          {isMobileMenuOpen && (
-            <div 
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-          )}
-
+          {isMobileMenuOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
           <aside className={`fixed left-0 top-0 bottom-0 w-56 border-r border-zinc-800 bg-black flex flex-col z-50 transition-transform lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-            <div className="p-6 flex items-center justify-between">
+            <div className="p-6">
               <span className="text-xl font-black text-red-600 italic tracking-tighter">CRMPLUS+</span>
-              <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-zinc-500">
-                <X size={20} />
-              </button>
             </div>
             <nav className="flex-1 px-3 space-y-1 overflow-y-auto no-scrollbar">
               <Link to="/dashboard" className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname === '/dashboard' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
                 <LayoutGrid size={16} /> Painel
               </Link>
-              
               <div className="pt-6 pb-2 text-[8px] font-black text-zinc-700 uppercase tracking-[0.3em] px-3">Operacional</div>
               {currentUser?.subscriptions?.filter((s:any) => s.status.includes('ativa') || s.status === 'teste_ativo').map((sub:any) => (
                 <Link key={sub.id} to={`/module/${sub.id}`} className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname.startsWith(`/module/${sub.id}`) ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
@@ -159,7 +123,6 @@ const App: React.FC = () => {
                   <span>{sub.id.toUpperCase()}</span>
                 </Link>
               ))}
-
               <div className="pt-6 pb-2 text-[8px] font-black text-zinc-700 uppercase tracking-[0.3em] px-3">Administrativo</div>
               <Link to="/billing" className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname === '/billing' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
                 <CreditCard size={16} /> Assinaturas
