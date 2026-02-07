@@ -21,13 +21,13 @@ const Landing: React.FC = () => {
       image: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&q=80&w=800',
       desc: 'Diagnóstico tecnológico e gestão de O.S. na palma da mão.', 
       icon: <Wrench size={32} />, 
-      detailed: 'Ideal para mecânicos que unem experiência e tecnologia. Realize diagnósticos, abra ordens de serviço e anexe fotos do motor diretamente pelo smartphone, garantindo transparência total para o cliente.',
+      detailed: 'Diagnósticos inteligentes, ordens de serviço e fotos do motor direto do celular. Mais transparência, histórico completo e aprovação do orçamento por link.',
       practical: [
         'Abertura de OS via mobile com diagnóstico via scanner',
         'Checklist de entrada com fotos em tempo real',
         'Histórico completo do veículo (Timeline)',
         'Status de reparo acessível pelo cliente via link',
-        'Gestão de estoque de peças integrada'
+        'Aprovação de orçamentos 100% digital'
       ],
       pilar: 'Tecnologia Aplicada ao Diagnóstico Automotivo',
       reports: 'Tempo médio de box, OS abertas/fechadas, Ticket médio'
@@ -38,7 +38,7 @@ const Landing: React.FC = () => {
       image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=800',
       desc: 'Comanda eletrônica e agilidade máxima no salão.', 
       icon: <Utensils size={32} />, 
-      detailed: 'Garçons equipados com smartphones para um atendimento premium. Elimine erros de pedido e reduza o tempo de entrega com integração direta entre o salão e a cozinha.',
+      detailed: 'Experiência que o cliente percebe. Elimine erros de pedido e acelere entregas com integração total entre salão e cozinha.',
       practical: [
         'Lançamento de pedidos direto na mesa via celular',
         'Impressão automática de tickets na cozinha/bar',
