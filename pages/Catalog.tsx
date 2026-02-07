@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, FileText, Utensils, Play, Rocket, Lock, Clock, LayoutDashboard } from 'lucide-react';
+import { Wrench, FileText, Utensils, Rocket, Lock, Clock, LayoutDashboard } from 'lucide-react';
 import { SystemConfig } from '../types';
 
 const ModuleCard: React.FC<{ mod: any, onNavigate: (id: string) => void, isAvailable: boolean }> = ({ mod, onNavigate, isAvailable }) => {
@@ -62,7 +62,7 @@ const Catalog: React.FC = () => {
 
   const handleStartSelection = (moduleId: string) => {
     if (isAccountLoggedIn) {
-      if (moduleId === 'oficina') navigate('/oficina');
+      if (moduleId === 'oficina') navigate('/module/oficina');
       return;
     }
     sessionStorage.setItem('crmplus_selected_module_onboarding', moduleId);
@@ -72,7 +72,7 @@ const Catalog: React.FC = () => {
   const systems = [
     {
       id: 'oficina',
-      name: 'Oficina',
+      name: 'Sistema de oficina',
       description: 'Gestão completa de O.S., peças e serviços para mecânicas profissionais.',
       iconSmall: <Wrench size={20} />,
       isAvailable: true,
@@ -120,7 +120,7 @@ const Catalog: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               {isAccountLoggedIn ? (
                 <button 
-                  onClick={() => navigate('/oficina')}
+                  onClick={() => navigate('/module/oficina')}
                   className="w-full sm:w-auto px-12 py-5 bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-black rounded-2xl hover:brightness-125 hover:scale-105 transition-all text-lg shadow-[0_15px_50px_rgba(0,240,255,0.3)] active:scale-95 flex items-center justify-center gap-4"
                 >
                   <LayoutDashboard size={24} strokeWidth={3} />

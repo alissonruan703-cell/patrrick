@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Key, Plus, Trash2, Edit3, X, Check, Search, LogOut, Globe, UserCircle, Calendar, AlertTriangle, Mail, LayoutGrid } from 'lucide-react';
-import { AccountLicense } from '../types';
+import { AccountLicense, ModuleId } from '../types';
 
 const AdminMaster: React.FC = () => {
   const navigate = useNavigate();
@@ -19,10 +19,10 @@ const AdminMaster: React.FC = () => {
     email: '',
     status: 'Ativo' as 'Ativo' | 'Bloqueado',
     expirationDate: '',
-    allowedModules: ['oficina'] as string[]
+    allowedModules: ['oficina'] as ModuleId[]
   });
 
-  const availableModules = [
+  const availableModules: { id: ModuleId; name: string }[] = [
     { id: 'oficina', name: 'Oficina Pro+' },
     { id: 'orcamento', name: 'Vendas Plus' },
     { id: 'restaurante', name: 'Gastro Hub' },
@@ -79,7 +79,7 @@ const AdminMaster: React.FC = () => {
     setFormData({ fullName: '', companyName: '', username: '', password: '', email: '', status: 'Ativo', expirationDate: '', allowedModules: ['oficina'] });
   };
 
-  const toggleModule = (id: string) => {
+  const toggleModule = (id: ModuleId) => {
     setFormData(prev => ({
       ...prev,
       allowedModules: prev.allowedModules.includes(id) 

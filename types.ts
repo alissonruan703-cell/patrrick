@@ -1,5 +1,5 @@
 
-export type ModuleId = 'oficina' | 'restaurante' | 'orcamento' | 'funil' | 'nps' | 'inspeção' | 'clients';
+export type ModuleId = 'oficina' | 'restaurante' | 'orcamento' | 'funil' | 'nps' | 'inspeção' | 'clients' | 'config';
 
 export interface ModuleSubscription {
   id: ModuleId;
@@ -8,32 +8,27 @@ export interface ModuleSubscription {
   testeUsado: boolean;
 }
 
-export interface Profile {
+export interface AccountLicense {
+  id: string;
+  fullName: string;
+  email: string;
+  companyName: string;
+  username: string;
+  password?: string;
+  status: 'Ativo' | 'Bloqueado';
+  createdAt: string;
+  expirationDate: string; // ISO String
+  allowedModules: ModuleId[];
+  planType?: 'mensal' | 'semestral' | 'anual';
+}
+
+export interface UserProfile {
   id: string;
   name: string;
-  role: string;
-  lastAccess: string;
-  permissions: string[];
-}
-
-export interface Account {
-  id: string;
-  companyName: string;
-  adminName: string;
-  email: string;
-  passwordHash: string;
+  avatar: string;
   pin: string;
-  subscriptions: ModuleSubscription[];
-  settings: AccountSettings;
-}
-
-export interface AccountSettings {
-  customClientFields: { name: string; type: string }[];
-  tags: string[];
-  funnelStages: string[];
-  restaurantCategories: string[];
-  inspectionTemplates: { id: string; name: string; items: string[] }[];
-  logoUrl?: string;
+  modules: string[];
+  actions: string[];
 }
 
 export interface Notification {
@@ -62,7 +57,6 @@ export interface ServiceOrder {
   total: number;
   status: 'Aberto' | 'Orçamento' | 'Aguardando Peças' | 'Execução' | 'Pendente Cliente' | 'Pronto' | 'Entregue' | 'Reprovado' | 'Garantia' | 'Finalizado';
   createdAt: string;
-  responsibleId?: string;
 }
 
 export interface PhotoWithObs {
@@ -81,15 +75,6 @@ export interface ServiceItem {
   timestamp: string;
 }
 
-export interface UserProfile {
-  id: string;
-  name: string;
-  avatar: string;
-  pin: string;
-  modules: string[];
-  actions: string[];
-}
-
 export interface LogEntry {
   id: string;
   timestamp: string;
@@ -100,27 +85,11 @@ export interface LogEntry {
   system: string;
 }
 
-// Added missing SystemConfig interface for branding and global configuration
 export interface SystemConfig {
   companyName: string;
   companyLogo: string;
 }
 
-// Added missing AccountLicense interface for SaaS license management
-export interface AccountLicense {
-  id: string;
-  fullName: string;
-  email: string;
-  companyName: string;
-  username: string;
-  password?: string;
-  status: 'Ativo' | 'Bloqueado';
-  createdAt: string;
-  expirationDate: string;
-  allowedModules: string[];
-}
-
-// Added missing HistoryEvent interface for audit logs and activity tracking
 export interface HistoryEvent {
   id: string;
   timestamp: string;
@@ -133,7 +102,6 @@ export interface HistoryEvent {
   link?: string;
 }
 
-// Added missing Client interface for private customer database management
 export interface Client {
   id: string;
   name: string;

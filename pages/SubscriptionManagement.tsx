@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CreditCard, ShieldCheck, Zap, Calendar, Rocket, FileText, Utensils, Check, Plus, AlertCircle, TrendingUp, X } from 'lucide-react';
-import { AccountLicense } from '../types';
+import { AccountLicense, ModuleId } from '../types';
 
 const SubscriptionManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -15,17 +15,18 @@ const SubscriptionManagement: React.FC = () => {
     setAccount(accounts.find((a: any) => a.id === accountId));
   }, []);
 
-  const handleUpgrade = (moduleId: string) => {
+  const handleUpgrade = (moduleId: ModuleId) => {
     if (!account) return;
     const accounts = JSON.parse(localStorage.getItem('crmplus_accounts') || '[]');
-    const updatedModules = [...account.allowedModules, moduleId];
+    // Fix: cast the result of spread to ModuleId[]
+    const updatedModules: ModuleId[] = [...account.allowedModules, moduleId];
     const updatedAccounts = accounts.map((a: AccountLicense) => a.id === account.id ? { ...a, allowedModules: updatedModules } : a);
     localStorage.setItem('crmplus_accounts', JSON.stringify(updatedAccounts));
     setAccount({ ...account, allowedModules: updatedModules });
     setShowUpgradeModal(false);
   };
 
-  const modulesData = [{ id: 'oficina', name: 'Oficina Pro+', icon: <Rocket size={20}/>, price: 'R$ 89,90/mês' }, { id: 'orcamento', name: 'Vendas Plus', icon: <FileText size={20}/>, price: 'R$ 59,90/mês' }, { id: 'restaurante', name: 'Gastro Hub', icon: <Utensils size={20}/>, price: 'R$ 79,90/mês' }];
+  const modulesData: { id: ModuleId; name: string; icon: React.ReactNode; price: string }[] = [{ id: 'oficina', name: 'Oficina Pro+', icon: <Rocket size={20}/>, price: 'R$ 89,90/mês' }, { id: 'orcamento', name: 'Vendas Plus', icon: <FileText size={20}/>, price: 'R$ 59,90/mês' }, { id: 'restaurante', name: 'Gastro Hub', icon: <Utensils size={20}/>, price: 'R$ 79,90/mês' }];
   if (!account) return null;
 
   return (

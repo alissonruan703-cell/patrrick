@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Key, Plus, Trash2, Edit3, X, Check, Search, LogOut, Globe, UserCircle, Calendar, AlertTriangle, Mail, LayoutGrid } from 'lucide-react';
-import { AccountLicense } from '../types';
+import { AccountLicense, ModuleId } from '../types';
 
 const AdminMaster: React.FC = () => {
   const navigate = useNavigate();
@@ -10,8 +10,8 @@ const AdminMaster: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ fullName: '', companyName: '', username: '', password: '', email: '', status: 'Ativo' as 'Ativo' | 'Bloqueado', expirationDate: '', allowedModules: ['oficina'] as string[] });
-  const availableModules = [{ id: 'oficina', name: 'Oficina Pro+' }, { id: 'orcamento', name: 'Vendas Plus' }, { id: 'restaurante', name: 'Gastro Hub' }, { id: 'config', name: 'Configurações' }];
+  const [formData, setFormData] = useState({ fullName: '', companyName: '', username: '', password: '', email: '', status: 'Ativo' as 'Ativo' | 'Bloqueado', expirationDate: '', allowedModules: ['oficina'] as ModuleId[] });
+  const availableModules: { id: ModuleId; name: string }[] = [{ id: 'oficina', name: 'Oficina Pro+' }, { id: 'orcamento', name: 'Vendas Plus' }, { id: 'restaurante', name: 'Gastro Hub' }, { id: 'config', name: 'Configurações' }];
 
   useEffect(() => {
     const isMaster = sessionStorage.getItem('crmplus_is_master') === 'true';
@@ -31,7 +31,7 @@ const AdminMaster: React.FC = () => {
     setEditingId(null);
   };
 
-  const toggleModule = (id: string) => { setFormData(prev => ({ ...prev, allowedModules: prev.allowedModules.includes(id) ? prev.allowedModules.filter(m => m !== id) : [...prev.allowedModules, id] })); };
+  const toggleModule = (id: ModuleId) => { setFormData(prev => ({ ...prev, allowedModules: prev.allowedModules.includes(id) ? prev.allowedModules.filter(m => m !== id) : [...prev.allowedModules, id] })); };
   const deleteLicense = (id: string) => { if (window.confirm('Tem certeza? Isso apaga o acesso da empresa.')) { const updated = licenses.filter(l => l.id !== id); setLicenses(updated); localStorage.setItem('crmplus_accounts', JSON.stringify(updated)); } };
   const filtered = licenses.filter(l => l.companyName.toLowerCase().includes(searchTerm.toLowerCase()) || l.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || l.username.toLowerCase().includes(searchTerm.toLowerCase()));
 
