@@ -1,13 +1,6 @@
 
 export type ModuleId = 'oficina' | 'restaurante' | 'orcamento' | 'funil' | 'nps' | 'inspeção' | 'clients' | 'config';
 
-export interface ModuleSubscription {
-  id: ModuleId;
-  status: 'nao_assinado' | 'teste_ativo' | 'assinatura_ativa' | 'bloqueado';
-  testeFim?: string;
-  testeUsado: boolean;
-}
-
 export interface AccountLicense {
   id: string;
   fullName: string;
@@ -17,9 +10,8 @@ export interface AccountLicense {
   password?: string;
   status: 'Ativo' | 'Bloqueado';
   createdAt: string;
-  expirationDate: string; // ISO String
+  expirationDate: string; 
   allowedModules: ModuleId[];
-  planType?: 'mensal' | 'semestral' | 'anual';
 }
 
 export interface UserProfile {
@@ -31,32 +23,12 @@ export interface UserProfile {
   actions: string[];
 }
 
-export interface Notification {
+export interface ServiceItem {
   id: string;
-  profileId: string;
-  title: string;
-  message: string;
-  type: 'urgent' | 'info' | 'success' | 'warning';
-  read: boolean;
-  timestamp: string;
-  link?: string;
-  moduleId?: ModuleId;
-}
-
-export interface ServiceOrder {
-  id: string;
-  clientId: string;
-  clientName: string;
-  phone: string;
-  vehicle: string;
-  plate: string;
+  type: 'PEÇA' | 'MÃO DE OBRA';
   description: string;
-  budgetNotes?: string;
-  items: ServiceItem[];
-  photos: PhotoWithObs[];
-  total: number;
-  status: 'Aberto' | 'Orçamento' | 'Aguardando Peças' | 'Execução' | 'Pendente Cliente' | 'Pronto' | 'Entregue' | 'Reprovado' | 'Garantia' | 'Finalizado';
-  createdAt: string;
+  quantity: number;
+  price: number;
 }
 
 export interface PhotoWithObs {
@@ -65,50 +37,16 @@ export interface PhotoWithObs {
   timestamp: string;
 }
 
-export interface ServiceItem {
+export interface ServiceOrder {
   id: string;
-  type: 'PEÇA' | 'MÃO DE OBRA';
-  description: string;
-  brand: string;
-  quantity: number;
-  price: number;
-  timestamp: string;
-}
-
-export interface LogEntry {
-  id: string;
-  timestamp: string;
-  userId: string;
-  userName: string;
-  action: string;
-  details: string;
-  system: string;
-}
-
-export interface SystemConfig {
-  companyName: string;
-  companyLogo: string;
-}
-
-export interface HistoryEvent {
-  id: string;
-  timestamp: string;
-  profileId: string;
-  profileName: string;
-  action: string;
-  details: string;
-  moduleId: string;
-  clientId?: string;
-  link?: string;
-}
-
-export interface Client {
-  id: string;
-  name: string;
-  email: string;
+  clientName: string;
   phone: string;
-  document?: string;
+  vehicle: string;
+  plate: string;
+  description: string;
+  items: ServiceItem[];
+  photos: PhotoWithObs[];
+  total: number;
+  status: 'Aberto' | 'Orçamento' | 'Execução' | 'Pronto' | 'Entregue' | 'Reprovado';
   createdAt: string;
-  tags: string[];
-  customFields: Record<string, any>;
 }
