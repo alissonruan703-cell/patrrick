@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Calendar, AlertCircle, CheckCircle2, ThumbsUp, ThumbsDown, Camera, MessageSquare, Loader2 } from 'lucide-react';
 
@@ -11,27 +11,26 @@ const PublicView: React.FC = () => {
   
   useEffect(() => {
     try {
-      // O link curto contém apenas o ID e o TenantID
+      // Short Token Decoding
       const decoded = JSON.parse(atob(data || ''));
       const budgetId = decoded.i;
       const tenantId = decoded.t;
 
-      // Buscamos o orçamento completo no "servidor simulado" (localStorage global)
-      const stored = localStorage.getItem(`public_budget_${budgetId}`);
+      // Busca na Public Store global (prefixo pb_ para orçamentos rápidos)
+      const stored = localStorage.getItem(`pb_${budgetId}`);
       if (stored) {
         setBudget(JSON.parse(stored));
       } else {
-        // Fallback para quando o link for antigo mas os dados ainda estão na base da oficina
+        // Fallback: busca na base local se disponível
         const offlineKey = `crmplus_oficina_v2_orders_${tenantId}`;
         const orders = JSON.parse(localStorage.getItem(offlineKey) || '[]');
         const found = orders.find((o: any) => o.id === budgetId);
         if (found) {
-           const companyName = JSON.parse(sessionStorage.getItem('crmplus_user') || '{}').company || 'Oficina Pro';
-           setBudget({...found, tenantId, company: companyName, client: found.clientName});
+           setBudget({...found, tenantId, company: found.companyName || 'Oficina Pro', client: found.clientName});
         }
       }
     } catch (e) {
-      console.error(e);
+      console.error("Falha ao decodificar orçamento:", e);
     } finally {
       setLoading(false);
     }
@@ -40,7 +39,7 @@ const PublicView: React.FC = () => {
   const handleClientAction = (newStatus: 'Execução' | 'Reprovado') => {
     if (!budget || !budget.tenantId) return;
 
-    // Atualiza na base de dados da oficina
+    // Sincroniza decisão com a base da oficina
     const storageKey = `crmplus_oficina_v2_orders_${budget.tenantId}`;
     const saved = localStorage.getItem(storageKey);
     
@@ -49,15 +48,15 @@ const PublicView: React.FC = () => {
       const updatedOrders = orders.map((o: any) => o.id === budget.id ? { ...o, status: newStatus } : o);
       localStorage.setItem(storageKey, JSON.stringify(updatedOrders));
       
-      // Notifica o sistema
+      // Envia notificação master
       const notifKey = `crmplus_notifications_${budget.tenantId}`;
       const existingNotifs = JSON.parse(localStorage.getItem(notifKey) || '[]');
       const newNotif = {
         id: Date.now().toString(),
         profileId: 'admin',
         moduleId: 'oficina',
-        title: `Decisão do Cliente: ${newStatus === 'Execução' ? 'APROVADO' : 'RECUSADO'}`,
-        message: `O cliente ${budget.client} respondeu ao orçamento da placa ${budget.plate}.`,
+        title: `Decisão: Orçamento ${newStatus === 'Execução' ? 'APROVADO' : 'RECUSADO'}`,
+        message: `O cliente ${budget.client} respondeu para o veículo ${budget.vehicle}.`,
         type: newStatus === 'Execução' ? 'success' : 'urgent',
         read: false,
         timestamp: new Date().toISOString(),
@@ -71,7 +70,7 @@ const PublicView: React.FC = () => {
   };
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="text-red-600 animate-spin" size={40} /></div>;
-  if (!budget) return <div className="min-h-screen bg-black flex items-center justify-center text-zinc-600 font-black uppercase tracking-widest p-10 text-center">Orçamento não localizado ou já finalizado.</div>;
+  if (!budget) return <div className="min-h-screen bg-black flex items-center justify-center text-zinc-600 font-black uppercase tracking-widest p-10 text-center">Orçamento não localizado. Solicite um novo link à empresa.</div>;
 
   return (
     <div className="min-h-screen bg-black p-4 lg:p-12 text-zinc-200">
@@ -84,10 +83,10 @@ const PublicView: React.FC = () => {
                 <div className="bg-red-600 w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white text-xl">{(budget.company || 'O')[0]}</div>
                 <span className="text-xl font-black text-white uppercase tracking-tighter">{budget.company || 'Oficina Pro'}</span>
               </div>
-              <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">Orçamento <span className="text-red-600">Digital</span></h1>
+              <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">Orçamento <span className="text-red-600">Digital</span></h1>
               <div className="flex gap-2">
                 <p className="bg-black px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-zinc-800 inline-flex items-center gap-2"><Calendar size={12}/> {new Date().toLocaleDateString('pt-BR')}</p>
-                <p className="bg-black px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-zinc-800 inline-flex items-center gap-2">O.S. #{budget.id.slice(-4)}</p>
+                <p className="bg-black px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-zinc-800">O.S. #{budget.id.slice(-4)}</p>
               </div>
             </div>
             <div className="bg-black p-8 rounded-3xl border border-red-600/20 text-center min-w-[200px]">
@@ -103,12 +102,12 @@ const PublicView: React.FC = () => {
             </div>
             <div className="p-6 bg-red-600/5 border border-red-600/10 rounded-2xl space-y-4">
               <div className="space-y-1">
-                <p className="text-[9px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2"><AlertCircle size={12}/> Diagnóstico</p>
+                <p className="text-[9px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2"><AlertCircle size={12}/> Laudo do Mecânico</p>
                 <p className="text-zinc-400 italic text-sm leading-relaxed">"{budget.description}"</p>
               </div>
               {budget.notes && (
                 <div className="pt-4 border-t border-red-600/10">
-                  <p className="text-[9px] font-black text-white uppercase tracking-widest flex items-center gap-2"><MessageSquare size={12}/> Obs. Técnicas</p>
+                  <p className="text-[9px] font-black text-white uppercase tracking-widest flex items-center gap-2"><MessageSquare size={12}/> Observações Adicionais</p>
                   <p className="text-zinc-400 text-xs leading-relaxed mt-1">{budget.notes}</p>
                 </div>
               )}
@@ -133,7 +132,7 @@ const PublicView: React.FC = () => {
             <div className="bg-black rounded-[2rem] border border-zinc-800 overflow-hidden">
                <table className="w-full">
                  <thead className="bg-zinc-800/30 text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em]">
-                   <tr><th className="px-8 py-5 text-left">Descrição</th><th className="px-8 py-5 text-center">Qtd</th><th className="px-8 py-5 text-right">Subtotal</th></tr>
+                   <tr><th className="px-8 py-5 text-left">Item / Serviço</th><th className="px-8 py-5 text-center">Qtd</th><th className="px-8 py-5 text-right">Subtotal</th></tr>
                  </thead>
                  <tbody className="divide-y divide-zinc-800">
                    {budget.items?.map((item: any, i: number) => (
@@ -151,13 +150,13 @@ const PublicView: React.FC = () => {
               {currentStatus === 'pending' ? (
                 <div className="grid grid-cols-2 gap-6">
                   <button onClick={() => handleClientAction('Reprovado')} className="py-6 bg-zinc-800 text-zinc-400 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:bg-zinc-700 transition-all flex items-center justify-center gap-3"><ThumbsDown size={18}/> Rejeitar</button>
-                  <button onClick={() => handleClientAction('Execução')} className="py-6 bg-red-600 text-white font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl hover:bg-red-700 transition-all flex items-center justify-center gap-3"><ThumbsUp size={18}/> Aprovar Agora</button>
+                  <button onClick={() => handleClientAction('Execução')} className="py-6 bg-red-600 text-white font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl hover:bg-red-700 transition-all flex items-center justify-center gap-3"><ThumbsUp size={18}/> Aprovar agora</button>
                 </div>
               ) : (
                 <div className={`w-full py-12 text-center font-black rounded-[2.5rem] uppercase text-sm tracking-[0.2em] flex flex-col items-center gap-4 border-2 ${currentStatus === 'approved' ? 'bg-emerald-600/10 text-emerald-500 border-emerald-500/20' : 'bg-red-600/10 text-red-500 border-red-500/20'}`}>
                   {currentStatus === 'approved' ? <CheckCircle2 size={48} className="mb-2 animate-bounce" /> : <AlertCircle size={48} className="mb-2" />}
-                  {currentStatus === 'approved' ? 'Orçamento Aprovado com Sucesso!' : 'Orçamento Reprovado.'}
-                  <p className="text-[10px] opacity-60 normal-case font-medium">Nossa equipe técnica foi notificada para os próximos passos.</p>
+                  {currentStatus === 'approved' ? 'Orçamento Aprovado!' : 'Orçamento Recusado.'}
+                  <p className="text-[10px] opacity-60 normal-case font-medium">A empresa foi notificada automaticamente.</p>
                 </div>
               )}
             </div>
