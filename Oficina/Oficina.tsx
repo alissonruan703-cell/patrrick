@@ -5,7 +5,7 @@ import {
   Plus, Search, X, Trash2,
   Calendar, ArrowLeft, Zap, User, Car, Phone, Hash, ClipboardList, Package, Wrench, DollarSign, Share2, Check, AlertCircle, Clock, Bell, ChevronRight, CheckCircle2, Image as ImageIcon, Camera, AlertTriangle, UserPlus, FileText
 } from 'lucide-react';
-import { ServiceOrder, ServiceItem, UserProfile, LogEntry, SystemConfig } from '../types';
+import { ServiceOrder, ServiceItem, UserProfile, LogEntry, SystemConfig, PhotoWithObs } from '../types';
 
 type OficinaTab = 'ativos' | 'historico' | 'nova';
 
@@ -115,13 +115,18 @@ const Oficina: React.FC = () => {
     }
   };
 
+  // Fixed handlePhotoUpload to correctly wrap base64 string in PhotoWithObs interface
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!selectedOS || !e.target.files?.[0]) return;
     const file = e.target.files[0];
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64 = reader.result as string;
-      const updatedPhotos = [...(selectedOS.photos || []), base64];
+      const newPhoto: PhotoWithObs = {
+        url: base64,
+        timestamp: new Date().toISOString()
+      };
+      const updatedPhotos = [...(selectedOS.photos || []), newPhoto];
       const updatedOS = { ...selectedOS, photos: updatedPhotos };
       const updatedOrders = orders.map(o => o.id === selectedOS.id ? updatedOS : o);
       setSelectedOS(updatedOS);
@@ -347,7 +352,7 @@ const Oficina: React.FC = () => {
                   <input 
                     required
                     value={newOS.plate} 
-                    onChange={e => setNewOS({...newOS, plate: e.target.value})}
+                    onChange={e => setNewOS({...newOS, plate: e.target.value.toUpperCase()})}
                     placeholder="ABC-1234"
                     className="w-full bg-black/40 border border-white/10 px-6 py-4 rounded-2xl text-white outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-black uppercase tracking-widest text-lg font-mono"
                   />
@@ -479,7 +484,8 @@ const Oficina: React.FC = () => {
                  <div className="grid grid-cols-3 gap-3">
                     {(selectedOS.photos || []).map((ph, idx) => (
                       <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-white/10">
-                         <img src={ph} className="w-full h-full object-cover" />
+                         {/* Correctly access the .url property of PhotoWithObs */}
+                         <img src={ph.url} className="w-full h-full object-cover" />
                          <button onClick={() => removePhoto(idx)} className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
                       </div>
                     ))}

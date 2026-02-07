@@ -38,7 +38,7 @@ export interface AccountSettings {
 
 export interface Notification {
   id: string;
-  profileId: string; // Specific profile or 'admin' for global system alerts
+  profileId: string;
   title: string;
   message: string;
   type: 'urgent' | 'info' | 'success' | 'warning';
@@ -46,47 +46,6 @@ export interface Notification {
   timestamp: string;
   link?: string;
   moduleId?: ModuleId;
-}
-
-export interface HistoryEvent {
-  id: string;
-  timestamp: string;
-  profileId: string;
-  profileName: string;
-  moduleId: ModuleId | 'account';
-  action: string;
-  details: string;
-  clientId?: string;
-  link?: string;
-}
-
-export interface Client {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  document?: string;
-  tags: string[];
-  customFields: Record<string, string>;
-  createdAt: string;
-}
-
-export interface SystemConfig {
-  companyName: string;
-  companyLogo: string;
-}
-
-export interface AccountLicense {
-  id: string;
-  fullName: string;
-  companyName: string;
-  username: string;
-  password?: string;
-  email: string;
-  status: 'Ativo' | 'Bloqueado';
-  createdAt: string;
-  expirationDate: string;
-  allowedModules: string[];
 }
 
 export interface ServiceOrder {
@@ -97,12 +56,19 @@ export interface ServiceOrder {
   vehicle: string;
   plate: string;
   description: string;
+  budgetNotes?: string;
   items: ServiceItem[];
-  photos: string[];
+  photos: PhotoWithObs[];
   total: number;
-  status: 'Aberto' | 'Orçamento' | 'Execução' | 'Pronto' | 'Entregue' | 'Reprovado';
+  status: 'Aberto' | 'Orçamento' | 'Aguardando Peças' | 'Execução' | 'Pendente Cliente' | 'Pronto' | 'Entregue' | 'Reprovado' | 'Garantia' | 'Finalizado';
   createdAt: string;
   responsibleId?: string;
+}
+
+export interface PhotoWithObs {
+  url: string;
+  obs?: string;
+  timestamp: string;
 }
 
 export interface ServiceItem {
@@ -132,4 +98,49 @@ export interface LogEntry {
   action: string;
   details: string;
   system: string;
+}
+
+// Added missing SystemConfig interface for branding and global configuration
+export interface SystemConfig {
+  companyName: string;
+  companyLogo: string;
+}
+
+// Added missing AccountLicense interface for SaaS license management
+export interface AccountLicense {
+  id: string;
+  fullName: string;
+  email: string;
+  companyName: string;
+  username: string;
+  password?: string;
+  status: 'Ativo' | 'Bloqueado';
+  createdAt: string;
+  expirationDate: string;
+  allowedModules: string[];
+}
+
+// Added missing HistoryEvent interface for audit logs and activity tracking
+export interface HistoryEvent {
+  id: string;
+  timestamp: string;
+  profileId: string;
+  profileName: string;
+  action: string;
+  details: string;
+  moduleId: string;
+  clientId?: string;
+  link?: string;
+}
+
+// Added missing Client interface for private customer database management
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  document?: string;
+  createdAt: string;
+  tags: string[];
+  customFields: Record<string, any>;
 }
