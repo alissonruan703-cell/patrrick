@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
-  Wrench, Utensils, FileText, LayoutGrid, Heart, ClipboardCheck, 
-  Settings, CreditCard, History, LogOut, Menu, X, Bell, Search, Users, UsersRound
+  Wrench, Utensils, FileText, LayoutGrid, Settings, CreditCard, LogOut, Menu, X, Bell, Search, UsersRound
 } from 'lucide-react';
 
 import Landing from './pages/Landing';
@@ -13,7 +12,8 @@ import Dashboard from './pages/Dashboard';
 import Billing from './pages/Billing';
 import AccountSettings from './pages/AccountSettings';
 import Oficina from './pages/Oficina';
-import Clients from './pages/Clients';
+import NotificationsPage from './pages/Notifications';
+import PublicView from './pages/PublicView';
 import LockedModule from './pages/LockedModule';
 import { Notification, UserProfile } from './types';
 
@@ -38,20 +38,26 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const sync = () => {
-      const savedUser = sessionStorage.getItem('crmplus_user');
-      const savedProfile = sessionStorage.getItem('crmplus_profile');
-      if (savedUser) setCurrentUser(JSON.parse(savedUser));
-      if (savedProfile) setActiveProfile(JSON.parse(savedProfile));
+      const savedUserStr = sessionStorage.getItem('crmplus_user');
+      const savedProfileStr = sessionStorage.getItem('crmplus_profile');
       
-      const allNotifs = JSON.parse(localStorage.getItem('crmplus_notifications') || '[]');
-      if (activeProfile) {
-        setNotifications(allNotifs.filter((n: any) => n.profileId === activeProfile.id || n.profileId === 'admin'));
+      if (savedUserStr) {
+        const user = JSON.parse(savedUserStr);
+        setCurrentUser(user);
+
+        // Notificações isoladas por usuário (Tenant)
+        const allNotifs = JSON.parse(localStorage.getItem(`crmplus_notifications_${user.id}`) || '[]');
+        setNotifications(allNotifs);
+      }
+      
+      if (savedProfileStr) {
+        setActiveProfile(JSON.parse(savedProfileStr));
       }
     };
     sync();
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
-  }, [activeProfile?.id]);
+  }, [location.pathname]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -70,7 +76,7 @@ const App: React.FC = () => {
     navigate('/profiles');
   };
 
-  const isPublic = ['/', '/login', '/signup'].includes(location.pathname);
+  const isPublic = ['/', '/login', '/signup'].includes(location.pathname) || location.pathname.startsWith('/v/');
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -95,9 +101,16 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <button className="relative p-2 text-zinc-400 hover:text-white">
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="relative p-2 text-zinc-400 hover:text-white transition-colors"
+            >
               <Bell size={20} />
-              {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-600 rounded-full border border-black"></span>}
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 rounded-full border-2 border-black flex items-center justify-center text-[8px] font-black">
+                  {unreadCount}
+                </span>
+              )}
             </button>
             
             <button 
@@ -118,7 +131,6 @@ const App: React.FC = () => {
 
       {activeProfile && !isPublic && (
         <>
-          {/* Overlay for mobile menu */}
           {isMobileMenuOpen && (
             <div 
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden"
@@ -136,9 +148,6 @@ const App: React.FC = () => {
             <nav className="flex-1 px-3 space-y-1 overflow-y-auto no-scrollbar">
               <Link to="/dashboard" className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname === '/dashboard' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
                 <LayoutGrid size={16} /> Painel
-              </Link>
-              <Link to="/clients" className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname.startsWith('/clients') ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
-                <Users size={16} /> Clientes
               </Link>
               
               <div className="pt-6 pb-2 text-[8px] font-black text-zinc-700 uppercase tracking-[0.3em] px-3">Operacional</div>
@@ -171,12 +180,13 @@ const App: React.FC = () => {
       <main className={!isPublic && activeProfile ? 'lg:pl-56 pt-16' : ''}>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/v/:data" element={<PublicView />} />
           <Route path="/login" element={<Auth type="login" onAuth={(user) => setCurrentUser(user)} />} />
           <Route path="/signup" element={<Auth type="signup" />} />
           <Route path="/profiles" element={<PrivateRoute currentUser={currentUser}><Profiles mode="select" onSelect={(p) => setActiveProfile(p)} /></PrivateRoute>} />
           <Route path="/account/profiles" element={<PrivateRoute currentUser={currentUser}><Profiles mode="manage" /></PrivateRoute>} />
           <Route path="/dashboard" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><Dashboard user={currentUser} /></ProfileRoute>} />
-          <Route path="/clients/*" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><Clients /></ProfileRoute>} />
+          <Route path="/notifications" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><NotificationsPage profile={activeProfile!} /></ProfileRoute>} />
           <Route path="/module/oficina" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><Oficina /></ProfileRoute>} />
           <Route path="/module/orcamento" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><LockedModule name="Orçamento" /></ProfileRoute>} />
           <Route path="/module/restaurante" element={<ProfileRoute currentUser={currentUser} activeProfile={activeProfile}><LockedModule name="Restaurante" /></ProfileRoute>} />

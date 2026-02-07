@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
-  Plus, Search, Trash2, ArrowLeft, Zap, User, Car, 
-  Package, Wrench, Share2, ChevronRight, UserPlus, Save, Loader2, Activity, Phone
+  Plus, Search, Trash2, ArrowLeft, Zap, Car, 
+  Package, Wrench, Share2, ChevronRight, UserPlus, Save, Loader2, Activity
 } from 'lucide-react';
 import { ServiceOrder, ServiceItem } from '../types';
 
@@ -20,7 +20,9 @@ const Oficina: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [newOS, setNewOS] = useState({ clientName: '', phone: '', vehicle: '', plate: '', description: '' });
-  const [newItem, setNewItem] = useState<Partial<ServiceItem>>({ type: 'PEÇA', description: '', quantity: 1, price: 0 });
+  
+  // newItem.price inicializado como string vazia conforme solicitado
+  const [newItem, setNewItem] = useState<any>({ type: 'PEÇA', description: '', quantity: 1, price: '' });
 
   const getStorageKey = (userId: string) => `crmplus_oficina_v2_orders_${userId}`;
 
@@ -75,21 +77,59 @@ const Oficina: React.FC = () => {
   };
 
   const handleAddItem = () => {
-    if (!selectedOS || !newItem.description || !newItem.price) return;
+    const priceNum = parseFloat(newItem.price);
+    if (!selectedOS || !newItem.description || isNaN(priceNum)) {
+      alert("Informe a descrição e um valor válido.");
+      return;
+    }
+
     const item: ServiceItem = {
       id: Date.now().toString(),
       type: newItem.type as 'PEÇA' | 'MÃO DE OBRA',
       description: newItem.description,
       brand: '',
-      quantity: newItem.quantity || 1,
-      price: newItem.price || 0,
+      quantity: parseInt(newItem.quantity) || 1,
+      price: priceNum,
       timestamp: new Date().toISOString()
     };
+    
     const updatedItems = [...(selectedOS.items || []), item];
-    const updatedOS = { ...selectedOS, items: updatedItems, total: updatedItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0) };
-    saveToDatabase(orders.map(o => o.id === selectedOS.id ? updatedOS : o));
+    const total = updatedItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+    
+    const updatedOS = { ...selectedOS, items: updatedItems, total };
+    const updatedOrders = orders.map(o => o.id === selectedOS.id ? updatedOS : o);
+    
     setSelectedOS(updatedOS);
-    setNewItem({ type: 'PEÇA', description: '', quantity: 1, price: 0 });
+    saveToDatabase(updatedOrders);
+    setNewItem({ type: 'PEÇA', description: '', quantity: 1, price: '' });
+  };
+
+  const generateLink = () => {
+    if (!selectedOS || !currentUser) return;
+    
+    const payload = {
+      i: selectedOS.id,
+      tid: currentUser.id, // Fundamental para o PublicView saber onde salvar
+      n: selectedOS.clientName,
+      v: selectedOS.vehicle,
+      p: selectedOS.plate,
+      d: selectedOS.description,
+      t: selectedOS.total,
+      dt: new Date(selectedOS.createdAt).toLocaleDateString('pt-BR'),
+      it: (selectedOS.items || []).map(i => ({ 
+        d: i.description, 
+        q: i.quantity, 
+        p: i.price, 
+        t: i.type === 'PEÇA' ? 'P' : 'S' 
+      })),
+      ph: selectedOS.photos || []
+    };
+
+    const base64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const url = `${window.location.origin}/#/v/${base64}`;
+    
+    navigator.clipboard.writeText(url);
+    alert('Link do orçamento copiado para o WhatsApp!');
   };
 
   const filteredOrders = useMemo(() => orders.filter(o => 
@@ -171,7 +211,7 @@ const Oficina: React.FC = () => {
               <div key={os.id} onClick={() => { setSelectedOS(os); setView('detalhes'); }} className="bg-zinc-900 border border-zinc-800 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] group hover:border-red-600 transition-all cursor-pointer shadow-xl relative">
                 <div className="flex justify-between items-start mb-6">
                   <span className="text-[10px] font-black text-zinc-700 font-mono">#{os.id.slice(-4)}</span>
-                  <span className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase border ${os.status === 'Execução' ? 'text-red-500 border-red-500/20' : 'text-zinc-500 border-zinc-800'}`}>{os.status}</span>
+                  <span className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase border ${os.status === 'Execução' ? 'text-emerald-500 border-emerald-500/20' : 'text-zinc-500 border-zinc-800'}`}>{os.status}</span>
                 </div>
                 <h3 className="text-lg md:text-xl font-black uppercase truncate mb-2">{os.clientName}</h3>
                 <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2 truncate"><Car size={12}/> {os.vehicle} • <span className="text-white font-mono bg-white/5 px-2 py-0.5 rounded">{os.plate}</span></p>
@@ -198,7 +238,7 @@ const Oficina: React.FC = () => {
                  </div>
 
                  <div className="flex flex-col gap-2 mt-8">
-                   <button className="w-full bg-zinc-800 text-white py-4 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2"><Share2 size={16} /> Link p/ Cliente</button>
+                   <button onClick={generateLink} className="w-full bg-zinc-800 text-white py-4 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 hover:bg-zinc-700 transition-all"><Share2 size={16} /> Link p/ Cliente</button>
                    <button onClick={() => { saveToDatabase(orders.filter(o => o.id !== selectedOS?.id)); setView('lista'); }} className="w-full text-zinc-600 py-3 font-black uppercase text-[9px] hover:text-red-500 transition-colors">Excluir O.S.</button>
                  </div>
               </div>
@@ -207,15 +247,16 @@ const Oficina: React.FC = () => {
            <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] md:rounded-[4rem] p-6 md:p-12 shadow-2xl flex flex-col gap-8">
               <div className="bg-black/30 border border-zinc-800 p-6 md:p-8 rounded-[2rem] space-y-6">
                  <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2"><Zap size={18} className="text-red-600"/> Lançamento</h3>
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <select value={newItem.type} onChange={e => setNewItem({...newItem, type: e.target.value as any})} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs font-bold text-white outline-none">
                        <option value="PEÇA">PEÇA</option>
                        <option value="MÃO DE OBRA">SERVIÇO</option>
                     </select>
                     <input value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} placeholder="Descrição" className="w-full sm:col-span-1 bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs font-bold text-white outline-none" />
-                    <input type="number" value={newItem.price} onChange={e => setNewItem({...newItem, price: parseFloat(e.target.value)})} placeholder="Valor Unit." className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs font-bold text-white outline-none" />
+                    <input type="number" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: e.target.value})} placeholder="Qtd" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs font-bold text-white outline-none" />
+                    <input type="number" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} placeholder="Valor Unit." className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs font-bold text-white outline-none" />
                  </div>
-                 <button onClick={handleAddItem} className="w-full bg-white text-black py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center justify-center gap-2"><Plus size={16}/> Adicionar ao Orçamento</button>
+                 <button onClick={handleAddItem} className="w-full bg-white text-black py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-zinc-200 transition-all"><Plus size={16}/> Adicionar ao Orçamento</button>
               </div>
 
               <div className="space-y-8 overflow-y-auto no-scrollbar">
@@ -229,7 +270,7 @@ const Oficina: React.FC = () => {
                           <div key={item.id} className="bg-black/30 border border-zinc-800 p-4 md:p-6 rounded-2xl flex items-center justify-between group">
                              <div className="flex-1">
                                 <p className="text-xs md:text-sm font-black uppercase text-white truncate pr-4">{item.description}</p>
-                                <p className="text-[9px] font-bold text-zinc-600 uppercase mt-1">Un: R$ {item.price.toFixed(2)}</p>
+                                <p className="text-[9px] font-bold text-zinc-600 uppercase mt-1">Qtde: {item.quantity} • Un: R$ {item.price.toFixed(2)}</p>
                              </div>
                              <div className="flex items-center gap-4">
                                 <p className="text-sm md:text-base font-black text-zinc-300">R$ {(item.price * item.quantity).toFixed(2)}</p>
