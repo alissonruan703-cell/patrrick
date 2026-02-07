@@ -78,9 +78,10 @@ const PublicView: React.FC = () => {
             <div className="px-10 lg:px-14 py-8 space-y-6">
                <div className="flex items-center gap-3 px-2 border-l-4 border-cyan-500"><ImageIcon className="text-cyan-500" size={18}/><h3 className="text-[11px] font-black text-white uppercase tracking-widest">Fotos do Serviço</h3></div>
                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {osDataFromUrl.photos.map((ph: string, i: number) => (
+                  {/* Corrected: Accessing ph.url property as osDataFromUrl.photos contains objects of type PhotoWithObs */}
+                  {osDataFromUrl.photos.map((ph: any, i: number) => (
                     <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-lg">
-                       <img src={ph} className="w-full h-full object-cover" />
+                       <img src={ph.url} className="w-full h-full object-cover" />
                     </div>
                   ))}
                </div>
