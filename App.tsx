@@ -76,37 +76,37 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-zinc-200">
       {!isPublic && activeProfile && (
-        <div className="fixed top-0 left-64 right-0 h-20 border-b border-zinc-800 bg-black/80 backdrop-blur-md z-40 px-8 flex items-center justify-between">
-          <div className="relative w-full max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+        <div className="fixed top-0 left-56 right-0 h-16 border-b border-zinc-800 bg-black/80 backdrop-blur-md z-40 px-6 flex items-center justify-between">
+          <div className="relative w-full max-w-lg">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
             <input 
               type="text" 
               placeholder="Busca global..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:border-red-600 outline-none transition-all"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2 pl-10 pr-4 text-xs font-medium focus:border-red-600 outline-none transition-all"
             />
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <button 
               onClick={() => setShowNotifPanel(!showNotifPanel)}
-              className="relative p-3 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-red-600 transition-all"
+              className="relative p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-red-600 transition-all"
             >
-              <Bell size={20} className="text-zinc-400" />
-              {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-black animate-pulse">{unreadCount}</span>}
+              <Bell size={18} className="text-zinc-400" />
+              {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-black animate-pulse">{unreadCount}</span>}
             </button>
             
             <button 
               onClick={handleSwitchProfile}
-              className="flex items-center gap-3 hover:opacity-80 transition-all p-2 rounded-2xl bg-zinc-900/50 border border-zinc-800/50"
+              className="flex items-center gap-3 hover:opacity-80 transition-all p-1.5 rounded-xl bg-zinc-900/50 border border-zinc-800/50"
             >
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-black uppercase text-white leading-none">{activeProfile?.name}</p>
-                <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">Trocar Perfil</p>
+                <p className="text-[10px] font-black uppercase text-white leading-none">{activeProfile?.name}</p>
+                <p className="text-[8px] font-bold text-zinc-500 uppercase mt-1">Trocar Perfil</p>
               </div>
-              <div className="w-10 h-10 rounded-xl overflow-hidden border border-red-600/30 shadow-xl bg-black flex items-center justify-center text-red-600">
-                <UsersRound size={20} />
+              <div className="w-8 h-8 rounded-lg overflow-hidden border border-red-600/30 shadow-xl bg-black flex items-center justify-center text-red-600">
+                <UsersRound size={16} />
               </div>
             </button>
           </div>
@@ -114,43 +114,43 @@ const App: React.FC = () => {
       )}
 
       {activeProfile && !isPublic && (
-        <div className="fixed left-0 top-0 bottom-0 w-64 border-r border-zinc-800 bg-black flex flex-col z-50">
-          <div className="p-8">
-            <span className="text-2xl font-black text-red-600 italic tracking-tighter">CRMPLUS+</span>
+        <div className="fixed left-0 top-0 bottom-0 w-56 border-r border-zinc-800 bg-black flex flex-col z-50">
+          <div className="p-6">
+            <span className="text-xl font-black text-red-600 italic tracking-tighter">CRMPLUS+</span>
           </div>
-          <nav className="flex-1 px-4 space-y-1 overflow-y-auto no-scrollbar">
-            <Link to="/dashboard" className={`flex items-center gap-3 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${location.pathname === '/dashboard' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
-              <LayoutGrid size={18} /> Painel
+          <nav className="flex-1 px-3 space-y-1 overflow-y-auto no-scrollbar">
+            <Link to="/dashboard" className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname === '/dashboard' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
+              <LayoutGrid size={16} /> Painel
             </Link>
-            <Link to="/clients" className={`flex items-center gap-3 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${location.pathname.startsWith('/clients') ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
-              <Users size={18} /> Clientes
+            <Link to="/clients" className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname.startsWith('/clients') ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
+              <Users size={16} /> Clientes
             </Link>
-            <div className="pt-6 pb-2 text-[9px] font-black text-zinc-700 uppercase tracking-[0.3em] px-4">Operacional</div>
+            <div className="pt-4 pb-2 text-[8px] font-black text-zinc-700 uppercase tracking-[0.3em] px-3">Operacional</div>
             {currentUser?.subscriptions?.filter((s:any) => s.status.includes('ativa') || s.status === 'teste_ativo').map((sub:any) => (
-              <Link key={sub.id} to={`/module/${sub.id}`} className={`flex items-center gap-3 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${location.pathname.startsWith(`/module/${sub.id}`) ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
-                {sub.id === 'oficina' && <Wrench size={18} />}
-                {sub.id === 'restaurante' && <Utensils size={18} />}
-                {sub.id === 'orcamento' && <FileText size={18} />}
+              <Link key={sub.id} to={`/module/${sub.id}`} className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname.startsWith(`/module/${sub.id}`) ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
+                {sub.id === 'oficina' && <Wrench size={16} />}
+                {sub.id === 'restaurante' && <Utensils size={16} />}
+                {sub.id === 'orcamento' && <FileText size={16} />}
                 <span>{sub.id.toUpperCase()}</span>
               </Link>
             ))}
-            <div className="pt-6 pb-2 text-[9px] font-black text-zinc-700 uppercase tracking-[0.3em] px-4">Administrativo</div>
-            <Link to="/billing" className={`flex items-center gap-3 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${location.pathname === '/billing' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
-              <CreditCard size={18} /> Assinaturas
+            <div className="pt-4 pb-2 text-[8px] font-black text-zinc-700 uppercase tracking-[0.3em] px-3">Administrativo</div>
+            <Link to="/billing" className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname === '/billing' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
+              <CreditCard size={16} /> Assinaturas
             </Link>
-            <Link to="/account/settings" className={`flex items-center gap-3 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${location.pathname === '/account/settings' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
-              <Settings size={18} /> Configurações
+            <Link to="/account/settings" className={`flex items-center gap-3 p-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${location.pathname === '/account/settings' ? 'bg-red-600 text-white' : 'text-zinc-500 hover:bg-zinc-900'}`}>
+              <Settings size={16} /> Configurações
             </Link>
           </nav>
-          <div className="p-4 border-t border-zinc-900">
-            <button onClick={handleLogout} className="w-full flex items-center gap-3 p-4 rounded-2xl text-red-500 hover:bg-red-500/10 transition-all font-black uppercase text-[10px] tracking-widest">
-              <LogOut size={18} /> Sair
+          <div className="p-3 border-t border-zinc-900">
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all font-black uppercase text-[9px] tracking-widest">
+              <LogOut size={16} /> Sair
             </button>
           </div>
         </div>
       )}
 
-      <div className={!isPublic && activeProfile ? 'pl-64 pt-20' : ''}>
+      <div className={!isPublic && activeProfile ? 'pl-56 pt-16' : ''}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Auth type="login" onAuth={(user) => setCurrentUser(user)} />} />
